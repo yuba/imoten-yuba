@@ -1,0 +1,134 @@
+UTF-8
+
+■imoten.ini の設定パラメータ
+	XXXXX=YYYYY
+	の形式で指定する。
+	#でコメントアウトできる。
+
+docomo.id
+  imode.netのログインID。
+
+docomo.passwd
+　imode.netのログインパスワード。
+
+smtp.server
+　転送に使用するSMTPサーバのホスト名もしくはIPアドレス。
+
+smtp.port
+　転送に使用するSMTPサーバのポート番号。
+　デフォルト25。
+
+smtp.connecttimeout
+　転送に使用するSMTPサーバとの接続タイムアウト時間(秒)。
+　デフォルト[10]。
+
+smtp.timeout
+　転送に使用するSMTPサーバとの送受信タイムアウト時間(秒)。
+　デフォルト[30]。
+
+smtp.ssl
+　転送に使用するSMTPサーバがSSLを使用する場合[true]。
+　SSLを使用しない場合[false]。
+　デフォルト[false]。
+
+smtp.from
+　SMTPサーバへ送信する自分のメールアドレス。
+　SMTPコマンドの[MAIL FROM]で指定します。
+　[forward.rewriteaddress]を[true]にした場合、Fromヘッダの
+　アドレスになります。
+
+smtp.auth.user
+　SMTPサーバが認証を必要とする場合、ユーザ名を指定します。
+
+smtp.auth.passwd
+　SMTPサーバが認証を必要とする場合、パスワードを指定します。
+
+popbeforesmtp.server
+　POP before SMTP認証を行う場合、POPサーバのホスト名
+　もしくはIPアドレスを指定します。
+
+popbeforesmtp.user
+　POP before SMTP認証を行う場合、POPサーバのユーザ名を指定します。
+
+popbeforesmtp.passwd
+　POP before SMTP認証を行う場合、POPサーバのパスワードを指定します。
+
+emojireplace.subject
+　[true]を指定すると、メールの題名に絵文字があった場合にその絵文字を[はれ]の様な
+　説明ラベルに置き換えます。
+　[false]を指定すると、そのまま送信します。その場合、PCで表示すると絵文字は
+　正しく表示されません。
+　デフォルト[true]。
+
+emojireplace.body
+　[inline]の場合、絵文字をGMailの画像に置き換え、その画像をメールにインラインで添付します。
+　メールはHTMLメールに変換されます。
+　[link]の場合、絵文字をGMailの画像へのリンク<img src="...">に置き換えます。
+　絵文字を表示するには、メール閲覧時インターネットにつながっている必要があります。
+　メールはHTMLメールに変換されます。
+　[label]の場合、絵文字をはれ]の様な説明ラベルに置き換えます。
+　[none]の場合、絵文字の置き換えを行いません。PCで表示すると絵文字は正しく表示されません。
+　デフォルト[inline]。
+
+forward.subject.prefix
+　転送時に題名の先頭に追加する文字列を指定します。
+　デフォルト空文字列。
+
+forward.to
+　転送時のTOのアドレスです。複数ある場合[,]区切りで指定します。
+
+forward.cc
+　転送時のCCのアドレスです。複数ある場合[,]区切りで指定します。
+
+forward.bcc
+　転送時のBCCのアドレスです。複数ある場合[,]区切りで指定します。
+
+forward.replyto
+　転送時のReply-Toのアドレスです。複数ある場合[,]区切りで指定します。
+
+forward.rewriteaddress
+　[true]の場合、転送時のFROM,TO,CCヘッダをsmtp.from,forward.to,forward.ccに
+　置き換えます。
+　[false]の場合、imodeメールのFROM,TO,CCを転送時のメールに指定します。
+　デフォルト[true]。
+
+forward.headertobody
+　[true]の場合、メールの先頭にimodeメールのFrom,CCなどの情報を追加します。
+　デフォルト[true]。
+
+imodenet.checkinterval
+　imode.netで新着メールをチェックする間隔(秒)を指定します。
+　デフォルト[60]。
+
+imodenet.logininterval
+　imode.netへのログインが失敗した場合、再度ログインを行うまでの時間(秒)を
+　指定します。
+　デフォルト[600]。
+
+save.cookie
+　[true]の場合、ログイン時のCookie情報を保存します。
+　起動時にこの情報を使用してアクセスします。
+　プログラムやPCの再起動などで数分程度の停止の場合は、
+　ログイン処理が省略でき、ログインメールが送信を防ぐことができます。
+　[false]の場合、Cookie情報は保存されません。
+　デフォルト[true]。
+
+save.filename
+　最後に転送したメールID情報を保存するファイル名を指定します。
+　[save.cookie]が[true]の場合はCookie情報も一緒に保存されます。
+　デフォルト[./status.ini]。
+
+http.conntimeout
+　httpでの接続タイムアウト時間(秒)を指定します。
+　デフォルト[10]。
+
+http.sotimeout
+　httpでの受信タイムアウト時間(SO_TIMEOUT)(秒)を指定します。
+　デフォルト[10]。
+
+
+
+
+
+
+

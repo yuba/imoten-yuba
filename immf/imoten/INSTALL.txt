@@ -1,0 +1,83 @@
+UTF-8
+
+Imoteは JavaSE6 以上を必要とします。
+あらかじめインストールしてください。
+
+動作確認はWindowsVistaSP1,Linux CentOS5.3で行いました。
+ほかのOS上でも JavaSE6 が動作する環境であれば動作する可能性があります。
+
+
+■Windows
+▼インストール方法
+1.展開したフォルダを適当なフォルダに移動させます。
+
+2.設定を行います。
+　imoten.ini ファイルを編集してください。
+　設定パラメータについては Parameter.txt を確認してください。
+
+3.Windowsサービスに登録します。
+　binフォルダの InstallImotenWapper-NT.bat を実行します。
+　管理者権限で実行します。Vistaなどでは注意してください。
+　サービス登録後にフォルダの移動を行うとサービスが起動できません。
+
+4.Imotenサービスを起動します。
+　コントロール パネル -> 管理ツール -> サービス を開きます。
+　Imoten という名前のサービスがあるので[開始]してください。
+　次回からはPCを起動すると自動でサービスが起動されます。
+
+▼アンインストール方法
+1.Windowsサービスを削除します。
+　binフォルダの UninstallImotenWapper-NT.bat を実行します。
+　管理者権限で実行します。Vistaなどでは注意してください。
+　コントロール パネル -> 管理ツール -> サービス から
+　削除されていることを確認してください。
+
+2.imotenのフォルダを削除してください。
+
+
+
+
+■Linux
+▼インストール方法
+1.ファイルを展開します。
+　# mkdir /usr/local/imoten
+　# unzip -d /usr/local/imoten imoten-x.x.x.zip
+
+2.設定を行います。
+　imoten.ini ファイルを編集してください。
+　設定パラメータについては Parameter.txt を確認してください。
+
+3.conf/wrapper.confを編集します。
+　wrapper.java.command にjavaの絶対パスを指定します。
+　例) wrapper.java.command=/usr/local/java/bin/java
+
+　wrapper.app.parameter.1=immf.ServerMain の下に以下の行を追加します。(Java Service Wrapperのバグ?)
+　wrapper.app.parameter.2=immf.ServerMain
+
+4.実行権限付与
+　# chmod +x bin/imoten
+　# chmod +x bin/wrapper-linux-*
+
+
+4.init.dへ登録
+　以下はCentOSの場合です。
+　それぞれのディストリビューションの流儀にそって登録してください。
+　# ln -s /usr/local/imoten/bin/imoten /etc/init.d/imoten
+　# /sbin/chkconfig --add imoten
+
+5.起動
+　以下はCentOSの場合です。
+　# /etc/init.d/imoten start
+
+■アンインストール方法
+1.init.dから削除
+　/etc/init.d/imoten stop
+　/sbin/chkconfig --del imoten
+　rm /etc/init.d/imoten
+
+2.ファイルの削除
+　rm -rf /usr/local/imoten
+
+
+
+
