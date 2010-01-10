@@ -91,6 +91,9 @@ public class Config {
 	// httpクライアントのreadタイムアウト
 	private int httpSoTimeoutSec = 10;
 	
+	// Javamailのdebugフラグ
+	private boolean mailDebugEnable = false;
+	
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -140,6 +143,7 @@ public class Config {
 		this.statusFile = getString("save.filename", this.statusFile);
 		this.httpConnectTimeoutSec = getInt("http.conntimeout", this.httpConnectTimeoutSec);
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
+		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
 		
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
@@ -303,6 +307,10 @@ public class Config {
 
 	public List<String> getForwardReplyTo() {
 		return forwardReplyTo;
+	}
+
+	public boolean isMailDebugEnable() {
+		return mailDebugEnable;
 	}
 	
 	

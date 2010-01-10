@@ -32,7 +32,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		this.imm = imm;
 		this.conf = conf;
 		
-		this.setDebug(true);
+		this.setDebug(conf.isMailDebugEnable());
 		this.setCharset(Charset);
 		
 		// SMTP Server
