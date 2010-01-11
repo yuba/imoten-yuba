@@ -26,9 +26,9 @@ smtp.timeout
 　転送に使用するSMTPサーバとの送受信タイムアウト時間(秒)。
 　デフォルト[30]。
 
-smtp.ssl
-　転送に使用するSMTPサーバがSSLを使用する場合[true]。
-　SSLを使用しない場合[false]。
+smtp.tls
+　転送に使用するSMTPサーバがTLSを使用する場合[true]。
+　TLSを使用しない場合[false]。
 　デフォルト[false]。
 
 smtp.from
@@ -116,7 +116,8 @@ save.cookie
 save.filename
 　最後に転送したメールID情報を保存するファイル名を指定します。
 　[save.cookie]が[true]の場合はCookie情報も一緒に保存されます。
-　デフォルト[./status.ini]。
+　相対パスを指定した場合、binディレクトリからの相対パスになります。
+　デフォルト[../status.ini]。
 
 http.conntimeout
 　httpでの接続タイムアウト時間(秒)を指定します。
@@ -132,6 +133,27 @@ mail.debug
 　ログファイルに詳細なメールログが出力されます。
 
 
+
+■サンプル
+SMTPサーバ関係のみ記述しています。
+転送先でなく転送に使用するメールサーバの設定です。
+
+▼GmailのSMTPサーバで送信する場合
+smtp.server=smtp.gmail.com
+smtp.port=587
+smtp.tls=true
+smtp.from=<あなたのGmailユーザ名>@gmail.com
+smtp.auth.user=<あなたのGmailユーザ名>@gmail.com
+smtp.auth.passwd=<あなたのGmailパスワード>
+
+
+▼Windows Live HotmailのSMTPサーバで送信する場合
+smtp.server=smtp.live.com
+smtp.port=587
+smtp.tls=true
+smtp.from=<あなたのHotmailアドレス>
+smtp.auth.user=<あなたのHotmailアドレス>
+smtp.auth.passwd=<あなたのHotmailパスワード>
 
 
 

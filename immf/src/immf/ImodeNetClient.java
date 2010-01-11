@@ -166,7 +166,7 @@ public class ImodeNetClient implements Closeable{
 		}finally{
 			post.abort();
 		}
-		log.debug(json.toString(2));
+		//log.debug(json.toString(2));
 		
 		ImodeMail r = new ImodeMail();
 		String myAddr = json.getJSONObject("common").getString("myAddr");

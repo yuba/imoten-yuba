@@ -40,6 +40,12 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		this.setSmtpPort(conf.getSmtpPort());
 		this.setSocketConnectionTimeout(conf.getSmtpConnectTimeoutSec()*1000);
 		this.setSocketTimeout(conf.getSmtpTimeoutSec()*1000);
+		this.setTLS(conf.isSmtpTls());
+		System.err.println("TLS "+conf.isSmtpTls());
+		
+		if(!StringUtils.isBlank(conf.getSmtpUser())){
+			this.setAuthentication(conf.getSmtpUser(), conf.getSmtpPasswd());
+		}
 
 		if(!StringUtils.isBlank(conf.getPopServer())
 				&& !StringUtils.isBlank(conf.getPopUser())){

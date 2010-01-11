@@ -37,6 +37,11 @@ public class Util {
 		return buf.toString();
 	}
 
+	
+	/*
+	 * JavaMail完全解説 のページから使用させていただきました
+	 * http://www.sk-jp.com/book/javamail/contents/
+	 */
 	public static void setFileName(Part part, String filename,
 			String charset, String lang)
 	throws MessagingException {

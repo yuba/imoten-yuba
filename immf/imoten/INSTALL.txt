@@ -3,10 +3,23 @@ UTF-8
 Imoteは JavaSE6 以上を必要とします。
 あらかじめインストールしてください。
 
-動作確認はWindowsVistaSP1,Linux CentOS5.3で行いました。
-ほかのOS上でも JavaSE6 が動作する環境であれば動作する可能性があります。
+動作確認はWindowsVistaSP1,Linux CentOS5.3,Mac OS X 10.5.8で行いました。
+ほかのOS上でも JavaSE6 が動作する環境であれば動作する可能性が高いです。
 
 
+★バックグラウンドで動作させない場合
+■Windows
+　bin/ImotenWrapper.bat を実行します。
+
+■UNIX系
+　bin/imoten cosole を実行します。
+
+■Javaコマンドで直接実行する方法
+　binディレクトリに移動して以下のコマンドを実行します。
+　java -jar ../imoten.jar
+
+
+★バックグラウンドで動作させる場合
 ■Windows
 ▼インストール方法
 1.展開したフォルダを適当なフォルダに移動させます。
@@ -24,6 +37,7 @@ Imoteは JavaSE6 以上を必要とします。
 　コントロール パネル -> 管理ツール -> サービス を開きます。
 　Imoten という名前のサービスがあるので[開始]してください。
 　次回からはPCを起動すると自動でサービスが起動されます。
+
 
 ▼アンインストール方法
 1.Windowsサービスを削除します。
@@ -56,7 +70,7 @@ Imoteは JavaSE6 以上を必要とします。
 
 4.実行権限付与
 　# chmod +x bin/imoten
-　# chmod +x bin/wrapper-linux-*
+　# chmod +x bin/wrapper*
 
 
 4.init.dへ登録
@@ -69,7 +83,8 @@ Imoteは JavaSE6 以上を必要とします。
 　以下はCentOSの場合です。
 　# /etc/init.d/imoten start
 
-■アンインストール方法
+
+▼アンインストール方法
 1.init.dから削除
 　/etc/init.d/imoten stop
 　/sbin/chkconfig --del imoten
@@ -77,6 +92,47 @@ Imoteは JavaSE6 以上を必要とします。
 
 2.ファイルの削除
 　rm -rf /usr/local/imoten
+
+
+
+
+■Mac OS X
+▼インストール方法
+1.ファイルを展開します。
+　imoten-x.x.x.zip の中身を /Application/imoten に移動します。
+
+3.conf/wrapper.confを編集します。
+　wrapper.java.command にjavaの絶対パスを指定します。
+　複数のバージョンのJavaがインストールされている場合も、確実にJavaSE6で実行されるように
+　指定してください。
+　例) wrapper.java.command=/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Commands/java
+
+　wrapper.app.parameter.1=immf.ServerMain の下に以下の行を追加します。(Java Service Wrapperのバグ?)
+　wrapper.app.parameter.2=immf.ServerMain
+
+4.実行権限付与
+　sudo chmod +x /Application/imoten/bin/imoten
+　sudo chmod +x /Application/imoten/bin/wrapper*
+
+5.スタートアップの設定を行います。
+　sudo mkdir /Library/StartupItems/imoten
+　sudo cp /Application/imoten/bin/mac_startup/* /Library/StartupItems/imoten/
+　sudo chmod -R 755 /Library/StartupItems/imoten
+
+6.起動
+　sudo /sbin/SystemStarter start imoten
+
+
+▼アンインストール方法
+1.スタートアップルスクリプトの削除
+　sudo /sbin/SystemStarter stop
+　sudo rm -rf /Library/StartupItems/imoten
+
+2.ファイルの削除
+　rm -rf /Application/imoten
+
+
+
 
 
 

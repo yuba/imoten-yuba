@@ -19,7 +19,7 @@ public class Config {
 	// SMTPサーバ
 	private String smtpServer;
 	private int smtpPort = 25;
-	private boolean smtpSsl = false;
+	private boolean smtpTls = false;
 	private String smtpMailAddress;
 	private int smtpConnectTimeoutSec = 10;
 	private int smtpTimeoutSec = 30;
@@ -110,7 +110,7 @@ public class Config {
 		this.smtpPort = 		getInt(   "smtp.port", this.smtpPort);
 		this.smtpConnectTimeoutSec = getInt("smtp.connecttimeout", this.smtpConnectTimeoutSec);
 		this.smtpTimeoutSec = getInt("smtp.timeout", this.smtpTimeoutSec);
-		this.smtpSsl = 			getBoolean("smtp.ssl", this.smtpSsl);
+		this.smtpTls = 			getBoolean("smtp.tls", this.smtpTls);
 		this.smtpMailAddress = 	getString("smtp.from", null);
 		this.smtpUser = 		getString("smtp.auth.user", null);
 		this.smtpPasswd = 		getString("smtp.auth.passwd", null);
@@ -194,8 +194,8 @@ public class Config {
 		return smtpPort;
 	}
 
-	public boolean isSmtpSsl() {
-		return smtpSsl;
+	public boolean isSmtpTls() {
+		return smtpTls;
 	}
 
 	public String getSmtpMailAddress() {

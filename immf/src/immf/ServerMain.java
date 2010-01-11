@@ -13,7 +13,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imode.net mail forwarder ver. 1.0.0";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.0.0";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
@@ -23,6 +23,7 @@ public class ServerMain {
 	public ServerMain(File conffile){
 		System.out.println("StartUp ["+Version+"]");
 		log.info("StartUp ["+Version+"]");
+		this.setShutdownHook();
 		try{
 			log.info("Load Config file "+conffile.getAbsolutePath());
 			FileInputStream is = new FileInputStream(conffile);
@@ -143,6 +144,19 @@ public class ServerMain {
 			// 負荷をかけないように
 			Thread.sleep(1000);
 		}catch (Exception e) {}
+	}
+	
+	/*
+	 * 停止時にログを出力
+	 */
+	private void setShutdownHook(){
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+        		System.out.println("Shutdown ["+Version+"]");
+        		log.info("Shutdown ["+Version+"]");
+            }
+        });;
+
 	}
 	
 	public static void main(String[] args){

@@ -1,0 +1,31 @@
+#!/bin/sh
+
+. /etc/rc.common
+
+##
+# Startup imoten
+##
+
+StartService()
+{
+	ConsoleMessage "Starting imoten"
+	cd /Applications/imoten/bin
+	./imoten start
+}
+
+StopService()
+{
+	ConsoleMessage "Stopping imoten"
+	cd /Applications/imoten/bin
+	./imoten stop
+}
+
+RestartService()
+{
+	ConsoleMessage "Restarting imoten"
+	cd /Applications/imoten/bin
+	./imoten stop
+	./imoten start
+}
+
+RunService "$1"

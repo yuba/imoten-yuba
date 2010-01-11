@@ -20,7 +20,7 @@
 
 # Application
 APP_NAME="imoten"
-APP_LONG_NAME="i mode.net mail forwarder"
+APP_LONG_NAME="imoten (i mode mail tensou)"
 
 # Wrapper
 WRAPPER_CMD="./wrapper"

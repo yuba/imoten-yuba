@@ -22,7 +22,7 @@ Java Service Wrapper(http://wrapper.tanukisoftware.org/)の
 コミュニティ版を使用させてもらいました。
 
 
-■インストール方法
+■インストール・実行方法
 　INSTALL.txt を確認してください。
 
 ■設定方法
@@ -31,7 +31,7 @@ Java Service Wrapper(http://wrapper.tanukisoftware.org/)の
 
 ■うまく動作しないとき
 　詳細なログが出るように設定を変更して、ログを確認して下さい。
-　logs/wrapper.log, logs/imoten.log にHTTP,SMTPの詳細な
+　logs/wrapper.log, logs/imoten.log にHTTP,SMTP,JavaServiceWrapperの詳細な
 　ログが出力されるようになります。
 
 　▼imoten.ini
@@ -44,6 +44,10 @@ Java Service Wrapper(http://wrapper.tanukisoftware.org/)の
 　　log4j.rootLogger=DEBUG, file
 　　#log4j.rootLogger=INFO, file
 　　　に変更します。
+
+　▼conf/wrapper.conf
+　　以下の行がコメントアウトされているので有効にします。
+　　wrapper.debug=TRUE
 
 　ログファイルはローテートするので、ログでHDDがいっぱいに
 　なることはありません。
