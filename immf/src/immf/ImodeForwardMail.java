@@ -36,7 +36,6 @@ import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,7 +61,6 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		this.setSocketConnectionTimeout(conf.getSmtpConnectTimeoutSec()*1000);
 		this.setSocketTimeout(conf.getSmtpTimeoutSec()*1000);
 		this.setTLS(conf.isSmtpTls());
-		System.err.println("TLS "+conf.isSmtpTls());
 		
 		if(!StringUtils.isBlank(conf.getSmtpUser())){
 			this.setAuthentication(conf.getSmtpUser(), conf.getSmtpPasswd());
@@ -152,7 +150,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		}
 		html = "<html>"+html+"</html>";
 		try{
-			this.setHtmlMsg(new String(html.getBytes(Charset)));
+			this.setHtmlMsg(Util.toIso2022jp(html));
 		}catch (Exception e) {
 			throw new EmailException(e);
 		}

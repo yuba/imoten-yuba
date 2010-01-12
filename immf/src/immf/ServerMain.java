@@ -23,8 +23,6 @@ package immf;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -34,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.0.0";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.0.1";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
@@ -74,8 +72,10 @@ public class ServerMain {
 		
 		try{
 			// 前回のcookie
-			for (Cookie	cookie : this.status.getCookies()) {
-				this.client.addCookie(cookie);
+			if(this.conf.isSaveCookie()){
+				for (Cookie	cookie : this.status.getCookies()) {
+					this.client.addCookie(cookie);
+				}
 			}
 		}catch (Exception e) {}
 		
@@ -124,7 +124,9 @@ public class ServerMain {
 				log.info("Update LastMailId="+this.status.getLastMailId());
 			}
 			try{
-				this.status.setCookies(client.getCookies());
+				if(this.conf.isSaveCookie()){
+					this.status.setCookies(client.getCookies());
+				}
 				this.status.save();
 			}catch (Exception e) {
 				log.error("Status File save Error.",e);

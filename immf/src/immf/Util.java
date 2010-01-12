@@ -31,12 +31,28 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
 
+import org.apache.commons.lang.StringUtils;
+
 public class Util {
 	public static void safeclose(Closeable c){
 		if(c!=null){
 			try{
 				c.close();
 			}catch (Exception e) {}
+		}
+	}
+	
+	public static String toIso2022jp(String s){
+		s = StringUtils.replace(s, "\uff5e", "\u301c");
+		s = StringUtils.replace(s, "\u2225", "\u2016");
+		s = StringUtils.replace(s, "\uff0d", "\u2212");
+		s = StringUtils.replace(s, "\uffe0", "\u00a2");
+		s = StringUtils.replace(s, "\uffe1", "\u00a3");
+		s = StringUtils.replace(s, "\uffe2", "\u00ac");
+		try{
+			return new String(s.getBytes("iso-2022-jp"));
+		}catch (Exception e) {
+			return s;
 		}
 	}
 	
