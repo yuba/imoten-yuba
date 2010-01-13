@@ -99,7 +99,7 @@ Imoteは JavaSE6 以上を必要とします。
 ■Mac OS X
 ▼インストール方法
 1.ファイルを展開します。
-　imoten-x.x.x.zip の中身を /Application/imoten に移動します。
+　imoten-x.x.x.zip の中身を /Applications/imoten に移動します。
 
 3.conf/wrapper.confを編集します。
 　wrapper.java.command にjavaの絶対パスを指定します。
@@ -111,12 +111,12 @@ Imoteは JavaSE6 以上を必要とします。
 　wrapper.app.parameter.2=immf.ServerMain
 
 4.実行権限付与
-　sudo chmod +x /Application/imoten/bin/imoten
-　sudo chmod +x /Application/imoten/bin/wrapper*
+　sudo chmod +x /Applications/imoten/bin/imoten
+　sudo chmod +x /Applications/imoten/bin/wrapper*
 
 5.スタートアップの設定を行います。
 　sudo mkdir /Library/StartupItems/imoten
-　sudo cp /Application/imoten/bin/mac_startup/* /Library/StartupItems/imoten/
+　sudo cp /Applications/imoten/bin/mac_startup/* /Library/StartupItems/imoten/
 　sudo chmod -R 755 /Library/StartupItems/imoten
 
 6.起動
@@ -129,7 +129,7 @@ Imoteは JavaSE6 以上を必要とします。
 　sudo rm -rf /Library/StartupItems/imoten
 
 2.ファイルの削除
-　rm -rf /Application/imoten
+　rm -rf /Applications/imoten
 
 
 
