@@ -25,13 +25,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 public class ImodeMail {
-	private static final Log log = LogFactory.getLog(ImodeMail.class);
+//	private static final Log log = LogFactory.getLog(ImodeMail.class);
 	
 	private String mailId;
 	private int folderId;

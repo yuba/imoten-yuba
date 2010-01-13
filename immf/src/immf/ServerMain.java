@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.0.1";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.0.2";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;

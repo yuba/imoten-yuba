@@ -40,11 +40,11 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.mail.ByteArrayDataSource;
+import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 
 public class ImodeForwardMail extends MyHtmlEmail {
 	private static final Log log = LogFactory.getLog(ImodeForwardMail.class);
-	private static final String Charset = "iso-2022-jp";
 	private ImodeMail imm;
 	private Config conf;
 
@@ -53,7 +53,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		this.conf = conf;
 		
 		this.setDebug(conf.isMailDebugEnable());
-		this.setCharset(Charset);
+		this.setCharset(this.conf.getMailEncode());
 		
 		// SMTP Server
 		this.setHostName(conf.getSmtpServer());
@@ -150,7 +150,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		}
 		html = "<html>"+html+"</html>";
 		try{
-			this.setHtmlMsg(Util.toIso2022jp(html));
+			this.setHtmlMsg(html);
 		}catch (Exception e) {
 			throw new EmailException(e);
 		}
@@ -210,7 +210,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			for (AttachedFile f : files) {
 				BodyPart part = createBodyPart();
 				part.setDataHandler(new DataHandler(new ByteArrayDataSource(f.getData(),f.getContentType())));
-				Util.setFileName(part, f.getFilename(), Charset, null);
+				Util.setFileName(part, f.getFilename(), this.charset, null);
 				part.setDisposition(BodyPart.ATTACHMENT);
 				getContainer().addBodyPart(part);
 			}
@@ -225,7 +225,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		try{
 			List<AttachedFile> files = this.imm.getInlineFileList();
 			for (AttachedFile f : files) {
-				this.embed(new ByteArrayDataSource(f.getData(),f.getContentType()), f.getFilename(),Charset, f.getId());
+				this.embed(new ByteArrayDataSource(f.getData(),f.getContentType()), f.getFilename(), this.charset, f.getId());
 			}
 		}catch (Exception e) {
 			throw new EmailException(e);
@@ -304,7 +304,6 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				}
 				msg.setFrom(new InternetAddress(this.imm.getFromAddr()));
 			}
-			
 		}catch (Exception e) {
 			log.warn(e);
 		}
@@ -345,4 +344,22 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			return null;
 		}
     }
+
+	@Override
+	public MyHtmlEmail setHtmlMsg(String html) throws EmailException {
+		html = Util.replaceUnicodeMapping(html);
+		try{
+			html = new String(html.getBytes(this.charset));
+		}catch (Exception e) {
+			log.error("setHtmlMsg",e);
+		}
+		return super.setHtmlMsg(html);
+	}
+
+	@Override
+	public Email setSubject(String subject) {
+		return super.setSubject(Util.replaceUnicodeMapping(subject));
+	}
+	
+	
 }

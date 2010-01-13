@@ -24,13 +24,18 @@ package immf;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class Config {
 	public static final String ConfFile = "../imoten.ini";
 	public static final String StatusFile = "../status.ini";
+	private static final Log log = LogFactory.getLog(Config.class);
 	private Properties prop = new Properties();
 	
 	// imode.netアカウント
@@ -115,6 +120,10 @@ public class Config {
 	// Javamailのdebugフラグ
 	private boolean mailDebugEnable = false;
 	
+	// メールのエンコード(charset)
+	private static final String DefaultMailEncode = "UTF-8";
+	private String mailEncode = DefaultMailEncode;
+	
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -165,6 +174,7 @@ public class Config {
 		this.httpConnectTimeoutSec = getInt("http.conntimeout", this.httpConnectTimeoutSec);
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
+		this.mailEncode = getString("mail.encode", this.mailEncode);
 		
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
@@ -173,6 +183,13 @@ public class Config {
 		this.loginRetryIntervalSec = Math.max(this.loginRetryIntervalSec, 3);
 		this.httpConnectTimeoutSec = Math.max(this.httpConnectTimeoutSec, 3);
 		this.httpSoTimeoutSec = Math.max(this.httpSoTimeoutSec, 3);
+		
+		try{
+			this.mailEncode = Charset.forName(this.mailEncode).name();
+		}catch (Throwable e) {
+			log.warn("mail.encode["+this.mailEncode+"] Error("+e.getMessage()+"). use "+DefaultMailEncode);
+			this.mailEncode = DefaultMailEncode;
+		}
 	}
 	
 	private static List<String> splitComma(String str){
@@ -333,7 +350,10 @@ public class Config {
 	public boolean isMailDebugEnable() {
 		return mailDebugEnable;
 	}
-	
-	
+
+	public String getMailEncode() {
+		return mailEncode;
+	}
+
 }
 
