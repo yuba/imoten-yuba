@@ -1,6 +1,6 @@
 UTF-8
 
-Imoteは JavaSE6 以上を必要とします。
+Imotenは JavaSE6 以上を必要とします。
 あらかじめインストールしてください。
 
 動作確認はWindowsVistaSP1,Linux CentOS5.3,Mac OS X 10.5.8で行いました。
