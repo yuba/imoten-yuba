@@ -139,6 +139,24 @@ mail.encode
 　iso-2022-jp,Shift_JISなど別のエンコーディングを指定してみてください。
 　デフォルト[UTF-8]
 
+sender.smtp.port
+　imode.net経由でメールを送信する場合、imotenが動作しているPCで
+　SMTPを待ち受けるポート番号を指定してください。
+　デフォルトはSMTPの待ち受けを行いません。
+　imode.net経由でメールを送信する場合は必ず指定してください。
+　
+sender.smtp.user
+　imode.net経由でメールを送信する場合の認証ユーザ名を
+　指定します。
+
+sender.smtp.passwd
+　imode.net経由でメールを送信する場合の認証パスワードを
+　指定します。
+
+sender.alwaysbcc
+　imode.net経由でメールを送信する場合に常にBCCで追加するメールアドレスを
+　指定します。メールアドレスは1つしか指定することはできません。
+　デフォルト未設定
 
 
 ■サンプル

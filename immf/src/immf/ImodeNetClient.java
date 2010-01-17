@@ -22,11 +22,15 @@ package immf;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import javax.mail.internet.InternetAddress;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -39,12 +43,15 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.cookie.Cookie;
+import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
@@ -56,12 +63,14 @@ public class ImodeNetClient implements Closeable{
 	private static final String JsonUrl = "https://imode.net/imail/aclrs/acgi/";
 	private static final String AttachedFileUrl = "https://imode.net/imail/oexaf/acgi/mailfileget";
 	private static final String InlineFileUrl = "https://imode.net/imail/oexaf/acgi/mailimgget";
+	private static final String SendMailUrl = "https://imode.net/imail/oexaf/acgi/mailsend";
 	
 
 	private String name;
 	private String pass;
 	
 	private DefaultHttpClient httpClient;
+	private boolean logined;
 	
 	public ImodeNetClient(String name, String pass){
 		this.name = name;
@@ -96,13 +105,16 @@ public class ImodeNetClient implements Closeable{
 			try{
 				HttpResponse res = this.executeHttp(post);
 				if(res==null){
+					this.logined = false;
 					throw new IOException("Redirect Error");
 				}
 				if(res.getStatusLine().getStatusCode()!=200){
+					this.logined = false;
 					throw new IOException("http login response bad status code "+res.getStatusLine().getStatusCode());
 				}
 				String body = toStringBody(res);
 				if(body.indexOf("<title>認証エラー")>0){
+					this.logined = false;
 					throw new LoginException("認証エラー");
 				}
 			}finally{
@@ -114,11 +126,14 @@ public class ImodeNetClient implements Closeable{
 			try{
 				HttpResponse res = this.requestPost(post, null);
 				if(res==null){
+					this.logined = false;
 					throw new IOException("Login Error");
 				}
 				if(res.getStatusLine().getStatusCode()!=200){
+					this.logined = false;
 					throw new IOException("http login2 response bad status code "+res.getStatusLine().getStatusCode());
 				}
+				this.logined = true;
 			}finally{
 				post.abort();
 			}
@@ -134,7 +149,7 @@ public class ImodeNetClient implements Closeable{
 	 * @throws IOException
 	 * @throws LoginException
 	 */
-	public List<String> getMailIdList(int folderId) throws IOException,LoginException{
+	public synchronized List<String> getMailIdList(int folderId) throws IOException,LoginException{
 		log.info("# getMailIdList "+folderId);
 		HttpPost post = null;
 		int retry=0;
@@ -150,6 +165,7 @@ public class ImodeNetClient implements Closeable{
 					log.info("# retry getMailIdList");
 					continue;
 				}
+				this.logined = true;
 				JSONObject json = JSONObject.fromObject(toStringBody(res));
 				//log.debug(json.toString(2));
 				JSONArray array = json.getJSONObject("data").getJSONArray("folderList");
@@ -163,15 +179,15 @@ public class ImodeNetClient implements Closeable{
 					Collections.reverse(r);
 					return r;
 				}
-				return null;
+				return new ArrayList<String>();
 			}finally{
 				post.abort();
 			}
 		}while(retry<=1);
-		return null;
+		return new ArrayList<String>();
 	}
 	
-	public ImodeMail getMail(int folderId, String mailId) throws IOException{
+	public synchronized ImodeMail getMail(int folderId, String mailId) throws IOException{
 		log.info("# getMail "+folderId+"/"+mailId);
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 		formparams.add(new BasicNameValuePair("folder.id",Integer.toString(folderId)));
@@ -300,6 +316,85 @@ public class ImodeNetClient implements Closeable{
 			post.abort();
 		}
 	}
+	
+	/**
+	 * imode.netの送信フォールからメールを送信
+	 * 
+	 * @param mail
+	 * @return
+	 * @throws IOException
+	 */
+	public synchronized void sendMail(SenderMail mail) throws IOException{
+		if(!this.logined){
+			throw new IOException("imode.net nologin");
+		}
+		MultipartEntity multi = new MultipartEntity();
+		try{
+			multi.addPart("fonlder.id", new StringBody("0",Charset.forName("UTF-8")));
+			multi.addPart("folder.mail.type", new StringBody("0",Charset.forName("UTF-8")));
+			
+			// 送信先
+			int recipient = 0;
+			for (InternetAddress ia : mail.getTo()) {
+				multi.addPart("folder.mail.addrinfo("+recipient+").mladdr", new StringBody(ia.getAddress(),Charset.forName("UTF-8")));
+				multi.addPart("folder.mail.addrinfo("+recipient+").type", new StringBody("1",Charset.forName("UTF-8")));
+				recipient++;
+			}
+			for (InternetAddress ia : mail.getCc()) {
+				multi.addPart("folder.mail.addrinfo("+recipient+").mladdr", new StringBody(ia.getAddress(),Charset.forName("UTF-8")));
+				multi.addPart("folder.mail.addrinfo("+recipient+").type", new StringBody("2",Charset.forName("UTF-8")));
+				recipient++;
+			}
+			for (InternetAddress ia : mail.getBcc()) {
+				multi.addPart("folder.mail.addrinfo("+recipient+").mladdr", new StringBody(ia.getAddress(),Charset.forName("UTF-8")));
+				multi.addPart("folder.mail.addrinfo("+recipient+").type", new StringBody("3",Charset.forName("UTF-8")));
+				recipient++;
+			}
+			if(recipient>=5){
+				throw new IOException("Too Much Recipient");
+			}
+			
+			// 題名
+			multi.addPart("folder.mail.subject", new StringBody(Util.reverseReplaceUnicodeMapping(mail.getSubject()),Charset.forName("UTF-8")));
+			
+			// 内容
+			String body = Util.reverseReplaceUnicodeMapping(mail.getContent());
+			// imode.netの制限 本文は10000Bytes以内で
+			if(body.getBytes().length>10000){
+				// 文字数かbyte数かわからないのでとりあえずbyte数で制限
+				throw new IOException("Too Big Message Body. Max 10000 byte.");
+			}
+			System.err.println("body "+body);
+			multi.addPart("folder.mail.data", new StringBody(body,Charset.forName("UTF-8")));
+
+			// よくわかんない絵文字情報
+			multi.addPart("iemoji(0).id", new StringBody(Character.toString((char)0xe709),Charset.forName("UTF-8")));			// e709 = UTF-8でee89c9の値
+			multi.addPart("iemoji(1).id", new StringBody(Character.toString((char)0xe6f0),Charset.forName("UTF-8")));			// e6f0 = UTF-8でee9bb0の値
+			
+			multi.addPart("reqtype", new StringBody("0",Charset.forName("UTF-8")));
+
+			HttpPost post = new HttpPost(SendMailUrl);
+			try{
+				addDumyHeader(post);
+				post.setEntity(multi);
+
+				HttpResponse res = this.executeHttp(post);
+				if(!isJson(res)){
+					throw new IOException("Bad response");
+				}
+				JSONObject json = JSONObject.fromObject(toStringBody(res));
+				String result = json.getJSONObject("common").getString("result");
+				if(!result.equals("PW1000")){
+					log.debug(json.toString(2));
+					throw new IOException("Bad response "+result);
+				}
+			}finally{
+				post.abort();
+			}
+		}catch (UnsupportedEncodingException e) {
+			log.fatal(e);
+		}
+	}
 
 	private static boolean isJson(HttpResponse res){
 		if(res==null){
@@ -348,12 +443,7 @@ public class ImodeNetClient implements Closeable{
 	 * IEがAjaxで行うリクエストを行う
 	 */
 	private HttpResponse requestPost(HttpPost post,List<NameValuePair> formparams) throws IOException{
-		post.setHeader("Accept", "*/*");
-		post.setHeader("Accept-Encoding","gzip, deflate");
-		post.setHeader("Cache-Control", "no-cache");
-		post.setHeader("User-Agent","Mozilla/4.0 (compatible;MSIE 7.0; Windows NT 6.0;)");
-		post.setHeader("x-pw-service","PCMAIL/1.0");
-		post.setHeader("Referer","https://imode.net/imail/aclrs/ahtm/index.html");
+		addDumyHeader(post);
 		
 		if(formparams!=null){
 			UrlEncodedFormEntity entity = null;
@@ -366,6 +456,15 @@ public class ImodeNetClient implements Closeable{
 		}
 		
 		return this.executeHttp(post);
+	}
+	
+	private static void addDumyHeader(HttpEntityEnclosingRequestBase req){
+		req.setHeader("Accept", "*/*");
+		req.setHeader("Accept-Encoding","gzip, deflate");
+		req.setHeader("Cache-Control", "no-cache");
+		req.setHeader("User-Agent","Mozilla/4.0 (compatible;MSIE 7.0; Windows NT 6.0;)");
+		req.setHeader("x-pw-service","PCMAIL/1.0");
+		req.setHeader("Referer","https://imode.net/imail/aclrs/ahtm/index.html");
 	}
 	
 	public void setSoTimeout(int millisec){

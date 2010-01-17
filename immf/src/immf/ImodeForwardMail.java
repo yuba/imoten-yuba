@@ -242,7 +242,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		if(isHtml){
 			buf.append("<pre>");
 		}
-		buf.append("------------------------------------------------------------").append("\r\n");
+		buf.append("----").append("\r\n");
 		buf.append(" From:    ").append(this.imm.getFromAddr()).append("\r\n");
 		buf.append(" To:      ").append(this.imm.getMyMailAddr()).append("\r\n");
 		for(String addr : imm.getToAddrList()){

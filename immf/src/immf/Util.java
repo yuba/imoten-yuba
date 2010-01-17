@@ -57,6 +57,16 @@ public class Util {
 		return s;
 	}
 	
+	public static String reverseReplaceUnicodeMapping(String s){
+		s = StringUtils.replace(s, "\u301c", "\uff5e");
+		s = StringUtils.replace(s, "\u2016", "\u2225");
+		s = StringUtils.replace(s, "\u2212", "\uff0d");
+		s = StringUtils.replace(s, "\u00a2", "\uffe0");
+		s = StringUtils.replace(s, "\u00a3", "\uffe1");
+		s = StringUtils.replace(s, "\u00ac", "\uffe2");
+		return s;
+	}
+	
 	public static String easyEscapeHtml(String s){
 		StringBuilder buf = new StringBuilder();
 		for(char c : s.toCharArray()){

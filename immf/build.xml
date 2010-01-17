@@ -4,7 +4,7 @@
 	<property name="bin" value="./bin" />
 	<property name="release-dir" value="./imoten" />
 	<property name="onejar" value="${release-dir}/imoten.jar" />
-	<property name="release-name" value="imoten-1.0.2.zip" />
+	<property name="release-name" value="imoten-1.1.0.zip" />
 
 	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
@@ -36,6 +36,9 @@
             <zipfileset excludes="META-INF/*.SF" src="./lib/activation.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="./lib/commons-email-1.2.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="./lib/mail.jar"/>
+        	<zipfileset excludes="META-INF/*.SF" src="./lib/slf4j-api-1.5.6.jar"/>
+        	<zipfileset excludes="META-INF/*.SF" src="./lib/slf4j-simple-1.5.6.jar"/>
+        	<zipfileset excludes="META-INF/*.SF" src="./lib/subethasmtp-3.1.2.jar"/>   	
         </jar>
     </target>
 	

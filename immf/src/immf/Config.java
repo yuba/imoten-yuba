@@ -124,6 +124,12 @@ public class Config {
 	private static final String DefaultMailEncode = "UTF-8";
 	private String mailEncode = DefaultMailEncode;
 	
+	// 送信用設定
+	private int senderSmtpPort = -1;
+	private String senderUser = "z8$k>Lo2#aEeo@a(aw!";
+	private String senderPasswd = "<87a!Oa#3gpoYz0'->L";
+	private String senderAlwaysBcc = null;
+	
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -175,6 +181,11 @@ public class Config {
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
 		this.mailEncode = getString("mail.encode", this.mailEncode);
+		this.senderSmtpPort = getInt("sender.smtp.port", this.senderSmtpPort);
+		this.senderUser = getString("sender.smtp.user", this.senderUser);
+		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
+		this.senderAlwaysBcc = getString("sender.alwaysbcc", this.senderAlwaysBcc);
+		
 		
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
@@ -355,5 +366,23 @@ public class Config {
 		return mailEncode;
 	}
 
+	public int getSenderSmtpPort() {
+		return senderSmtpPort;
+	}
+
+	public String getSenderUser() {
+		return senderUser;
+	}
+
+	public String getSenderPasswd() {
+		return senderPasswd;
+	}
+
+	public String getSenderAlwaysBcc() {
+		return senderAlwaysBcc;
+	}
+
+	
+	
 }
 
