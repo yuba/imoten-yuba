@@ -124,6 +124,9 @@ public class Config {
 	private static final String DefaultMailEncode = "UTF-8";
 	private String mailEncode = DefaultMailEncode;
 	
+	// メールのhtml部分のContent-Transfer-Encoding
+	private String contentTransferEncoding = null;
+	
 	// 送信用設定
 	private int senderSmtpPort = -1;
 	private String senderUser = "z8$k>Lo2#aEeo@a(aw!";
@@ -181,6 +184,7 @@ public class Config {
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
 		this.mailEncode = getString("mail.encode", this.mailEncode);
+		this.contentTransferEncoding = getString("mail.contenttransferencoding", null);
 		this.senderSmtpPort = getInt("sender.smtp.port", this.senderSmtpPort);
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
@@ -380,6 +384,10 @@ public class Config {
 
 	public String getSenderAlwaysBcc() {
 		return senderAlwaysBcc;
+	}
+
+	public String getContentTransferEncoding() {
+		return contentTransferEncoding;
 	}
 
 	

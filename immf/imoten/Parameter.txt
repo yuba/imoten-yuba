@@ -139,6 +139,12 @@ mail.encode
 　iso-2022-jp,Shift_JISなど別のエンコーディングを指定してみてください。
 　デフォルト[UTF-8]
 
+mail.contenttransferencoding
+　メールの本文部分のContent-Transfer-Encodingを指定します。
+　メーラがquoted-printableに対応しない場合、[7bit]を指定してみてください。
+　デフォルト[quoted-printable]
+
+
 sender.smtp.port
 　imode.net経由でメールを送信する場合、imotenが動作しているPCで
 　SMTPを待ち受けるポート番号を指定してください。

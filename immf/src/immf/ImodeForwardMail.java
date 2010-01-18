@@ -35,6 +35,7 @@ import javax.mail.BodyPart;
 import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeUtility;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -54,6 +55,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		
 		this.setDebug(conf.isMailDebugEnable());
 		this.setCharset(this.conf.getMailEncode());
+		this.setContentTransferEncoding(this.conf.getContentTransferEncoding());
 		
 		// SMTP Server
 		this.setHostName(conf.getSmtpServer());
@@ -303,6 +305,16 @@ public class ImodeForwardMail extends MyHtmlEmail {
 					msg.setHeader("Cc", StringUtils.join(this.imm.getCcAddrList(),","));
 				}
 				msg.setFrom(new InternetAddress(this.imm.getFromAddr()));
+			}
+			
+			String subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+			if(conf.isSubjectEmojiReplace()){
+				subject = EmojiUtil.replaceToLabel(subject);
+			}
+			msg.setSubject(MimeUtility.encodeText(subject,this.charset,"B"));			
+			
+			if(this.conf.getContentTransferEncoding()!=null){
+				msg.setHeader("Content-Transfer-Encoding", this.conf.getContentTransferEncoding());
 			}
 		}catch (Exception e) {
 			log.warn(e);

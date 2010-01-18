@@ -143,8 +143,18 @@ public class MyHtmlEmail extends MultiPartEmail
      * user-defined image name.
      */
     protected Map inlineEmbeds = new HashMap();
+    
+    protected String contentTransferEncoding;
 
-    /**
+    public String getContentTransferEncoding() {
+		return contentTransferEncoding;
+	}
+
+	public void setContentTransferEncoding(String contentTransferEncoding) {
+		this.contentTransferEncoding = contentTransferEncoding;
+	}
+
+	/**
      * Set the text content.
      *
      * @param aText A String.
@@ -511,7 +521,7 @@ public class MyHtmlEmail extends MultiPartEmail
     		mbp.setFileName(name);
     		mbp.setDisposition("inline");
     		mbp.setContentID("<" + cid + ">");
-
+    		
     		InlineImage ii = new InlineImage(cid, dataSource, mbp);
     		this.inlineEmbeds.put(name, ii);
 
@@ -540,7 +550,7 @@ public class MyHtmlEmail extends MultiPartEmail
             //mbp.setFileName(name);
             mbp.setDisposition("inline");
             mbp.setContentID("<" + cid + ">");
-
+            
             InlineImage ii = new InlineImage(cid, dataSource, mbp);
             this.inlineEmbeds.put(name, ii);
 
@@ -633,6 +643,9 @@ public class MyHtmlEmail extends MultiPartEmail
             {
                 msgHtml.setContent(this.html, Email.TEXT_HTML);
             }
+    		if(contentTransferEncoding!=null){
+    			msgHtml.setHeader("Content-Transfer-Encoding", contentTransferEncoding);
+    		}
 
             Iterator iter = this.inlineEmbeds.values().iterator();
             while (iter.hasNext())
@@ -658,6 +671,9 @@ public class MyHtmlEmail extends MultiPartEmail
             {
                 msgText.setContent(this.text, Email.TEXT_PLAIN);
             }
+    		if(contentTransferEncoding!=null){
+    			msgText.setHeader("Content-Transfer-Encoding", contentTransferEncoding);
+    		}
         }
     }
 
