@@ -360,6 +360,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	@Override
 	public MyHtmlEmail setHtmlMsg(String html) throws EmailException {
 		html = Util.replaceUnicodeMapping(html);
+		html += "\n";
 		try{
 			html = new String(html.getBytes(this.charset));
 		}catch (Exception e) {

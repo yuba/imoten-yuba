@@ -191,7 +191,6 @@ public class ServerMain {
 			if(args.length>0){
 				confFile = args[0];
 			}
-
 			new ServerMain(new File(confFile));
 		}catch (Exception e) {
 			e.printStackTrace();

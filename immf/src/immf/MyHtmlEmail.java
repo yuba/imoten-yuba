@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -803,5 +804,11 @@ public class MyHtmlEmail extends MultiPartEmail
                 count++;
         }
         return buffer.toString();
+    }
+    
+    @Override
+    public void setCharset(String newCharset)
+    {
+    	this.charset = newCharset;
     }
 }

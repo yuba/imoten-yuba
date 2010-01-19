@@ -137,12 +137,13 @@ mail.encode
 　ISO-2022-JPだと機種も依存文字が送信できないので、デフォルトでは
 　UTF-8で送信します。もし使用しているメーラーがUTF-8に対応していない場合、
 　iso-2022-jp,Shift_JISなど別のエンコーディングを指定してみてください。
+　その場合は、下に説明してある conf/wrapper.conf の設定も
 　デフォルト[UTF-8]
 
 mail.contenttransferencoding
 　メールの本文部分のContent-Transfer-Encodingを指定します。
-　メーラがquoted-printableに対応しない場合、[7bit]を指定してみてください。
-　デフォルト[quoted-printable]
+　文字化けする場合、[7bit]を指定してみてください。
+　デフォルト ライブラリ任せ
 
 
 sender.smtp.port
@@ -185,6 +186,24 @@ smtp.tls=true
 smtp.from=<あなたのHotmailアドレス>
 smtp.auth.user=<あなたのHotmailアドレス>
 smtp.auth.passwd=<あなたのHotmailパスワード>
+
+
+
+■conf/wrapper.conf の設定パラメータ
+
+wrapper.java.additional.1=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS　
+　上記の設定はimoten.iniの mail.encode に[ISO-2022-JP]もしくは[Shift_JIS]を指定した場合に
+　関係します。
+　[①]のような機種依存文字は本来[ISO-2022-JP],[Shift_JIS]には含まれません。
+　なので機種依存文字を[ISO-2022-JP],[Shift_JIS]で送信すると[？]に置き換えられてしまうんですが、
+　上記の設定を行うと、[？]にならず、機種依存文字を[ISO-2022-JP],[Shift_JIS]に含めて処理してくれる
+　ようになります(Outlookのようなメーラのように)。
+　ただし、メーラ(特にMacやLinuxの場合)によっては文字化けが発生するかもしれません。
+　その場合は上記の行を[#]でコメントアウトしてください。
+　
+
+
+
 
 
 

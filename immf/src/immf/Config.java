@@ -200,7 +200,7 @@ public class Config {
 		this.httpSoTimeoutSec = Math.max(this.httpSoTimeoutSec, 3);
 		
 		try{
-			this.mailEncode = Charset.forName(this.mailEncode).name();
+			Charset.forName(this.mailEncode).name();
 		}catch (Throwable e) {
 			log.warn("mail.encode["+this.mailEncode+"] Error("+e.getMessage()+"). use "+DefaultMailEncode);
 			this.mailEncode = DefaultMailEncode;
