@@ -62,7 +62,8 @@ public class ServerMain {
 			this.status.load();
 		}catch (Exception e) {
 			// ステータスファイルが無い場合
-			log.info("Statis File load error. "+e.getMessage());
+			log.info("Status File load error. "+e.getMessage());
+			log.info("Statusファイルが作成されます。");
 		}
 		log.info("Loaded LastMailID="+this.status.getLastMailId());
 		
@@ -73,6 +74,7 @@ public class ServerMain {
 		try{
 			// 前回のcookie
 			if(this.conf.isSaveCookie()){
+				log.info("Load cookie");
 				for (Cookie	cookie : this.status.getCookies()) {
 					this.client.addCookie(cookie);
 				}
@@ -87,8 +89,9 @@ public class ServerMain {
 			try{
 				// メールID一覧取得(降順)
 				mailIdList = this.client.getMailIdList(0);
+
 			}catch (LoginException e) {
-				log.error("Login Error.",e);
+				log.error("ログインエラー",e);
 				try{
 					Thread.sleep(this.conf.getLoginRetryIntervalSec()*1000);
 				}catch (Exception ex) {}
@@ -102,10 +105,13 @@ public class ServerMain {
 			}
 			
 			String lastId = this.status.getLastMailId();
+			log.info("受信したメールIDの数:"+mailIdList.size()+"  lastId:"+lastId);
+
 			if(StringUtils.isBlank(lastId)){
 				if(!mailIdList.isEmpty()){
 					// 最初の起動では現在の最新メールの次から転送処理する
 					this.status.setLastMailId(mailIdList.get(0));
+					log.info("LastMailIdが空なので、次のメールから転送を開始します。");
 				}else{
 					// メールがひとつも無かった
 				}
@@ -117,20 +123,21 @@ public class ServerMain {
 						forwardIdList.add(0, id);
 					}
 				}
-				log.info("Forward ID size "+forwardIdList.size());
+				log.info("転送するメールIDの数 "+forwardIdList.size());
 				for (String id : forwardIdList) {
 					this.forward(id);
 					this.status.setLastMailId(id);
 				}
 			}
 			if(lastId!=null && !lastId.equals(this.status.getLastMailId())){
-				log.info("Update LastMailId="+this.status.getLastMailId());
+				log.info("LastMailId("+this.status.getLastMailId()+")に更新しました");
 			}
 			try{
 				if(this.conf.isSaveCookie()){
 					this.status.setCookies(client.getCookies());
 				}
 				this.status.save();
+				log.info("statusファイルを保存しました");
 			}catch (Exception e) {
 				log.error("Status File save Error.",e);
 			}
@@ -194,6 +201,7 @@ public class ServerMain {
 			new ServerMain(new File(confFile));
 		}catch (Exception e) {
 			e.printStackTrace();
+			log.fatal("Startup Error.",e);
 		}
 	}
 }

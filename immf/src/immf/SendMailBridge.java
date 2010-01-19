@@ -64,10 +64,10 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.user = conf.getSenderUser();
 		this.passwd = conf.getSenderPasswd();
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
-				
+		
+		log.info("SMTPサーバを起動します。");
 		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this);
 		this.wiser.start();
-		
 
 	}
 	
@@ -79,10 +79,10 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	public void receiveMail(MyWiserMessage msg) throws IOException {
 		try{
 			SenderMail senderMail = new SenderMail();
-			
-			log.debug("================================================");
-			log.debug("Sender   "+msg.getEnvelopeSender());
-			log.debug("Receiver "+msg.getEnvelopeReceiver());
+
+			log.info("==== SMTPサーバがメールを受信しました。====");
+			log.info("From       "+msg.getEnvelopeSender());
+			log.info("Recipients  "+msg.getEnvelopeReceiver());
 
 			MimeMessage mime = msg.getMimeMessage();
 						
@@ -92,21 +92,23 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			
 			int maxRecipients = MaxRecipient;
 			if(this.alwaysBcc!=null){
+				log.debug("add alwaysbcc "+this.alwaysBcc);
 				maxRecipients--;
 				bcc.add(new InternetAddress(this.alwaysBcc));
 			}
-			log.debug("To   "+StringUtils.join(to," / "));
-			log.debug("cc   "+StringUtils.join(cc," / "));
-			log.debug("bcc   "+StringUtils.join(bcc," / "));
+			log.info("To   "+StringUtils.join(to," / "));
+			log.info("cc   "+StringUtils.join(cc," / "));
+			log.info("bcc   "+StringUtils.join(bcc," / "));
 
 			senderMail.setTo(to);
 			senderMail.setCc(cc);
 			senderMail.setBcc(bcc);
 			
 			if(maxRecipients< (to.size()+cc.size()+bcc.size())){
+				log.warn("送信先が多すぎます。iモード.netの送信先は最大5です。");
 				throw new IOException("Too Much Recipients");
 			}
-			log.debug("subject  "+mime.getSubject());
+			log.info("subject  "+mime.getSubject());
 			senderMail.setSubject(mime.getSubject());
 			
 			Object content = mime.getContent();
@@ -116,10 +118,11 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				senderMail.setContent(strContent);
 			}else{
 				// HTMLメール添付ファイルはエラー
+				log.warn("プレーンテキスト以外の、マルチパート・添付ファイルはサポートしていません。");
 				throw new IOException("MimeMultiPart unsupported. Send Plain Text Mail.");
 			}
-			log.debug("Content  "+mime.getContent());
-			log.debug("================================================");
+			log.info("Content  "+mime.getContent());
+			log.info("====");
 			
 			this.client.sendMail(senderMail);
 			
@@ -164,7 +167,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	public void login(String user, String pass) throws LoginFailedException {
 		if(!StringUtils.equals(this.user, user)
 				||!StringUtils.equals(this.passwd, pass)){
-			log.warn("SMTP Auth. Bad User Pass "+user+"/"+pass);
+			log.warn("SMTP 認証エラー User "+user+"/ Pass "+pass);
 			throw new LoginFailedException("SMTP Auth Login Error.");
 		}
 	}
