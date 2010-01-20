@@ -136,8 +136,8 @@ mail.encode
 　メールのエンコーディングを指定します。
 　ISO-2022-JPだと機種も依存文字が送信できないので、デフォルトでは
 　UTF-8で送信します。もし使用しているメーラーがUTF-8に対応していない場合、
-　iso-2022-jp,Shift_JISなど別のエンコーディングを指定してみてください。
-　その場合は、下に説明してある conf/wrapper.conf の設定も
+　iso-2022-jpなど別のエンコーディングを指定してみてください。
+　その場合は、下に説明している conf/wrapper.conf の設定も
 　デフォルト[UTF-8]
 
 mail.contenttransferencoding
@@ -192,18 +192,29 @@ smtp.auth.passwd=<あなたのHotmailパスワード>
 ■conf/wrapper.conf の設定パラメータ
 
 wrapper.java.additional.1=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS　
-　上記の設定はimoten.iniの mail.encode に[ISO-2022-JP]もしくは[Shift_JIS]を指定した場合に
-　関係します。
-　[①]のような機種依存文字は本来[ISO-2022-JP],[Shift_JIS]には含まれません。
-　なので機種依存文字を[ISO-2022-JP],[Shift_JIS]で送信すると[？]に置き換えられてしまうんですが、
-　上記の設定を行うと、[？]にならず、機種依存文字を[ISO-2022-JP],[Shift_JIS]に含めて処理してくれる
-　ようになります(Outlookのようなメーラのように)。
+　[①]のような機種依存文字は、本来[ISO-2022-JP],[Shift_JIS]には含まれません。
+　なので、機種依存文字を[ISO-2022-JP],[Shift_JIS]で送信すると、[？]に置き換えられてしまいます。
+　そこで、上記の設定を行うと、[？]にならず、機種依存文字を[ISO-2022-JP],[Shift_JIS]に含めて
+　処理してくれます。
 　ただし、メーラ(特にMacやLinuxの場合)によっては文字化けが発生するかもしれません。
 　その場合は上記の行を[#]でコメントアウトしてください。
-　
+　また、上記の設定をしていない場合は、「―～∥－￠￡￢」の文字化けを防ぐために、これらの文字を
+　以下のページを参考に置き換えています。
+　これは、mail.encodeに[UTF-8]を指定している場合も影響があります。
+　文字化けが発生する場合は、[#]でコメントアウトすることで状況が変わる可能性があります。
+　　http://www.ingrid.org/java/i18n/encoding/ja-conv.html
 
 
 
 
+■文字化けに関係するパラメータ
+　iモード.netから転送したメールが文字化けが発生する場合、
+　以下のパラメータを色々な組み合わせで変更して、状況が変わるか試してみてください。
 
+　imoten.ini
+	mail.encode=ISO-2022-JP
+	mail.contenttransferencoding=7bit
+
+　conf/wrapper.conf で以下のパラメータをコメントアウト
+　　wrapper.java.additional.1=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS
 

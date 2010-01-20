@@ -48,14 +48,18 @@ public class Util {
 	 * @return
 	 */
 	public static String replaceUnicodeMapping(String s){
-		/*
-		s = StringUtils.replace(s, "\uff5e", "\u301c");
-		s = StringUtils.replace(s, "\u2225", "\u2016");
-		s = StringUtils.replace(s, "\uff0d", "\u2212");
-		s = StringUtils.replace(s, "\uffe0", "\u00a2");
-		s = StringUtils.replace(s, "\uffe1", "\u00a3");
-		s = StringUtils.replace(s, "\uffe2", "\u00ac");
-		*/
+		if(StringUtils.isEmpty(System.getProperty("sun.nio.cs.map"))){
+			s = StringUtils.replace(s, "\uff5e", "\u301c");
+			s = StringUtils.replace(s, "\u2225", "\u2016");
+			s = StringUtils.replace(s, "\uff0d", "\u2212");
+			s = StringUtils.replace(s, "\uffe0", "\u00a2");
+			s = StringUtils.replace(s, "\uffe1", "\u00a3");
+			s = StringUtils.replace(s, "\uffe2", "\u00ac");
+			s = StringUtils.replace(s, "\u2015", "\u2014");
+		}
+		// sun.nio.cs.map が設定されている場合はiso-2022-jpの代わりに
+		// x-windows-iso2022jpが使用され自動で変換されるので置き換えない
+
 		return s;
 	}
 	
@@ -66,6 +70,7 @@ public class Util {
 		s = StringUtils.replace(s, "\u00a2", "\uffe0");
 		s = StringUtils.replace(s, "\u00a3", "\uffe1");
 		s = StringUtils.replace(s, "\u00ac", "\uffe2");
+		s = StringUtils.replace(s, "\u2014", "\u2015");
 		return s;
 	}
 	
