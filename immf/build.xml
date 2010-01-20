@@ -37,7 +37,7 @@
             <zipfileset excludes="META-INF/*.SF" src="./lib/commons-email-1.2.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="./lib/mail.jar"/>
         	<zipfileset excludes="META-INF/*.SF" src="./lib/slf4j-api-1.5.6.jar"/>
-        	<zipfileset excludes="META-INF/*.SF" src="./lib/slf4j-simple-1.5.6.jar"/>
+        	<zipfileset excludes="META-INF/*.SF" src="./lib/slf4j-jcl-1.5.6.jar"/>
         	<zipfileset excludes="META-INF/*.SF" src="./lib/subethasmtp-3.1.2.jar"/>   	
         </jar>
     </target>
