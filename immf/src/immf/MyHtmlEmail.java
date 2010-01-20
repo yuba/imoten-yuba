@@ -43,10 +43,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -137,13 +135,13 @@ public class MyHtmlEmail extends MultiPartEmail
      * @deprecated As of commons-email 1.1, no longer used. Inline embedded
      * objects are now stored in {@link #inlineEmbeds}.
      */
-    protected List inlineImages;
+    //protected List inlineImages;
 
     /**
      * Embedded images Map<String, InlineImage> where the key is the
      * user-defined image name.
      */
-    protected Map inlineEmbeds = new HashMap();
+    protected Map<String,InlineImage> inlineEmbeds = new HashMap<String,InlineImage>();
     
     protected String contentTransferEncoding;
 
@@ -648,7 +646,7 @@ public class MyHtmlEmail extends MultiPartEmail
     			msgHtml.setHeader("Content-Transfer-Encoding", contentTransferEncoding);
     		}
 
-            Iterator iter = this.inlineEmbeds.values().iterator();
+            Iterator<InlineImage> iter = this.inlineEmbeds.values().iterator();
             while (iter.hasNext())
             {
                 InlineImage ii = (InlineImage) iter.next();
