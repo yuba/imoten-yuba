@@ -21,9 +21,11 @@
 
 package immf;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,7 +36,7 @@ public class EmojiUtil {
 	public static final String UnknownReplace = "[?]";
 	private static Map<Character, Emoji> map;
 	static{
-		map = new HashMap<Character, Emoji>();
+		map = new TreeMap<Character, Emoji>();
 		// 基本絵文字
 		add(0xe63e,"晴れ","000");
 		add(0xe63f,"曇り","001");
@@ -366,6 +368,28 @@ public class EmojiUtil {
 			return true;
 		}else{
 			return false;
+		}
+	}
+	
+	// 絵文字の一覧を作成
+	public static void main(String[] args){
+		BufferedWriter br = null;
+		try{
+			br = new BufferedWriter(new FileWriter("./emoji.html"));
+			
+			br.write("<html><body><table>");
+			br.write("<th>Unicode　</th><th>画像　</th><th>ラベル　</th>");
+			for (Emoji e : map.values()) {
+				br.write("<tr>\n");
+				br.write("    <td>"+String.format("0x%x", (int)e.getC())+"</td>" +
+						"<td><img src='"+emojiToImageUrl(e.getC())+"'></td>" +
+						"<td>"+e.getLabel()+"</td>\n");
+				br.write("</tr>\n");
+			}
+			br.write("</table></body></html>");
+			br.close();
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }
