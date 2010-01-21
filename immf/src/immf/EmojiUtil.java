@@ -23,7 +23,6 @@ package immf;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.util.Map;
@@ -379,10 +378,11 @@ public class EmojiUtil {
 		try{
 			br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./emoji.html"),"UTF-8"));
 			
-			br.write("<html><body>" +
+			br.write("<html>" +
 					"<head>" +
 					"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"+
-					"</head>"+ServerMain.Version+"<br><br>"+
+					"</head>" +
+					"<body>"+ServerMain.Version+"<br><br>"+
 					"<table>");
 			br.write("<th>Unicode　</th><th>画像　</th><th>ラベル　</th>");
 			for (Emoji e : map.values()) {
