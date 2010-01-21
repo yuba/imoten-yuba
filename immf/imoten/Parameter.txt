@@ -103,6 +103,9 @@ imodenet.checkinterval
 imodenet.logininterval
 　imode.netへのログインが失敗した場合、再度ログインを行うまでの時間(秒)を
 　指定します。
+　PCからiモード.netにログインした場合、imotenはログアウトして設定時間後に
+　再度ログインを行います。
+　PCでもiモード.netを使用する場合、操作する時間分だけ余裕を持った時間を指定して下さい。
 　デフォルト[600]。
 
 save.cookie

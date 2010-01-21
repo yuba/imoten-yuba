@@ -70,7 +70,7 @@ public class ImodeNetClient implements Closeable{
 	private String pass;
 	
 	private DefaultHttpClient httpClient;
-	private boolean logined;
+	private Boolean logined;
 	
 	public ImodeNetClient(String name, String pass){
 		this.name = name;
@@ -105,18 +105,19 @@ public class ImodeNetClient implements Closeable{
 			try{
 				HttpResponse res = this.executeHttp(post);
 				if(res==null){
-					this.logined = false;
+					this.logined = Boolean.FALSE;
 					throw new IOException("Redirect Error");
 				}
 				if(res.getStatusLine().getStatusCode()!=200){
-					this.logined = false;
+					this.logined = Boolean.FALSE;
 					throw new IOException("http login response bad status code "+res.getStatusLine().getStatusCode());
 				}
 				String body = toStringBody(res);
 				if(body.indexOf("<title>認証エラー")>0){
-					this.logined = false;
+					this.logined = Boolean.FALSE;
 					log.info("認証エラー");
 					log.debug(body);
+					this.clearCookie();
 					throw new LoginException("認証エラー");
 				}
 			}finally{
@@ -128,18 +129,19 @@ public class ImodeNetClient implements Closeable{
 			try{
 				HttpResponse res = this.requestPost(post, null);
 				if(res==null){
-					this.logined = false;
+					this.logined = Boolean.FALSE;
 					throw new IOException("Login Error");
 				}
 				if(res.getStatusLine().getStatusCode()!=200){
-					this.logined = false;
+					this.logined = Boolean.FALSE;
 					throw new IOException("http login2 response bad status code "+res.getStatusLine().getStatusCode());
 				}
-				this.logined = true;
+				this.logined = Boolean.TRUE;
 			}finally{
 				post.abort();
 			}
 		}catch (Exception e) {
+			this.logined = Boolean.FALSE;
 			throw new LoginException("Docomo i mode.net Login Error.",e);
 		}
 	}
@@ -155,42 +157,51 @@ public class ImodeNetClient implements Closeable{
 	public synchronized List<String> getMailIdList(int folderId) throws IOException,LoginException{
 		log.info("# メールIDリストを取得  フォルダID:"+folderId);
 		HttpPost post = null;
-		int retry=0;
-		do{
-			try{
-				post = new HttpPost(JsonUrl+"mailidlist");
-				HttpResponse res = this.requestPost(post,null);
-				if(!isJson(res) && retry==0){
-					toStringBody(res);
-					post.abort();
-					retry++;
-					this.login();
-					log.info("# ログイン処理完了で再度メールIDリストを取得");
+
+		try{
+			// nullの場合は起動直後でcookieがあるので、ログインせずにトライする
+			if(this.logined!=null && this.logined==Boolean.FALSE){
+				this.login();
+			}
+			
+			post = new HttpPost(JsonUrl+"mailidlist");
+			HttpResponse res = this.requestPost(post,null);
+			if(!isJson(res)){
+				toStringBody(res);
+				post.abort();
+				this.clearCookie();
+				this.logined = Boolean.FALSE;
+				throw new LoginException("Response is not Json");
+			}
+			JSONObject json = JSONObject.fromObject(toStringBody(res));
+
+			String result = json.getJSONObject("common").getString("result");
+			if(!result.equals("PW1000")){
+				log.debug(json.toString(2));
+				this.clearCookie();
+				this.logined = Boolean.FALSE;
+				throw new LoginException("Bad response "+result);
+			}
+
+			//log.debug(json.toString(2));
+			JSONArray array = json.getJSONObject("data").getJSONArray("folderList");
+			for(int i=0; i<array.size(); i++){
+				json = array.getJSONObject(i);
+				if(json.getInt("folderId")!=folderId){
 					continue;
 				}
-				this.logined = true;
-				JSONObject json = JSONObject.fromObject(toStringBody(res));
-				//log.debug(json.toString(2));
-				JSONArray array = json.getJSONObject("data").getJSONArray("folderList");
-				for(int i=0; i<array.size(); i++){
-					json = array.getJSONObject(i);
-					if(json.getInt("folderId")!=folderId){
-						continue;
-					}
-					List<String> r = new ArrayList<String>(JSONArray.toCollection(json.getJSONArray("mailIdList"),String.class));
-					Collections.sort(r);
-					Collections.reverse(r);
-					return r;
-				}
-				return new ArrayList<String>();
-			}finally{
-				post.abort();
+				List<String> r = new ArrayList<String>(JSONArray.toCollection(json.getJSONArray("mailIdList"),String.class));
+				Collections.sort(r);
+				Collections.reverse(r);
+				return r;
 			}
-		}while(retry<=1);
-		return new ArrayList<String>();
+			return new ArrayList<String>();
+		}finally{
+			post.abort();
+		}
 	}
 	
-	public synchronized ImodeMail getMail(int folderId, String mailId) throws IOException{
+	public synchronized ImodeMail getMail(int folderId, String mailId) throws IOException,LoginException{
 		log.info("# メール情報を取得 フォルダID:"+folderId+" / メールID:"+mailId);
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 		formparams.add(new BasicNameValuePair("folder.id",Integer.toString(folderId)));
@@ -202,6 +213,14 @@ public class ImodeNetClient implements Closeable{
 			post = new HttpPost(JsonUrl+"maildetail");
 			HttpResponse res = this.requestPost(post,formparams);
 			json = JSONObject.fromObject(toStringBody(res));
+			
+			String result = json.getJSONObject("common").getString("result");
+			if(!result.equals("PW1000")){
+				log.debug(json.toString(2));
+				this.clearCookie();
+				this.logined = Boolean.FALSE;
+				throw new LoginException("Bad response "+result);
+			}
 		}finally{
 			post.abort();
 		}

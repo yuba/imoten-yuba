@@ -32,7 +32,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.0";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.1-beta";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
@@ -43,6 +43,7 @@ public class ServerMain {
 		System.out.println("StartUp ["+Version+"]");
 		log.info("StartUp ["+Version+"]");
 		this.setShutdownHook();
+		this.verCheck();
 		try{
 			log.info("Load Config file "+conffile.getAbsolutePath());
 			FileInputStream is = new FileInputStream(conffile);
@@ -83,7 +84,7 @@ public class ServerMain {
 		
 		// メール送信
 		new SendMailBridge(conf, this.client);
-		
+		boolean first = true;
 		while(true){
 			List<String> mailIdList = null;
 			try{
@@ -92,7 +93,14 @@ public class ServerMain {
 
 			}catch (LoginException e) {
 				log.error("ログインエラー",e);
+				if(first){
+					// 起動直後はcookieが切れている可能性があるのでクッキーを破棄してリトライ
+					log.info("起動直後はすぐにログイン処理を行います。");
+					continue;
+				}
 				try{
+					// 別の場所でログインされた
+					log.info("Logout Wait "+this.conf.getLoginRetryIntervalSec()+" sec.");
 					Thread.sleep(this.conf.getLoginRetryIntervalSec()*1000);
 				}catch (Exception ex) {}
 				continue;
@@ -102,6 +110,8 @@ public class ServerMain {
 					Thread.sleep(this.conf.getLoginRetryIntervalSec()*1000);
 				}catch (Exception ex) {}
 				continue;
+			}finally{
+				first = false;
 			}
 			
 			String lastId = this.status.getLastMailId();
@@ -147,6 +157,24 @@ public class ServerMain {
 		}
 		
 	}
+	
+	private void verCheck(){
+		String verndor = System.getProperty("java.vendor");
+		String version = System.getProperty("java.version");
+		log.info("Java vendor  "+verndor);
+		log.info("Java version "+version);
+		try{
+			String[] v = version.split("\\.");
+			if(Integer.parseInt(v[0])>=2 || Integer.parseInt(v[1])>=6){
+				return;
+			}else{
+				log.warn("注意 動作にはJava ver 1.6 以上が必要となります。");
+			}
+		}catch (Exception e) {
+			log.warn(e.getMessage());
+		}
+	}
+	
 	/*
 	 * メールをダウンロードして送信
 	 */
