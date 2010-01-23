@@ -241,27 +241,36 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	 */
 	private String getHeaderInfo(boolean isHtml){
 		StringBuilder buf = new StringBuilder();
-		if(isHtml){
-			buf.append("<pre>");
-		}
-		buf.append("----").append("\r\n");
-		buf.append(" From:    ").append(this.imm.getFromAddr()).append("\r\n");
-		buf.append(" To:      ").append(this.imm.getMyMailAddr()).append("\r\n");
-		for(String addr : imm.getToAddrList()){
-			buf.append("          ").append(addr).append("\r\n");
+		StringBuilder header = new StringBuilder();
+
+		header.append(" From:    ").append(this.imm.getFromAddr().toUnicodeString()).append("\r\n");
+		header.append(" To:      ").append(this.imm.getMyMailAddr()).append("\r\n");
+		for(InternetAddress addr : imm.getToAddrList()){
+			header.append("          ").append(addr.toUnicodeString()).append("\r\n");
 		}
 		String prefix = " Cc:";
-		for(String addr : imm.getCcAddrList()){
-			buf.append(prefix+"      ").append(addr).append("\r\n");
+		for(InternetAddress addr : imm.getCcAddrList()){
+			header.append(prefix+"      ").append(addr.toUnicodeString()).append("\r\n");
 			prefix = "    ";
 		}
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd (EEE) HH:mm:ss");
-		buf.append(" Date:    ").append(df.format(this.imm.getTimeDate())).append("\r\n");
+		header.append(" Date:    ").append(df.format(this.imm.getTimeDate())).append("\r\n");
 		String subject = this.imm.getSubject();
 		if(conf.isSubjectEmojiReplace()){
 			subject = EmojiUtil.replaceToLabel(subject);
 		}
-		buf.append(" Subject: ").append(subject).append("\r\n");
+		header.append(" Subject: ").append(subject).append("\r\n");
+		
+		
+		if(isHtml){
+			buf.append("<pre>");
+		}
+		buf.append("----").append("\r\n");
+		if(isHtml){
+			buf.append(Util.easyEscapeHtml(header.toString()));
+		}else{
+			buf.append(header.toString());
+		}
 		buf.append("----").append("\r\n");
 		if(isHtml){
 			buf.append("</pre>");
@@ -297,14 +306,16 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				msg.removeHeader("Cc");
 				msg.removeHeader("Bcc");
 
-				List<String> list = new ArrayList<String>();
-				list.add(this.imm.getMyMailAddr());
+				List<InternetAddress> list = new ArrayList<InternetAddress>();
+				list.add(this.imm.getMyInternetAddress());
 				list.addAll(this.imm.getToAddrList());
-				msg.setHeader("To", StringUtils.join(list, ","));
+				msg.setHeader("To", InternetAddress.toString(list.toArray(new InternetAddress[0])));
+				
 				if(this.imm.getCcAddrList().size()>0){
-					msg.setHeader("Cc", StringUtils.join(this.imm.getCcAddrList(),","));
+					msg.setHeader("Cc", InternetAddress.toString(this.imm.getCcAddrList().toArray(new InternetAddress[0])));
 				}
-				msg.setFrom(new InternetAddress(this.imm.getFromAddr()));
+				
+				msg.setFrom(this.imm.getFromAddr());
 			}
 			
 			String subject = conf.getSubjectAppendPrefix()+imm.getSubject();

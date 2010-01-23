@@ -25,10 +25,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.mail.internet.InternetAddress;
+
 import org.apache.commons.lang.text.StrBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class ImodeMail {
-//	private static final Log log = LogFactory.getLog(ImodeMail.class);
+	private static final Log log = LogFactory.getLog(ImodeMail.class);
 	
 	private String mailId;
 	private int folderId;
@@ -38,9 +42,9 @@ public class ImodeMail {
 	private int recvType;
 	private String body;
 	private String myAddr;
-	private String fromAddr;
-	private List<String> toAddrList = new ArrayList<String>();
-	private List<String> ccAddrList = new ArrayList<String>();;
+	private InternetAddress fromAddr;
+	private List<InternetAddress> toAddrList = new ArrayList<InternetAddress>();
+	private List<InternetAddress> ccAddrList = new ArrayList<InternetAddress>();;
 	
 	private List<AttachedFile> attachFileList = new ArrayList<AttachedFile>();
 	private List<AttachedFile> inlineFileList = new ArrayList<AttachedFile>();
@@ -55,11 +59,12 @@ public class ImodeMail {
 		buf.appendln("Decome       "+this.decomeFlg);
 		buf.appendln("RecvType     "+this.recvType);
 		buf.appendln("MyAddr       "+this.myAddr);
-		for (String to : this.toAddrList) {
-			buf.appendln("To           "+to);
+		buf.appendln("From         "+this.fromAddr.toUnicodeString());
+		for (InternetAddress to : this.toAddrList) {
+			buf.appendln("To           "+to.toUnicodeString());
 		}
-		for (String cc : this.toAddrList) {
-			buf.appendln("Cc           "+cc);
+		for (InternetAddress cc : this.toAddrList) {
+			buf.appendln("Cc           "+cc.toUnicodeString());
 		}
 		for(AttachedFile f : this.attachFileList){
 			buf.appendln("AttachFile ---- "+f.getFilename());
@@ -144,11 +149,11 @@ public class ImodeMail {
 		this.body = body;
 	}
 
-	public String getFromAddr() {
+	public InternetAddress getFromAddr() {
 		return fromAddr;
 	}
 
-	public void setFromAddr(String fromAddr) {
+	public void setFromAddr(InternetAddress fromAddr) {
 		this.fromAddr = fromAddr;
 	}
 
@@ -160,19 +165,19 @@ public class ImodeMail {
 		this.attachFileList = attachFileList;
 	}
 
-	public List<String> getToAddrList() {
+	public List<InternetAddress> getToAddrList() {
 		return toAddrList;
 	}
 
-	public void setToAddrList(List<String> toAddrList) {
+	public void setToAddrList(List<InternetAddress> toAddrList) {
 		this.toAddrList = toAddrList;
 	}
 
-	public List<String> getCcAddrList() {
+	public List<InternetAddress> getCcAddrList() {
 		return ccAddrList;
 	}
 
-	public void setCcAddrList(List<String> ccAddrList) {
+	public void setCcAddrList(List<InternetAddress> ccAddrList) {
 		this.ccAddrList = ccAddrList;
 	}
 
@@ -193,6 +198,14 @@ public class ImodeMail {
 	}
 	public String getMyMailAddr(){
 		return this.myAddr+"@docomo.ne.jp";
+	}
+	public InternetAddress getMyInternetAddress(){
+		try{
+			return new InternetAddress(this.getMyMailAddr());
+		}catch (Exception e) {
+			log.error("getMyInternetAddress Error."+this.getMyMailAddr(),e);
+			return null;
+		}
 	}
 	
 }

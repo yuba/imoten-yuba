@@ -120,9 +120,11 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			this.client.sendMail(senderMail);
 			
 		}catch (IOException e) {
+			log.warn("Bad Mail Received.",e);
 			throw e;
 		}catch (Exception e) {
-			throw new IOException("ReceiveMail Error.",e);
+			log.error("ReceiveMail Error.",e);
+			throw new IOException("ReceiveMail Error."+e.getMessage(),e);
 		}
 	}
 	

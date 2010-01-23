@@ -27,8 +27,14 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.mail.internet.InternetAddress;
 
@@ -59,11 +65,13 @@ import org.apache.http.util.EntityUtils;
 
 public class ImodeNetClient implements Closeable{
 	private static final Log log = LogFactory.getLog(ImodeNetClient.class);
-	private static final String LoginUrl = "https://imode.net/dcm/dfw";
-	private static final String JsonUrl = "https://imode.net/imail/aclrs/acgi/";
-	private static final String AttachedFileUrl = "https://imode.net/imail/oexaf/acgi/mailfileget";
-	private static final String InlineFileUrl = "https://imode.net/imail/oexaf/acgi/mailimgget";
-	private static final String SendMailUrl = "https://imode.net/imail/oexaf/acgi/mailsend";
+	private static final String LoginUrl = 		"https://imode.net/dcm/dfw";
+	private static final String JsonUrl = 		"https://imode.net/imail/aclrs/acgi/";
+	private static final String AttachedFileUrl ="https://imode.net/imail/oexaf/acgi/mailfileget";
+	private static final String InlineFileUrl = 	"https://imode.net/imail/oexaf/acgi/mailimgget";
+	private static final String SendMailUrl = 	"https://imode.net/imail/oexaf/acgi/mailsend";
+	private static final String PcAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/pcaddrlist";
+	private static final String DsAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/dsaddrlist";
 	
 
 	private String name;
@@ -71,6 +79,9 @@ public class ImodeNetClient implements Closeable{
 	
 	private DefaultHttpClient httpClient;
 	private Boolean logined;
+	
+	private AddressBook addressBook;
+	private String mailAddrCharset = "ISO-2022-jP";
 	
 	public ImodeNetClient(String name, String pass){
 		this.name = name;
@@ -81,6 +92,19 @@ public class ImodeNetClient implements Closeable{
 	
 	}
 	
+	public void checkAddressBook(){
+		if(this.addressBook==null){
+			// 起動直後は必ず読み込む
+			this.loadAddressBook();
+
+		}else{
+			Date loaded = this.addressBook.getCreated();
+			long diff = System.currentTimeMillis() - loaded.getTime();
+			if(diff> 1000*60*60*24){	// 1日おきに読み込む
+				this.loadAddressBook();
+			}
+		}
+	}
 	/**
 	 * i mode.netにログインする
 	 * @throws LoginException
@@ -140,6 +164,7 @@ public class ImodeNetClient implements Closeable{
 			}finally{
 				post.abort();
 			}
+			
 		}catch (Exception e) {
 			this.logined = Boolean.FALSE;
 			throw new LoginException("Docomo i mode.net Login Error.",e);
@@ -149,20 +174,19 @@ public class ImodeNetClient implements Closeable{
 	/**
 	 * 
 	 * @param folderId 取得するメールIDの入っているメールボックスのフォルダIDを指定する(0:受信ボックス？)
-	 * @return メールIDのリスト
+	 * @return フォルダIDをキーにしてそのフォルダの中のメールIDのリストを取得するMap
 	 * @throws IOException
 	 * @throws LoginException
 	 */
-	@SuppressWarnings("unchecked")
-	public synchronized List<String> getMailIdList(int folderId) throws IOException,LoginException{
-		log.info("# メールIDリストを取得  フォルダID:"+folderId);
+	public synchronized Map<Integer,List<String>> getMailIdList() throws IOException,LoginException{
+		log.info("# メールIDリストを取得");
 		HttpPost post = null;
 
 		try{
 			// nullの場合は起動直後でcookieがあるので、ログインせずにトライする
 			if(this.logined!=null && this.logined==Boolean.FALSE){
 				this.login();
-			}
+			}			
 			
 			post = new HttpPost(JsonUrl+"mailidlist");
 			HttpResponse res = this.requestPost(post,null);
@@ -185,17 +209,26 @@ public class ImodeNetClient implements Closeable{
 
 			//log.debug(json.toString(2));
 			JSONArray array = json.getJSONObject("data").getJSONArray("folderList");
+			
+			Map<Integer, List<String>> r = new TreeMap<Integer, List<String>>();
 			for(int i=0; i<array.size(); i++){
 				json = array.getJSONObject(i);
-				if(json.getInt("folderId")!=folderId){
+				int folderId = json.getInt("folderId");
+				// 1:送信フォルダ, 2:下書きフォルダ
+				if(folderId==1 || folderId==2){
+					// スキップ
 					continue;
 				}
-				List<String> r = new ArrayList<String>(JSONArray.toCollection(json.getJSONArray("mailIdList"),String.class));
-				Collections.sort(r);
-				Collections.reverse(r);
-				return r;
+				log.debug("FolderId "+folderId);
+				@SuppressWarnings("unchecked")
+				Collection<String> mailIdlist = (Collection<String>)JSONArray.toCollection(json.getJSONArray("mailIdList"),String.class);
+				List<String> list = new ArrayList<String>(mailIdlist);
+				Collections.sort(list);
+				Collections.reverse(list);
+				r.put(folderId, list);
 			}
-			return new ArrayList<String>();
+
+			return r;
 		}finally{
 			post.abort();
 		}
@@ -246,20 +279,20 @@ public class ImodeNetClient implements Closeable{
 		
 		// メールアドレス
 		JSONArray addrs = json.getJSONArray("previewInfo");
-		List<String> tolist = new ArrayList<String>();
-		List<String> cclist = new ArrayList<String>();
+		List<InternetAddress> tolist = new ArrayList<InternetAddress>();
+		List<InternetAddress> cclist = new ArrayList<InternetAddress>();
 		for(int i=0; i<addrs.size(); i++){
 			JSONObject addrJson = addrs.getJSONObject(i);
 			int type = addrJson.getInt("type");
 			String addr = addrJson.getString("mladdr");
 			if(type==0){
-				r.setFromAddr(addr);
+				r.setFromAddr(this.addressBook.getInternetAddress(addr,this.mailAddrCharset));
 				log.info("From "+addr);
 			}else if(type==1){
-				tolist.add(addr);
+				tolist.add(this.addressBook.getInternetAddress(addr,this.mailAddrCharset));
 				log.info("To   "+addr);
 			}else if(type==2){
-				cclist.add(addr);
+				cclist.add(this.addressBook.getInternetAddress(addr,this.mailAddrCharset));
 				log.info("Cc   "+addr);
 			}
 		}
@@ -434,6 +467,138 @@ public class ImodeNetClient implements Closeable{
 			log.fatal(e);
 		}
 	}
+	
+	/*
+	 * アドレス帳情報を読み込む
+	 */
+	private void loadAddressBook(){
+		AddressBook ab = new AddressBook();
+		try{
+			this.loadPcAddressBook(ab);
+		}catch (Exception e) {
+			log.warn("iモード.netのアドレス帳情報が読み込めませんでした。");
+		}
+		try{
+			this.loadDsAddressBook(ab);
+		}catch (Exception e) {
+			log.warn("ケータイデータお預かりサービスのアドレス帳情報が読み込めませんでした。");
+		}
+		this.addressBook = ab;
+	}
+	/*
+	 * iモード.net上で登録したアドレス帳情報を読み込む
+	 */
+	private void loadPcAddressBook(AddressBook ab) throws IOException, LoginException{
+		log.info("# iモード.netのアドレス帳情報を読み込みます。");
+		HttpPost post = new HttpPost(PcAddrListUrl);
+		JSONObject json = null;
+		try{
+			HttpResponse res = this.requestPost(post, null);
+			if(res==null){
+				this.logined = Boolean.FALSE;
+				throw new IOException("Login Error");
+			}
+			json = JSONObject.fromObject(toStringBody(res));
+			
+			String result = json.getJSONObject("common").getString("result");
+			if(!result.equals("PW1000")){
+				log.debug(json.toString(2));
+				this.clearCookie();
+				this.logined = Boolean.FALSE;
+				throw new LoginException("Bad response "+result);
+			}
+		}finally{
+			post.abort();
+		}
+		
+		JSONObject nameTbl = json.getJSONObject("data").getJSONObject("pcNameTbl");
+		@SuppressWarnings("unchecked")
+		Iterator<Object> ite = nameTbl.keys();
+		while(ite.hasNext()){
+			try{
+				String addr = (String)ite.next();
+				JSONObject jsonMail = null;
+				Object o = nameTbl.get(addr);
+				if(o instanceof JSONObject){
+					jsonMail = nameTbl.getJSONObject(addr);
+				}else if(o instanceof JSONArray){
+					// 1つのメールアドレスが複数登録されている場合は最初の
+					jsonMail = nameTbl.getJSONArray(addr).getJSONObject(0);
+				}else{
+					log.warn("unknown Type "+o.getClass()+"/"+o);
+					continue;
+				}
+				ImodeAddress ia = new ImodeAddress();
+				ia.setMailAddress(addr);
+				ia.setName(jsonMail.getString("value"));
+				ia.setId(jsonMail.getString("id"));
+				ab.addPcAddr(ia);
+				log.debug("ID:"+ia.getId()+" / Name:"+ia.getName()+" / Address:"+ia.getMailAddress());
+			}catch (Exception e) {
+				log.warn("loadPcAddressBook json error.",e);
+			}
+		}
+	}
+	
+	/*
+	 * ケータイデータお預かりサービスで登録したアドレス帳情報を読み込む
+	 */
+	private void loadDsAddressBook(AddressBook ab) throws IOException, LoginException{
+		log.info("# ケータイデータお預かりサービスで登録したアドレス帳情報を読み込みます。");
+		HttpPost post = new HttpPost(DsAddrListUrl);
+		JSONObject json = null;
+		try{
+			List<NameValuePair> formparams = new ArrayList<NameValuePair>();
+			formparams.add(new BasicNameValuePair("lastupdate",""));
+			
+			HttpResponse res = this.requestPost(post, formparams);
+			if(res==null){
+				this.logined = Boolean.FALSE;
+				throw new IOException("Login Error");
+			}
+			json = JSONObject.fromObject(toStringBody(res));
+			
+			String result = json.getJSONObject("common").getString("result");
+			if(!result.equals("PW1000")){
+				log.debug(json.toString(2));
+				this.clearCookie();
+				this.logined = Boolean.FALSE;
+				throw new LoginException("Bad response "+result);
+			}
+		}finally{
+			post.abort();
+		}
+		
+		JSONObject nameTbl = json.getJSONObject("data").getJSONObject("dsNameTbl");
+
+		@SuppressWarnings("unchecked")
+		Iterator<Object> ite = nameTbl.keys();
+		while(ite.hasNext()){
+			try{
+				String addr = (String)ite.next();
+				Object o = nameTbl.get(addr);
+				JSONObject jsonMail = null;
+				if(o instanceof JSONObject){
+					jsonMail = nameTbl.getJSONObject(addr);
+				}else if(o instanceof JSONArray){
+					// 1つのメールアドレスが複数登録されている場合は最初の
+					jsonMail = nameTbl.getJSONArray(addr).getJSONObject(0);
+				}else{
+					log.warn("unknown Type "+o.getClass()+"/"+o);
+					continue;
+				}
+				ImodeAddress ia = new ImodeAddress();
+				ia.setMailAddress(addr);
+				ia.setName(jsonMail.getString("value"));
+				ia.setId(jsonMail.getString("id"));
+				ab.addPcAddr(ia);
+				log.debug("ID:"+ia.getId()+" / Name:"+ia.getName()+" / Address:"+ia.getMailAddress());
+			}catch (Exception e) {
+				log.warn("loadDsAddressBook json error.",e);
+			}
+		}
+	}
+	
 
 	private static boolean isJson(HttpResponse res){
 		if(res==null){
@@ -503,7 +668,7 @@ public class ImodeNetClient implements Closeable{
 		req.setHeader("Cache-Control", "no-cache");
 		req.setHeader("User-Agent","Mozilla/4.0 (compatible;MSIE 7.0; Windows NT 6.0;)");
 		req.setHeader("x-pw-service","PCMAIL/1.0");
-		req.setHeader("Referer","https://imode.net/imail/aclrs/ahtm/index.html");
+		req.setHeader("Referer","https://imode.net/imail/aclrs/ahtm/index_f.html#");
 	}
 	
 	public void setSoTimeout(int millisec){
@@ -512,6 +677,10 @@ public class ImodeNetClient implements Closeable{
 	
 	public void setConnTimeout(int millisec){
 		this.httpClient.getParams().setIntParameter("http.connection.timeout", millisec);
+	}
+	
+	public void setMailAddrCharset(String str){
+		this.mailAddrCharset = str;
 	}
 	
 	public void clearCookie(){

@@ -23,8 +23,10 @@ package immf;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -32,7 +34,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.1";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.2";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
@@ -71,6 +73,7 @@ public class ServerMain {
 		this.client = new ImodeNetClient(this.conf.getDocomoId(),conf.getDocomoPasswd());
 		this.client.setConnTimeout(this.conf.getHttpConnectTimeoutSec()*1000);
 		this.client.setSoTimeout(this.conf.getHttpSoTimeoutSec()*1000);
+		this.client.setMailAddrCharset(this.conf.getMailEncode());
 		
 		try{
 			// 前回のcookie
@@ -86,10 +89,11 @@ public class ServerMain {
 		new SendMailBridge(conf, this.client);
 		boolean first = true;
 		while(true){
-			List<String> mailIdList = null;
+			Map<Integer,List<String>> mailIdListMap = null;
 			try{
 				// メールID一覧取得(降順)
-				mailIdList = this.client.getMailIdList(0);
+				mailIdListMap = this.client.getMailIdList();
+				this.client.checkAddressBook();
 
 			}catch (LoginException e) {
 				log.error("ログインエラー",e);
@@ -114,33 +118,32 @@ public class ServerMain {
 				first = false;
 			}
 			
-			String lastId = this.status.getLastMailId();
-			log.info("受信したメールIDの数:"+mailIdList.size()+"  lastId:"+lastId);
-
-			if(StringUtils.isBlank(lastId)){
+			String newestId="0";	// 次のlastIdを求める
+			Iterator<Integer> folderIdIte =  mailIdListMap.keySet().iterator();
+			while(folderIdIte.hasNext()){
+				// フォルダごとに処理
+				Integer fid = folderIdIte.next();
+				List<String> mailIdList = mailIdListMap.get(fid);
+				
+				folderProc(fid,mailIdList);
+				
 				if(!mailIdList.isEmpty()){
-					// 最初の起動では現在の最新メールの次から転送処理する
-					this.status.setLastMailId(mailIdList.get(0));
-					log.info("LastMailIdが空なので、次のメールから転送を開始します。");
-				}else{
-					// メールがひとつも無かった
-				}
-			}else{
-				List<String> forwardIdList = new LinkedList<String>();
-				for (String id : mailIdList) {
-					if(lastId.compareToIgnoreCase(id)<0){
-						// 昇順に入れていく
-						forwardIdList.add(0, id);
+					String newestInFolder = mailIdList.get(0);
+					if(newestId.compareToIgnoreCase(newestInFolder)<0){
+						newestId = newestInFolder;
 					}
 				}
-				log.info("転送するメールIDの数 "+forwardIdList.size());
-				for (String id : forwardIdList) {
-					this.forward(id);
-					this.status.setLastMailId(id);
-				}
 			}
-			if(lastId!=null && !lastId.equals(this.status.getLastMailId())){
-				log.info("LastMailId("+this.status.getLastMailId()+")に更新しました");
+			
+			// status.ini の更新
+			if(StringUtils.isBlank(this.status.getLastMailId())){
+				this.status.setLastMailId(newestId);
+				log.info("LastMailIdが空なので、次のメールから転送を開始します。");
+			}
+			String lastId = this.status.getLastMailId();
+			if(lastId!=null && !lastId.equals(newestId)){
+				this.status.setLastMailId(newestId);
+				log.info("LastMailId("+newestId+")に更新しました");
 			}
 			try{
 				if(this.conf.isSaveCookie()){
@@ -151,12 +154,47 @@ public class ServerMain {
 			}catch (Exception e) {
 				log.error("Status File save Error.",e);
 			}
+			
+			// 次のチェックまで待つ
 			try{
 				Thread.sleep(conf.getCheckIntervalSec()*1000);
 			}catch (Exception e) {}
 		}
 		
 	}
+	
+
+	private void folderProc(Integer fid, List<String> mailIdList){
+		String lastId = this.status.getLastMailId();
+		log.info("FolderID "+fid+"  受信メールIDの数:"+mailIdList.size()+"  lastId:"+lastId);
+		
+		String newestId = "";
+		
+		if(StringUtils.isBlank(lastId)){
+			if(!mailIdList.isEmpty()){
+				// 最初の起動では現在の最新メールの次から転送処理する
+				if(newestId.compareToIgnoreCase(mailIdList.get(0))<0){
+					return;
+				}
+			}else{
+				// メールがひとつも無かった
+				return;
+			}
+		}else{
+			List<String> forwardIdList = new LinkedList<String>();
+			for (String id : mailIdList) {
+				if(lastId.compareToIgnoreCase(id)<0){
+					// 昇順に入れていく
+					forwardIdList.add(0, id);
+				}
+			}
+			log.info("転送するメールIDの数 "+forwardIdList.size());
+			for (String id : forwardIdList) {
+				this.forward(fid,id);
+			}
+		}
+	}
+	
 	
 	private void verCheck(){
 		String verndor = System.getProperty("java.vendor");
@@ -178,11 +216,11 @@ public class ServerMain {
 	/*
 	 * メールをダウンロードして送信
 	 */
-	private void forward(String mailId){
+	private void forward(int folderId, String mailId){
 		ImodeMail mail = null;
 		try{
 			// download
-			mail = this.client.getMail(0, mailId);
+			mail = this.client.getMail(folderId, mailId);
 			if(log.isInfoEnabled()){
 				log.info("Downloaded Mail ########");
 				log.info(mail.toLoggingString());
