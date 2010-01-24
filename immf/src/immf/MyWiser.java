@@ -38,7 +38,7 @@ import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.MessageHandlerFactory;
 import org.subethamail.smtp.RejectException;
 import org.subethamail.smtp.TooMuchDataException;
-import org.subethamail.smtp.auth.PlainAuthenticationHandlerFactory;
+import org.subethamail.smtp.auth.EasyAuthenticationHandlerFactory;
 import org.subethamail.smtp.auth.UsernamePasswordValidator;
 import org.subethamail.smtp.server.SMTPServer;
 
@@ -61,7 +61,7 @@ public class MyWiser implements MyMessageListener,MessageHandlerFactory {
 	 */
 	public MyWiser(UsernamePasswordValidator userPass, int port, MyWiserMailListener listener)
 	{
-		this.server = new SMTPServer(this, new PlainAuthenticationHandlerFactory(userPass));
+		this.server = new SMTPServer(this, new EasyAuthenticationHandlerFactory(userPass));
 		this.server.setPort(port);
 		this.listener = listener;
 	}

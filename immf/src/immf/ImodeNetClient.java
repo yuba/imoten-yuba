@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -206,7 +205,7 @@ public class ImodeNetClient implements Closeable{
 				this.logined = Boolean.FALSE;
 				throw new LoginException("Bad response "+result);
 			}
-
+			this.logined = Boolean.TRUE;
 			//log.debug(json.toString(2));
 			JSONArray array = json.getJSONObject("data").getJSONArray("folderList");
 			
@@ -394,7 +393,7 @@ public class ImodeNetClient implements Closeable{
 	 * @throws IOException
 	 */
 	public synchronized void sendMail(SenderMail mail) throws IOException{
-		if(!this.logined){
+		if(this.logined==null || !this.logined){
 			log.warn("iモード.netにログインできていません。");
 			throw new IOException("imode.net nologin");
 		}
@@ -435,7 +434,6 @@ public class ImodeNetClient implements Closeable{
 				log.warn("本文のサイズが大きすぎます。最大10000byte");
 				throw new IOException("Too Big Message Body. Max 10000 byte.");
 			}
-			System.err.println("body "+body);
 			multi.addPart("folder.mail.data", new StringBody(body,Charset.forName("UTF-8")));
 
 			// よくわかんない絵文字情報
