@@ -29,6 +29,9 @@ public class SenderMail {
 		this.bcc = bcc;
 	}
 	public String getSubject() {
+		if(this.subject==null){
+			return "";
+		}
 		return subject;
 	}
 	public void setSubject(String subject) {
