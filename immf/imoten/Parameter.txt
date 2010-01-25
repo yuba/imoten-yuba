@@ -168,6 +168,20 @@ sender.alwaysbcc
 　指定します。メールアドレスは1つしか指定することはできません。
 　デフォルト未設定
 
+sender.smtp.tls.keystore
+　imode.net経由でメールを送信する場合にTLSを使用する場合に、keystoreファイルの
+　場所を指定します。相対パスを指定した場合、binディレクトリからの相対パスになります。
+　設定しなかった場合、TLSは使用できません。
+　keystoreファイルを作成する方法は以下のURLを参照してください。
+　[ http://java.sun.com/javase/ja/6/docs/ja/technotes/tools/solaris/keytool.html ]
+
+sender.smtp.tls.keytype
+　[sender.smtp.tls.keystore]のタイプを指定します。JKS/PKCS12。
+　デフォルト[JKS]
+
+sender.smtp.tls.keypasswd
+　[sender.smtp.tls.keystore]のパスワードを指定します。
+
 
 ■サンプル
 SMTPサーバ関係のみ記述しています。

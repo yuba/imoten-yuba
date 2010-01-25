@@ -133,6 +133,11 @@ public class Config {
 	private String senderPasswd = "<87a!Oa#3gpoYz0'->L";
 	private String senderAlwaysBcc = null;
 	
+	// 送信用TLS
+	private String senderTlsKeystore;
+	private String senderTlsKeyType;
+	private String senderTlsKeyPasswd;
+	
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -189,6 +194,9 @@ public class Config {
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
 		this.senderAlwaysBcc = getString("sender.alwaysbcc", this.senderAlwaysBcc);
+		this.senderTlsKeystore = getString("sender.smtp.tls.keystore", null);
+		this.senderTlsKeyType = getString("sender.smtp.tls.keytype", "JKS");
+		this.senderTlsKeyPasswd = getString("sender.smtp.tls.keypasswd", null);
 		
 		
 		// 最小値
@@ -388,6 +396,18 @@ public class Config {
 
 	public String getContentTransferEncoding() {
 		return contentTransferEncoding;
+	}
+
+	public String getSenderTlsKeystore() {
+		return senderTlsKeystore;
+	}
+
+	public String getSenderTlsKeyType() {
+		return senderTlsKeyType;
+	}
+
+	public String getSenderTlsKeyPasswd() {
+		return senderTlsKeyPasswd;
 	}
 
 	

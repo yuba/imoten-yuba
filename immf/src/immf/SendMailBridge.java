@@ -59,7 +59,10 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
 		
 		log.info("SMTPサーバを起動します。");
-		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this);
+		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this,
+				conf.getSenderTlsKeystore(),
+				conf.getSenderTlsKeyType(),
+				conf.getSenderTlsKeyPasswd());
 		this.wiser.start();
 
 	}

@@ -23,13 +23,24 @@ package immf;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 import javax.mail.Session;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -59,13 +70,60 @@ public class MyWiser implements MyMessageListener,MessageHandlerFactory {
 	 * The default port is 25. Call setPort()/setHostname() before
 	 * calling start().
 	 */
-	public MyWiser(UsernamePasswordValidator userPass, int port, MyWiserMailListener listener)
+	public MyWiser(UsernamePasswordValidator userPass, int port, MyWiserMailListener listener, final String tlsKeyStore, final String tlsKeyType, final String tlsKeyPasswd)
 	{
-		this.server = new SMTPServer(this, new EasyAuthenticationHandlerFactory(userPass));
+		if(tlsKeyStore==null){
+			log.info("SMTP Server disable TLS");
+			this.server = new SMTPServer(this, new EasyAuthenticationHandlerFactory(userPass));
+			this.server.setHideTLS(true);	// TLS無し
+			
+		}else{
+			// TLS
+			log.info("SMTP Server enable TLS");
+			this.server = new SMTPServer(this,new EasyAuthenticationHandlerFactory(userPass)){
+				public SSLSocket createSSLSocket(Socket socket) throws IOException
+				{
+					SSLSocketFactory sf = createSslSocketFactory(tlsKeyStore, tlsKeyType, tlsKeyPasswd);
+					InetSocketAddress remoteAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
+					SSLSocket s = (SSLSocket) (sf.createSocket(socket, remoteAddress.getHostName(), socket.getPort(), true));
+
+					s.setUseClientMode(false);
+
+					s.setEnabledCipherSuites(s.getSupportedCipherSuites());
+
+					return s;
+				}
+			};
+			this.server.setRequireTLS(true);	// TLS　必須
+		}
 		this.server.setPort(port);
 		this.listener = listener;
 	}
 
+	
+	private SSLSocketFactory createSslSocketFactory(String keystoreFile, String keyType, String keypasswd){
+		InputStream keyis = null;
+		try{
+			keyis = new FileInputStream(keystoreFile);
+			KeyStore keyStore = KeyStore.getInstance(keyType);
+			keyStore.load(keyis, keypasswd.toCharArray());
+
+			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");        
+			kmf.init(keyStore, keypasswd.toCharArray());
+
+			SSLContext context = SSLContext.getInstance("TLS");
+
+			context.init(kmf.getKeyManagers(), null, new SecureRandom());
+			return context.getSocketFactory();
+		}catch (Exception e) {
+			e.printStackTrace();
+			return (SSLSocketFactory)SSLSocketFactory.getDefault();
+		}finally{
+			try{
+				keyis.close();
+			}catch (Exception e) {}
+		}
+	}
 
 	/**
 	 * The hostname that the server should listen on.

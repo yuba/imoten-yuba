@@ -34,6 +34,14 @@ Java Service Wrapper(http://wrapper.tanukisoftware.org/)の
 　PCのファイヤーウォールの設定や、インターネットから使用する場合は
 　通常DDNSやルータの設定などに注意してください。
 
+■imode.net経由のメール送信でTLSを有効にするには
+　パラメータ[sender.smtp.tls.*]を設定する必要があります。
+　テスト用のkeystoreファイル[test.keystore]ファイルを添付しています。
+　添付しているimoen.iniの以下の行を有効にして試すことができます。
+　# sender.smtp.tls.keystore=../test.keystore
+　# sender.smtp.tls.keytype=JKS
+　# sender.smtp.tls.keypasswd=imotenkey
+
 ■インストール・実行方法
 　INSTALL.txt を確認してください。
 
