@@ -37,6 +37,8 @@ Java Service Wrapper(http://wrapper.tanukisoftware.org/)の
 ■imode.net経由のメール送信でTLSを有効にするには
 　パラメータ[sender.smtp.tls.*]を設定する必要があります。
 　テスト用のkeystoreファイル[test.keystore]ファイルを添付しています。
+　[test.keystore]の作成方法
+　　keytool -genkeypair -validity 1800 -keystore test.keystore -keypass imotenkey -storepass imotenkey -storetype JKS -alias imoten
 　添付しているimoen.iniの以下の行を有効にして試すことができます。
 　# sender.smtp.tls.keystore=../test.keystore
 　# sender.smtp.tls.keytype=JKS

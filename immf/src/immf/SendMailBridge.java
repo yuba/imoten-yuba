@@ -25,10 +25,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.mail.BodyPart;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+
+import net.htmlparser.jericho.Renderer;
+import net.htmlparser.jericho.Segment;
+import net.htmlparser.jericho.Source;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -107,15 +113,30 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("subject  "+mime.getSubject());
 			senderMail.setSubject(mime.getSubject());
 			
+			String contentType = mime.getContentType();
+			log.info("ContentType:"+contentType);
+			
 			Object content = mime.getContent();
 			if (content instanceof String) {
 				// テキストメール
 				String strContent = (String) content;
+				if(contentType.toLowerCase().startsWith("text/html")){
+					// htmlはテキスト形式にフォーマット変換
+					Source src = new Source(strContent);
+					strContent = src.getRenderer().toString();
+					log.info("convert to text");
+					log.info(strContent);
+				}
 				senderMail.setContent(strContent);
+				
+			}else if(content instanceof Multipart){
+				Multipart mp = (Multipart)content;
+				parseMultipart(senderMail, mp);
+				
 			}else{
 				// HTMLメール添付ファイルはエラー
-				log.warn("プレーンテキスト以外の、マルチパート・添付ファイルはサポートしていません。");
-				throw new IOException("MimeMultiPart unsupported. Send Plain Text Mail.");
+				log.warn("未知のコンテンツ "+content.getClass().getName());
+				throw new IOException("Unsupported type "+content.getClass().getName()+".");
 			}
 			log.info("Content  "+mime.getContent());
 			log.info("====");
@@ -128,6 +149,50 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}catch (Exception e) {
 			log.error("ReceiveMail Error.",e);
 			throw new IOException("ReceiveMail Error."+e.getMessage(),e);
+		}
+	}
+	
+	private static void parseMultipart(SenderMail sendMail, Multipart mp) throws IOException{
+		String contentType = mp.getContentType();
+		log.info("Multipart ContentType:"+contentType);
+
+		try{
+			int count = mp.getCount();
+			log.info("count "+count);
+
+			for(int i=0; i<count; i++){
+				parseBodypart(sendMail, mp.getBodyPart(i));
+			}
+		}catch (Exception e) {
+			log.error("parse multipart error.",e);
+			throw new IOException("MimeMultiPart error."+e.getMessage(),e);
+		}
+	}
+	
+	private static void parseBodypart(SenderMail sendMail, BodyPart bp) throws IOException{
+		try{
+			String contentType = bp.getContentType().toLowerCase();
+			log.info("Bodypart ContentType:"+contentType);
+			
+			if(contentType.startsWith("multipart/")){
+				parseMultipart(sendMail, (Multipart)bp.getContent());
+				
+			}else if(sendMail.getContent()==null && contentType.startsWith("text/plain")){
+				log.info("set Content text ["+(String)bp.getContent()+"]");
+				sendMail.setContent((String)bp.getContent());
+				
+			}else if(sendMail.getContent()==null && contentType.startsWith("text/html")){
+				log.info("set Content html ["+(String)bp.getContent()+"]");
+				// htmlはテキスト形式に変換
+				Source src = new Source((String)bp.getContent());
+				String content = src.getRenderer().toString();
+				log.info("convert to text");
+				log.info(content);
+				sendMail.setContent(content);
+			}
+		}catch (Exception e) {
+			log.error("parse bodypart error.",e);
+			throw new IOException("BodyPart error."+e.getMessage(),e);
 		}
 	}
 	
