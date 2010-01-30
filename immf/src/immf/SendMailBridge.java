@@ -298,6 +298,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	}
 
 	public void login(String user, String pass) throws LoginFailedException {
+		log.debug("* SMTP Login *");
 		if(!StringUtils.equals(this.user, user)
 				||!StringUtils.equals(this.passwd, pass)){
 			log.warn("SMTP 認証エラー User "+user+"/ Pass "+pass);

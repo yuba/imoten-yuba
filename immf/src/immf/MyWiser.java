@@ -244,6 +244,11 @@ public class MyWiser implements MyMessageListener,MessageHandlerFactory {
 		public void from(String from) throws RejectException
 		{
 			this.from = from;
+			if(ctx.getAuthenticationHandler()==null || ctx.getAuthenticationHandler().getIdentity()==null){
+				log.warn("SMTP認証が必要です");
+				throw new RejectException("Require SMTP Auth.");
+			}
+			log.info("SMTP Auth, User "+ctx.getAuthenticationHandler().getIdentity());
 		}
 
 		/** */
