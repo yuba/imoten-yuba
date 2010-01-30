@@ -77,7 +77,9 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		this.setFrom(conf.getSmtpMailAddress());
 
 		if(!conf.getForwardReplyTo().isEmpty()){
-			this.setReplyTo(conf.getForwardReplyTo());
+			for (String addr : conf.getForwardReplyTo()) {
+				this.addReplyTo(addr);
+			}
 		}
 		
 		String subject = conf.getSubjectAppendPrefix()+imm.getSubject();
@@ -150,7 +152,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			}
 			html = "<body><pre>"+Util.easyEscapeHtml(text)+"</pre></body>";
 		}
-		html = "<html>"+html+"</html>";
+		html = "<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset="+this.charset+"\"></head>"+html+"</html>";
 		try{
 			this.setHtmlMsg(html);
 		}catch (Exception e) {

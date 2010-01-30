@@ -208,7 +208,7 @@ smtp.auth.passwd=<あなたのHotmailパスワード>
 
 ■conf/wrapper.conf の設定パラメータ
 
-wrapper.java.additional.1=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS　
+wrapper.java.additional.2=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS　
 　[①]のような機種依存文字は、本来[ISO-2022-JP],[Shift_JIS]には含まれません。
 　なので、機種依存文字を[ISO-2022-JP],[Shift_JIS]で送信すると、[？]に置き換えられてしまいます。
 　そこで、上記の設定を行うと、[？]にならず、機種依存文字を[ISO-2022-JP],[Shift_JIS]に含めて
@@ -233,5 +233,5 @@ wrapper.java.additional.1=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windo
 	mail.contenttransferencoding=7bit
 
 　conf/wrapper.conf で以下のパラメータをコメントアウト
-　　wrapper.java.additional.1=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS
+　　wrapper.java.additional.2=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS
 

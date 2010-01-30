@@ -21,7 +21,9 @@
 
 package immf;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,10 +33,7 @@ import javax.mail.Multipart;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-
-import net.htmlparser.jericho.Renderer;
-import net.htmlparser.jericho.Segment;
-import net.htmlparser.jericho.Source;
+import javax.mail.internet.MimeUtility;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -52,6 +51,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private String user;
 	private String passwd;
 	private String alwaysBcc;
+	private boolean forcePlainText;
 	
 	private MyWiser wiser;
 	
@@ -63,6 +63,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.user = conf.getSenderUser();
 		this.passwd = conf.getSenderPasswd();
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
+		this.forcePlainText = conf.isSenderMailForcePlainText();
 		
 		log.info("SMTPサーバを起動します。");
 		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this,
@@ -113,7 +114,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("subject  "+mime.getSubject());
 			senderMail.setSubject(mime.getSubject());
 			
-			String contentType = mime.getContentType();
+			String contentType = mime.getContentType().toLowerCase();
 			log.info("ContentType:"+contentType);
 			
 			Object content = mime.getContent();
@@ -121,27 +122,25 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				// テキストメール
 				String strContent = (String) content;
 				if(contentType.toLowerCase().startsWith("text/html")){
-					// htmlはテキスト形式にフォーマット変換
-					Source src = new Source(strContent);
-					strContent = src.getRenderer().toString();
-					log.info("convert to text");
-					log.info(strContent);
+					log.info("Single plainText part "+strContent);
+					senderMail.setHtmlContent(strContent);
+				}else{
+					log.info("Single html part "+strContent);
+					senderMail.setPlainTextContent(strContent);
 				}
-				senderMail.setContent(strContent);
-				
 			}else if(content instanceof Multipart){
 				Multipart mp = (Multipart)content;
-				parseMultipart(senderMail, mp);
+				parseMultipart(senderMail, mp, getSubtype(contentType));
 				
 			}else{
-				// HTMLメール添付ファイルはエラー
 				log.warn("未知のコンテンツ "+content.getClass().getName());
 				throw new IOException("Unsupported type "+content.getClass().getName()+".");
 			}
+			
 			log.info("Content  "+mime.getContent());
 			log.info("====");
 			
-			this.client.sendMail(senderMail);
+			this.client.sendMail(senderMail, this.forcePlainText);
 			
 		}catch (IOException e) {
 			log.warn("Bad Mail Received.",e);
@@ -152,7 +151,10 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 	}
 	
-	private static void parseMultipart(SenderMail sendMail, Multipart mp) throws IOException{
+	/*
+	 * マルチパートを処理
+	 */
+	private static void parseMultipart(SenderMail sendMail, Multipart mp, String subtype) throws IOException{
 		String contentType = mp.getContentType();
 		log.info("Multipart ContentType:"+contentType);
 
@@ -161,7 +163,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("count "+count);
 
 			for(int i=0; i<count; i++){
-				parseBodypart(sendMail, mp.getBodyPart(i));
+				parseBodypart(sendMail, mp.getBodyPart(i), subtype);
 			}
 		}catch (Exception e) {
 			log.error("parse multipart error.",e);
@@ -169,31 +171,99 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 	}
 	
-	private static void parseBodypart(SenderMail sendMail, BodyPart bp) throws IOException{
+	private static String getSubtype(String contenttype){
+		try{
+			String r = contenttype.split("\\r?\\n")[0];
+			return r.split("/")[1].replaceAll("\\s*;.*", "");
+		}catch (Exception e) {
+		}
+		return "";
+	}
+	
+	/*
+	 * 各パートの処理
+	 */
+	private static void parseBodypart(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
 		try{
 			String contentType = bp.getContentType().toLowerCase();
 			log.info("Bodypart ContentType:"+contentType);
+			log.info("subtype:"+subtype);
 			
 			if(contentType.startsWith("multipart/")){
-				parseMultipart(sendMail, (Multipart)bp.getContent());
+				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType));
 				
-			}else if(sendMail.getContent()==null && contentType.startsWith("text/plain")){
+			}else if(sendMail.getPlainTextContent()==null
+					&& contentType.startsWith("text/plain")){
+				// 最初に存在するplain/textは本文
 				log.info("set Content text ["+(String)bp.getContent()+"]");
-				sendMail.setContent((String)bp.getContent());
+				sendMail.setPlainTextContent((String)bp.getContent());
 				
-			}else if(sendMail.getContent()==null && contentType.startsWith("text/html")){
+			}else if(sendMail.getHtmlContent()==null 
+					&& contentType.startsWith("text/html") 
+					&& (subtype.equalsIgnoreCase("alternative")
+							|| subtype.equalsIgnoreCase("related"))){
 				log.info("set Content html ["+(String)bp.getContent()+"]");
-				// htmlはテキスト形式に変換
-				Source src = new Source((String)bp.getContent());
-				String content = src.getRenderer().toString();
-				log.info("convert to text");
-				log.info(content);
-				sendMail.setContent(content);
+				// 本文 htmlはテキスト形式に変換
+				sendMail.setHtmlContent((String)bp.getContent());
+
+			}else{
+				log.debug("attach");
+				// 本文ではない 
+
+				if(subtype.equalsIgnoreCase("related")){
+					// インライン添付
+					SenderAttachment file = new SenderAttachment();
+					file.setInline(true);
+					file.setContentType(contentType);
+					//file.setFilename(bp.getFileName());
+					file.setFilename(uniqId()+"."+getSubtype(contentType));
+					file.setData(inputstream2bytes(bp.getInputStream()));
+					file.setContentId(bp.getHeader("Content-Id")[0]);
+					sendMail.addAttachmentFileIdList(file);
+					log.info("Inline Attachment "+file.loggingString());
+					
+				}else{
+					// 通常の添付ファイル
+					SenderAttachment file = new SenderAttachment();
+					file.setInline(false);
+					file.setContentType(contentType);
+					String fname = MimeUtility.decodeText(bp.getFileName());
+					file.setFilename(fname);
+					file.setData(inputstream2bytes(bp.getInputStream()));
+					sendMail.addAttachmentFileIdList(file);
+					log.info("Attachment "+file.loggingString());
+				}
 			}
 		}catch (Exception e) {
 			log.error("parse bodypart error.",e);
 			throw new IOException("BodyPart error."+e.getMessage(),e);
 		}
+	}
+	private static int fileNameId=0;
+	private static String uniqId(){
+		fileNameId++;
+		return System.currentTimeMillis()+"_"+fileNameId;
+	}
+	private static byte[] inputstream2bytes(InputStream is) throws IOException{
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		try{
+			byte[] buf = new byte[1024 * 4];
+			while(is.available()>0){
+				int len = is.read(buf);
+				if(len<=0){
+					break;
+				}
+				bos.write(buf,0,len);
+			}
+		}finally{
+			try{
+				is.close();
+			}catch (Exception e) {}
+			try{
+				bos.close();
+			}catch (Exception e) {}
+		}
+		return bos.toByteArray();
 	}
 	
 	private static List<InternetAddress> getBccRecipients(List<String> allRecipients, List<InternetAddress> to, List<InternetAddress> cc) throws AddressException{

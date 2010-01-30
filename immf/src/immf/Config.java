@@ -132,6 +132,7 @@ public class Config {
 	private String senderUser = "z8$k>Lo2#aEeo@a(aw!";
 	private String senderPasswd = "<87a!Oa#3gpoYz0'->L";
 	private String senderAlwaysBcc = null;
+	private boolean senderMailForcePlainText = true;
 	
 	// 送信用TLS
 	private String senderTlsKeystore;
@@ -194,6 +195,8 @@ public class Config {
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
 		this.senderAlwaysBcc = getString("sender.alwaysbcc", this.senderAlwaysBcc);
+		// imode.netでhtmlをチェックしてるようで、PCで作成したhtmlメールはエラーになるのでテキストのみ許可
+//		this.senderMailForcePlainText = getBoolean("sender.forceplaintext", this.senderMailForcePlainText);
 		this.senderTlsKeystore = getString("sender.smtp.tls.keystore", null);
 		this.senderTlsKeyType = getString("sender.smtp.tls.keytype", "JKS");
 		this.senderTlsKeyPasswd = getString("sender.smtp.tls.keypasswd", null);
@@ -408,6 +411,10 @@ public class Config {
 
 	public String getSenderTlsKeyPasswd() {
 		return senderTlsKeyPasswd;
+	}
+
+	public boolean isSenderMailForcePlainText() {
+		return senderMailForcePlainText;
 	}
 
 	

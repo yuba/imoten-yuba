@@ -23,6 +23,7 @@ package immf;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,7 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.5";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.6";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
@@ -201,6 +202,7 @@ public class ServerMain {
 		String version = System.getProperty("java.version");
 		log.info("Java vendor  "+verndor);
 		log.info("Java version "+version);
+		log.info("defaultCharset "+Charset.defaultCharset());
 		try{
 			String[] v = version.split("\\.");
 			if(Integer.parseInt(v[0])>=2 || Integer.parseInt(v[1])>=6){

@@ -20,6 +20,7 @@
  */
 package immf;
 
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -31,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -56,6 +58,7 @@ import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.mime.MultipartEntity;
+import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -69,6 +72,8 @@ public class ImodeNetClient implements Closeable{
 	private static final String AttachedFileUrl ="https://imode.net/imail/oexaf/acgi/mailfileget";
 	private static final String InlineFileUrl = 	"https://imode.net/imail/oexaf/acgi/mailimgget";
 	private static final String SendMailUrl = 	"https://imode.net/imail/oexaf/acgi/mailsend";
+	private static final String FileupUrl = 		"https://imode.net/imail/oexaf/acgi/fileupd";
+	private static final String ImgupUrl = 		"https://imode.net/imail/oexaf/acgi/pcimgupd";
 	private static final String PcAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/pcaddrlist";
 	private static final String DsAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/dsaddrlist";
 	
@@ -343,13 +348,7 @@ public class ImodeNetClient implements Closeable{
 		}
 		formparams.add(new BasicNameValuePair("cdflg","1"));
 		
-		String pwsp = "";
-		for (Cookie c : this.httpClient.getCookieStore().getCookies()) {
-			if(c.getName().equalsIgnoreCase("pwsp")){
-				String val = c.getValue();
-				pwsp = val.substring(val.length()-32);
-			}
-		}
+		String pwsp = this.getPwspQuery();
 		
 		HttpPost post = null;
 		try{
@@ -385,6 +384,17 @@ public class ImodeNetClient implements Closeable{
 		}
 	}
 	
+	private String getPwspQuery(){
+		String pwsp = "";
+		for (Cookie c : this.httpClient.getCookieStore().getCookies()) {
+			if(c.getName().equalsIgnoreCase("pwsp")){
+				String val = c.getValue();
+				pwsp = val.substring(val.length()-32);
+			}
+		}
+		return pwsp;
+	}
+	
 	/**
 	 * imode.netの送信フォールからメールを送信
 	 * 
@@ -392,15 +402,64 @@ public class ImodeNetClient implements Closeable{
 	 * @return
 	 * @throws IOException
 	 */
-	public synchronized void sendMail(SenderMail mail) throws IOException{
+	public synchronized void sendMail(SenderMail mail, boolean forcePlaintext) throws IOException{
 		if(this.logined==null || !this.logined){
 			log.warn("iモード.netにログインできていません。");
 			throw new IOException("imode.net nologin");
 		}
+		List<String> inlineFileIdList = new LinkedList<String>();
+		List<String> attachmentFileIdList = new LinkedList<String>();
+		if(!forcePlaintext){
+			// htmlメールの場合インライン画像を送信する
+			for (SenderAttachment file : mail.getInlineFile()) {
+				String docomoFileId = this.sendAttachFile(
+						inlineFileIdList, 
+						true, 
+						file.getContentTypeWithoutParameter(), 
+						file.getFilename(), 
+						file.getData());
+				file.setDocomoFileId(docomoFileId);
+			}
+		}
+		for (SenderAttachment file : mail.getAttachmentFile()) {
+			// 添付ファイルを送信
+			this.sendAttachFile(
+					attachmentFileIdList, 
+					false, 
+					file.getContentTypeWithoutParameter(), 
+					file.getFilename(), 
+					file.getData());
+		}
+		
+		// htmlメールかテキストメール決定する
+		boolean htmlMail =false;
+		String body = null;
+		if(forcePlaintext){
+			htmlMail = false;
+			body = mail.getPlainBody();
+		}else{
+			body = mail.getHtmlBody(true);
+			if(body==null){
+				htmlMail = false;
+				body = mail.getPlainBody();
+			}else{
+				htmlMail = true;
+			}
+		}
+		log.info("Html "+htmlMail);
+		log.info("body "+body);
+		
+		
 		MultipartEntity multi = new MultipartEntity();
 		try{
 			multi.addPart("fonlder.id", new StringBody("0",Charset.forName("UTF-8")));
-			multi.addPart("folder.mail.type", new StringBody("0",Charset.forName("UTF-8")));
+			String mailType=null;
+			if(htmlMail){
+				mailType = "1";
+			}else{
+				mailType = "0";
+			}
+			multi.addPart("folder.mail.type", new StringBody(mailType,Charset.forName("UTF-8")));
 			
 			// 送信先
 			int recipient = 0;
@@ -427,7 +486,8 @@ public class ImodeNetClient implements Closeable{
 			multi.addPart("folder.mail.subject", new StringBody(Util.reverseReplaceUnicodeMapping(mail.getSubject()),Charset.forName("UTF-8")));
 			
 			// 内容
-			String body = Util.reverseReplaceUnicodeMapping(mail.getContent());
+			body = Util.reverseReplaceUnicodeMapping(body);
+			
 			// imode.netの制限 本文は10000Bytes以内で
 			if(body.getBytes().length>10000){
 				// 文字数かbyte数かわからないのでとりあえずbyte数で制限
@@ -435,6 +495,13 @@ public class ImodeNetClient implements Closeable{
 				throw new IOException("Too Big Message Body. Max 10000 byte.");
 			}
 			multi.addPart("folder.mail.data", new StringBody(body,Charset.forName("UTF-8")));
+			
+			if(!attachmentFileIdList.isEmpty()){
+				// 添付ファイル
+				for(int i=0; i<attachmentFileIdList.size();i++){
+					multi.addPart("folder.tmpfile("+i+").file(0).id", new StringBody(attachmentFileIdList.get(i),Charset.forName("UTF-8")));
+				}
+			}
 
 			// よくわかんない絵文字情報
 			multi.addPart("iemoji(0).id", new StringBody(Character.toString((char)0xe709),Charset.forName("UTF-8")));			// e709 = UTF-8でee89c9の値
@@ -450,6 +517,7 @@ public class ImodeNetClient implements Closeable{
 				HttpResponse res = this.executeHttp(post);
 				if(!isJson(res)){
 					log.warn("応答がJSON形式ではありません。");
+					log.debug(toStringBody(res));
 					throw new IOException("Bad response");
 				}
 				JSONObject json = JSONObject.fromObject(toStringBody(res));
@@ -465,6 +533,73 @@ public class ImodeNetClient implements Closeable{
 			log.fatal(e);
 		}
 	}
+	
+	/**
+	 * 送信するメールの添付ファイルを送信
+	 * 
+	 * @param fileIdList
+	 * @param contentType
+	 * @param filename
+	 * @param data
+	 */
+	private synchronized String sendAttachFile(List<String> fileIdList, boolean isInline, String contentType, String filename, byte[] data) throws IOException{
+		MultipartEntity multi = new MultipartEntity();
+		int i=0;
+		for (Iterator<String> iterator = fileIdList.iterator(); iterator.hasNext();i++) {
+			String fileId = (String) iterator.next();
+			try{
+				multi.addPart("tmpfile("+i+").id", new StringBody(fileId,Charset.forName("UTF-8")));
+			}catch (Exception e) {
+				log.error("sendAttachFile ("+i+")",e);
+			}
+		}
+		ByteArrayInputStream bis = new ByteArrayInputStream(data);
+		multi.addPart("stmpfile.data", new InputStreamBody(bis,contentType,"C:\\"+filename));
+
+		String url = null;
+		if(isInline){
+			url = ImgupUrl;
+		}else{
+			url = FileupUrl;
+		}
+			
+		HttpPost post = new HttpPost(url+"?pwsp="+this.getPwspQuery());
+		try{
+			addDumyHeader(post);
+			post.setEntity(multi);
+
+			HttpResponse res = this.executeHttp(post);
+			if(res.getStatusLine().getStatusCode()!=200){
+				log.warn("attachefile error. "+filename+"/"+res.getStatusLine().getStatusCode()+"/"+res.getStatusLine().getReasonPhrase());
+				throw new IOException(filename+" error. "+res.getStatusLine().getStatusCode()+"/"+res.getStatusLine().getReasonPhrase());
+			}
+			if(!isJson(res)){
+				log.warn("Fileuploadの応答がJSON形式ではありません。");
+				log.debug(toStringBody(res));
+				throw new IOException("Bad attached file");
+			}
+			JSONObject json = JSONObject.fromObject(toStringBody(res));
+			String result = json.getJSONObject("common").getString("result");
+			if(!result.equals("PW1000")){
+				log.debug(json.toString(2));
+				throw new IOException("Bad fileupload["+filename+"] response "+result);
+			}
+			// 応答のファイルIDをリストに追加
+			String objName = null;
+			if(isInline){
+				objName = "listPcimg";
+			}else{
+				objName = "file";
+			}
+			
+			String fileId = json.getJSONObject("data").getJSONObject(objName).getString("id");
+			fileIdList.add(fileId);
+			return fileId;
+		}finally{
+			post.abort();
+		}
+	}
+	
 	
 	/*
 	 * アドレス帳情報を読み込む
@@ -603,7 +738,8 @@ public class ImodeNetClient implements Closeable{
 			return false;
 		}
 		Header h = res.getFirstHeader("Content-type");
-		if(h.getValue().toUpperCase().indexOf("JSON")>=0){
+		String type = h.getValue().toLowerCase();
+		if(type.indexOf("json")>=0 || type.indexOf("text/plain")>=0){
 			return true;
 		}else{
 			return false;

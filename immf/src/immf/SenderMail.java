@@ -1,15 +1,27 @@
 package immf;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.mail.internet.InternetAddress;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import net.htmlparser.jericho.Source;
+
 public class SenderMail {
+	private static final Log log = LogFactory.getLog(SenderMail.class);
 	private List<InternetAddress> to;
 	private List<InternetAddress> cc;
 	private List<InternetAddress> bcc;
 	private String subject;
-	private String content;
+	private String plainTextContent;
+	private String htmlContent;
+	private List<SenderAttachment> attachments = new ArrayList<SenderAttachment>();
+	
 	public List<InternetAddress> getTo() {
 		return to;
 	}
@@ -37,12 +49,97 @@ public class SenderMail {
 	public void setSubject(String subject) {
 		this.subject = subject;
 	}
-	public String getContent() {
-		return content;
+
+
+	public String getPlainTextContent() {
+		return plainTextContent;
 	}
-	public void setContent(String content) {
-		this.content = content;
+	public void setPlainTextContent(String plainTextContent) {
+		this.plainTextContent = plainTextContent;
+	}
+	public String getHtmlContent() {
+		return htmlContent;
+	}
+	public void setHtmlContent(String htmlContent) {
+		this.htmlContent = htmlContent;
+	}
+	public void addAttachmentFileIdList(SenderAttachment file) {
+		this.attachments.add(file);
 	}
 	
+	/*
+	 * PlainText形式で本文を取得
+	 */
+	public String getPlainBody(){
+		if(this.plainTextContent!=null){
+			return this.plainTextContent;
+		}
+		if(this.htmlContent==null){
+			// 本文が無い
+			return "";
+		}
+		// htmlをテキストに変換
+		Source src = new Source(this.htmlContent);
+		return src.getRenderer().toString();
+	}
+	
+	public String getHtmlBody(boolean replaceCid){
+		String r = this.htmlContent;
+		if(r==null){
+			return null;
+		}
+		if(replaceCid==false){
+			return r;
+		}
+		List<SenderAttachment> inlines = getInlineFile();
+		for (SenderAttachment file : inlines) {
+			// 「40_」がつく
+			//System.err.println("\"cid:"+file.getContentIdWithoutBracket()+"\"");
+			r = StringUtils.replace(r, "\"cid:"+file.getContentIdWithoutBracket()+"\"", "\"40_"+file.getDocomoFileId()+"\"");
+		}
+		
+		// html,headerタグはimode.net側で付加されるので削除
+		r = replaceAllCaseInsenstive(r,".*<html[^>]*>","");
+		r = replaceAllCaseInsenstive(r,".*</head>","");
+		r = replaceAllCaseInsenstive(r,"</html>.*","");
+		return r;
+	}
+	private String replaceAllCaseInsenstive(String str, String regex, String repl){
+		return Pattern.compile(regex,Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(str).replaceAll(repl);
+	}
+	
+	/*
+	 * インライン添付ファイルを取得
+	 */
+	public List<SenderAttachment> getInlineFile(){
+		List<SenderAttachment> r = new ArrayList<SenderAttachment>();
+		if(this.htmlContent==null){
+			return r;
+		}
+
+		for (SenderAttachment file : this.attachments) {
+			if(!file.isInline()){
+				continue;
+			}
+			// 本当にインラインで参照されているものだけ
+			if(this.htmlContent.indexOf("\"cid:"+file.getContentIdWithoutBracket()+"\"")>=0){
+				r.add(file);
+			}else{
+				log.debug("not inline "+file.loggingString());
+			}
+		}
+		return r;
+	}
+	
+	/*
+	 * インライン以外の添付ファイルを取得
+	 */
+	public List<SenderAttachment> getAttachmentFile(){
+		List<SenderAttachment> r = new ArrayList<SenderAttachment>();
+		r.addAll(this.attachments);
+		List<SenderAttachment> inline = getInlineFile();
+		r.removeAll(inline);
+		return r;
+	}
 	
 }
