@@ -74,7 +74,7 @@ public class ImodeNetClient implements Closeable{
 	private static final String ImgupUrl = 		"https://imode.net/imail/oexaf/acgi/pcimgupd";
 	private static final String PcAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/pcaddrlist";
 	private static final String DsAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/dsaddrlist";
-	
+	private static final int MaxSendAttachment = 10;	
 
 	private String name;
 	private String pass;
@@ -419,7 +419,12 @@ public class ImodeNetClient implements Closeable{
 				file.setDocomoFileId(docomoFileId);
 			}
 		}
-		for (SenderAttachment file : mail.getAttachmentFile()) {
+		List<SenderAttachment> attachFiles = mail.getAttachmentFile();
+		if(attachFiles.size()>MaxSendAttachment){
+			log.warn("添付ファイルの数は最大"+MaxSendAttachment+"個");
+			throw new IOException("Too mush attachment file. Max "+MaxSendAttachment);
+		}
+		for (SenderAttachment file : attachFiles) {
 			// 添付ファイルを送信
 			this.sendAttachFile(
 					attachmentFileIdList, 
@@ -450,7 +455,7 @@ public class ImodeNetClient implements Closeable{
 		
 		MultipartEntity multi = new MultipartEntity();
 		try{
-			multi.addPart("fonlder.id", new StringBody("0",Charset.forName("UTF-8")));
+			multi.addPart("folder.id", new StringBody("0",Charset.forName("UTF-8")));
 			String mailType=null;
 			if(htmlMail){
 				mailType = "1";
