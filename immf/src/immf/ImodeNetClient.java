@@ -20,7 +20,6 @@
  */
 package immf;
 
-import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -58,7 +57,6 @@ import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -553,9 +551,9 @@ public class ImodeNetClient implements Closeable{
 				log.error("sendAttachFile ("+i+")",e);
 			}
 		}
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		multi.addPart("stmpfile.data", new InputStreamBody(bis,contentType,"C:\\"+filename));
 
+		multi.addPart("stmpfile.data", new ByteArrayBody(data,contentType,"C:\\"+filename));
+		
 		String url = null;
 		if(isInline){
 			url = ImgupUrl;
