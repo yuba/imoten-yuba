@@ -521,7 +521,7 @@ public class ImodeNetClient implements Closeable{
 				if(!isJson(res)){
 					log.warn("応答がJSON形式ではありません。");
 					log.debug(toStringBody(res));
-					throw new IOException("Bad response");
+					throw new IOException("Bad response. no json format.");
 				}
 				JSONObject json = JSONObject.fromObject(toStringBody(res));
 				String result = json.getJSONObject("common").getString("result");

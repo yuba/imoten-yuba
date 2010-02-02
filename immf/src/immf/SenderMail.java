@@ -98,15 +98,11 @@ public class SenderMail {
 			r = StringUtils.replace(r, "\"cid:"+file.getContentIdWithoutBracket()+"\"", "\"40_"+file.getDocomoFileId()+"\"");
 		}
 		
-		// html,headerタグはimode.net側で付加されるので削除
-		r = replaceAllCaseInsenstive(r,".*<html[^>]*>","");
-		r = replaceAllCaseInsenstive(r,".*</head>","");
-		r = replaceAllCaseInsenstive(r,"</html>.*","");
+		r = HtmlConvert.toDecomeHtml(r);
+		log.info(r);
 		return r;
 	}
-	private String replaceAllCaseInsenstive(String str, String regex, String repl){
-		return Pattern.compile(regex,Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(str).replaceAll(repl);
-	}
+
 	
 	/*
 	 * インライン添付ファイルを取得

@@ -196,7 +196,7 @@ public class Config {
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
 		this.senderAlwaysBcc = getString("sender.alwaysbcc", this.senderAlwaysBcc);
 		// imode.netでhtmlをチェックしてるようで、PCで作成したhtmlメールはエラーになるのでテキストのみ許可
-//		this.senderMailForcePlainText = getBoolean("sender.forceplaintext", this.senderMailForcePlainText);
+		this.senderMailForcePlainText = getBoolean("sender.forceplaintext", this.senderMailForcePlainText);
 		this.senderTlsKeystore = getString("sender.smtp.tls.keystore", null);
 		this.senderTlsKeyType = getString("sender.smtp.tls.keytype", "JKS");
 		this.senderTlsKeyPasswd = getString("sender.smtp.tls.keypasswd", null);
