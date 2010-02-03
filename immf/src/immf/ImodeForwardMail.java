@@ -37,6 +37,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
 
+import net.htmlparser.jericho.Source;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -134,36 +136,50 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	 * 絵文字の置き換えは行わない
 	 */
 	private void setBodyDontReplace() throws EmailException{
-		this.setBodyDontReplace(this.imm.getBody(),this.imm.isDecomeFlg(),this.imm.getInlineFileList());
-	}
-	private void setBodyDontReplace(String str, boolean isHtml, List<AttachedFile> inlineFiles) throws EmailException{
-		String html = null;
-		if(isHtml){
-			// htmlメール
-			html = cidAddedBody(str,inlineFiles);
-			if(conf.isHeaderToBody()){
-				html = html.replaceAll("(<body[^>]*>)", "$1"+this.getHeaderInfo(true));
-			}
+		String html = this.imm.getBody();
+		String plain = this.imm.getBody();
+		if(this.imm.isDecomeFlg()){
+			// HTMLメール
+			plain = html2text(plain);
 		}else{
-			// テキスト
-			String text = str;
-			if(conf.isHeaderToBody()){
-				text = this.getHeaderInfo(false)+text;
-			}
-			html = "<body><pre>"+Util.easyEscapeHtml(text)+"</pre></body>";
+			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
 		}
+		this.setBodyDontReplace(plain, html,this.imm.getInlineFileList());
+	}
+	private void setBodyDontReplace(String plainText, String html, List<AttachedFile> inlineFiles) throws EmailException{
+
+		// htmlメール
+		html = cidAddedBody(html,inlineFiles);
+		if(conf.isHeaderToBody()){
+			html = html.replaceAll("(<body[^>]*>)", "$1"+this.getHeaderInfo(true));
+		}
+
+		// テキスト
+		if(conf.isHeaderToBody()){
+			plainText = this.getHeaderInfo(false)+plainText;
+		}
+
 		html = "<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset="+this.charset+"\"></head>"+html+"</html>";
 		try{
 			this.setHtmlMsg(html);
+			if(conf.isMailAlternative()){
+				this.setTextMsg(plainText);
+			}
 		}catch (Exception e) {
 			throw new EmailException(e);
 		}
 	}
 	private void setBodyToInlineImage() throws EmailException{
 		String html = this.imm.getBody();
-		if(!this.imm.isDecomeFlg()){
+		String plain = this.imm.getBody();
+		if(this.imm.isDecomeFlg()){
+			// HTMLメール
+			plain = html2text(EmojiUtil.replaceToLabel(plain));
+		}else{
 			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			plain = EmojiUtil.replaceToLabel(plain);
 		}
+		
 		Map<URL, String> emojiToCid = new HashMap<URL, String>();
 		StringBuilder buf = new StringBuilder();
 		for(char c : html.toCharArray()){
@@ -188,21 +204,41 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				buf.append(EmojiUtil.UnknownReplace);
 			}
 		}
-		this.setBodyDontReplace(buf.toString(),true,this.imm.getInlineFileList());
+		this.setBodyDontReplace(plain,buf.toString(),this.imm.getInlineFileList());
 		
 	}
 	private void setBodyToWebLink() throws EmailException{
 		String html = this.imm.getBody();
-		if(!this.imm.isDecomeFlg()){
+		String plain = this.imm.getBody();
+		if(this.imm.isDecomeFlg()){
+			// HTMLメール
+			html = EmojiUtil.replaceToWebLink(html);
+			plain = html2text(EmojiUtil.replaceToLabel(plain));
+		}else{
 			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			html = EmojiUtil.replaceToWebLink(html);
+			plain = EmojiUtil.replaceToLabel(plain);
 		}
-		html = EmojiUtil.replaceToWebLink(html);
-		this.setBodyDontReplace(html,true,this.imm.getInlineFileList());
+		this.setBodyDontReplace(plain, html, this.imm.getInlineFileList());
 	}
 	private void setBodyToLabel() throws EmailException{
-		String body = this.imm.getBody();
-		body = EmojiUtil.replaceToLabel(body);
-		this.setBodyDontReplace(body,this.imm.isDecomeFlg(),this.imm.getInlineFileList());
+		String html = this.imm.getBody();
+		String plain = this.imm.getBody();
+		if(this.imm.isDecomeFlg()){
+			// HTMLメール
+			html = EmojiUtil.replaceToLabel(html);
+			plain = html2text(EmojiUtil.replaceToLabel(plain));
+		}else{
+			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			html = EmojiUtil.replaceToLabel(html);
+			plain = EmojiUtil.replaceToLabel(plain);
+		}
+		this.setBodyDontReplace(plain,html,this.imm.getInlineFileList());
+	}
+	
+	private static String html2text(String html){
+		Source src = new Source(html);
+		return src.getRenderer().toString();
 	}
 	
 	/*

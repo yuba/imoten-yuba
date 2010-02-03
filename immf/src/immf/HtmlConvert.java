@@ -22,10 +22,12 @@ public class HtmlConvert {
 		set.add("align");
 		availableProperties.put("div", set);
 	
+		/* タグが入れ子になるとエラーになるので使用しない
 		set = new HashSet<String>();
 		set.add("color");
 		set.add("size");
 		availableProperties.put("font", set);
+		*/
 		
 		set = new HashSet<String>();
 		set.add("color");
@@ -35,34 +37,51 @@ public class HtmlConvert {
 		set.add("src");
 		availableProperties.put("img", set);
 		
+		/*
 		set = new HashSet<String>();
 		set.add("behavior");
 		availableProperties.put("marquee", set);
+		*/
 	}
 	
 	public static String toDecomeHtml(String s){
 		// html,headerタグはimode.net側で付加されるので削除
+		s = s.replaceAll("[\\r\\n]", "");	// 改行削除　したがってpreタグは未対応
+		
 		s = replaceAllCaseInsenstive(s,".*<html[^>]*>","");
 		s = replaceAllCaseInsenstive(s,".*</head>","");
 		s = replaceAllCaseInsenstive(s,"</html>.*","");
-		s = replaceAllCaseInsenstive(s,"(<body[^>]*>)","$1<div>");
-		s = replaceAllCaseInsenstive(s,"(</body[^>]*>)","</div>$1");
-		//s = replaceAllCaseInsenstive(s, "<br[^>]*>", "</div><div>");	//brはfontタグの中にあることがあるのでこの置き換えは不可
-		s = replaceAllCaseInsenstive(s, "</?p>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?h\\d>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?ol>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?ul>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?dir>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?menu>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?pre>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?dl>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "<center>", "<div align=\"center\">");
-		s = replaceAllCaseInsenstive(s, "</center>", "</div>");
-		s = replaceAllCaseInsenstive(s, "</?backquote>", "</div><div>");
-		s = replaceAllCaseInsenstive(s, "</?tr>", "</div><div>");
+
+		s = replaceAllCaseInsenstive(s,"(<body[^>]*>)","$1\n");
+		s = replaceAllCaseInsenstive(s,"(</body[^>]*>)","\n$1");
+		
+		//s = replaceAllCaseInsenstive(s,"(<body[^>]*>)","$1<div>");
+		//s = replaceAllCaseInsenstive(s,"(</body[^>]*>)","</div>$1");
+
+		s = replaceAllCaseInsenstive(s, "<br[^>]*>", "\n");
+		
+		s = replaceAllCaseInsenstive(s, "<[^<>]+/>", "");
+		
+		// ブロック要素は改行に置き換える
+		// 入れ子のdivはエラーになるので、最後に各行を<div>で囲んで入れ子を防ぐ
+		s = replaceAllCaseInsenstive(s, "</?p[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?h\\d[^>]*>", "\n");
+//		s = replaceAllCaseInsenstive(s, "<h\\d>", "\n<font size=\"4\">");
+//		s = replaceAllCaseInsenstive(s, "</h\\d>", "</font>\n");
+		s = replaceAllCaseInsenstive(s, "<li[^>]*>", "\n&nbsp;&nbsp;o&nbsp;");
+		s = replaceAllCaseInsenstive(s, "</li[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?ol[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?ul[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?dir[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?menu[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?pre[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?dl[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?backquote[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?tr[^>]*>", "\n");
+		s = replaceAllCaseInsenstive(s, "</?div[^>]*>", "\n");
 		
 		
-		s = s.replaceAll("[\\r\\n]", "");	// 改行削除　したがってpreタグは未対応
+		
 		
 		StringBuilder buf = new StringBuilder();
 		
@@ -73,12 +92,12 @@ public class HtmlConvert {
 			start = s.indexOf('<',i);
 			if(start<0){
 				buf.append(s.substring(i));
-				return buf.toString();
+				return line2div(buf.toString());
 			}
 			end = s.indexOf('>',start);
 			if(end<0){
 				buf.append(s.substring(i));
-				return buf.toString();
+				return line2div(buf.toString());
 			}
 			// タグの前まで
 			buf.append(s.substring(i, start));
@@ -132,13 +151,38 @@ public class HtmlConvert {
 		}
 	}
 	
+	/*
+	 * 各行をdivで囲む
+	 */
+	private static String line2div(String s){
+		//System.out.println("["+s+"]");
+		StringBuilder buf = new StringBuilder();
+		String[] lines = s.split("\n");
+		buf.append(lines[0]);
+		for(int i=1; i<lines.length-1; i++){
+			//System.out.println(">>>>>>>>>>"+lines[i]);
+			buf.append("<div>"+lines[i]+"</div>");
+		}
+		buf.append(lines[lines.length-1]);
+		return buf.toString();
+		
+	}
+	
 	private static String replaceAllCaseInsenstive(String str, String regex, String repl){
 		return Pattern.compile(regex,Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(str).replaceAll(repl);
 	}
 	
 	public static void main(String[] args){
-		String html = "<html><head>aa</head><Body link=\"aaa\"><H1>タイトル</H1><font color=\"red\" size=\"5\">RED</FONT><hoge>ZAK</hoge><BR>" +
-				"aaaaa</body></html>";
+		String html = "<html><head>aa</head>" +
+				"<Body link=\"aaa\">" +
+				"<font>Top</font>"+
+				"<H1>タイトル</H1><font color=\"red\" size=\"5\">RED</FONT><hoge>ZAK</hoge><BR>" +
+				"aaaaa" +
+				"<div>DIVER</div>" +
+				"<div>" +
+				"  <div>innere</div>" +
+				"</div>" +
+				"</body></html>";
 		System.out.println(html);
 		System.out.println(toDecomeHtml(html));
 		System.out.println();

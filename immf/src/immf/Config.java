@@ -124,6 +124,9 @@ public class Config {
 	private static final String DefaultMailEncode = "UTF-8";
 	private String mailEncode = DefaultMailEncode;
 	
+	// 転送メールを multipart/alternative にするかどうか
+	private boolean mailAlternative = false;
+	
 	// メールのhtml部分のContent-Transfer-Encoding
 	private String contentTransferEncoding = null;
 	
@@ -191,6 +194,7 @@ public class Config {
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
 		this.mailEncode = getString("mail.encode", this.mailEncode);
 		this.contentTransferEncoding = getString("mail.contenttransferencoding", null);
+		this.mailAlternative = getBoolean("mail.alternative", this.mailAlternative);
 		this.senderSmtpPort = getInt("sender.smtp.port", this.senderSmtpPort);
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
@@ -415,6 +419,10 @@ public class Config {
 
 	public boolean isSenderMailForcePlainText() {
 		return senderMailForcePlainText;
+	}
+
+	public boolean isMailAlternative() {
+		return mailAlternative;
 	}
 
 	

@@ -101,6 +101,7 @@ public class SenderMail {
 		r = HtmlConvert.toDecomeHtml(r);
 		log.info(r);
 		return r;
+		//return "<body><font size=\"4\"><font color=\"#333333#\">ABCZZZZ</font></font></body>";
 	}
 
 	
