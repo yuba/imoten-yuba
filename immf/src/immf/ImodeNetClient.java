@@ -66,7 +66,8 @@ import org.apache.http.util.EntityUtils;
 public class ImodeNetClient implements Closeable{
 	private static final Log log = LogFactory.getLog(ImodeNetClient.class);
 	private static final String LoginUrl = 		"https://imode.net/dcm/dfw";
-	private static final String JsonUrl = 		"https://imode.net/imail/aclrs/acgi/";
+//	private static final String JsonUrl = 		"https://imode.net/imail/aclrs/acgi/";
+	private static final String JsonUrl = 		"https://imode.net/imail/oexaf/acgi/";
 	private static final String AttachedFileUrl ="https://imode.net/imail/oexaf/acgi/mailfileget";
 	private static final String InlineFileUrl = 	"https://imode.net/imail/oexaf/acgi/mailimgget";
 	private static final String SendMailUrl = 	"https://imode.net/imail/oexaf/acgi/mailsend";
@@ -624,7 +625,7 @@ public class ImodeNetClient implements Closeable{
 	/*
 	 * iモード.net上で登録したアドレス帳情報を読み込む
 	 */
-	private void loadPcAddressBook(AddressBook ab) throws IOException, LoginException{
+	private void loadPcAddressBook(AddressBook ab) throws IOException{
 		log.info("# iモード.netのアドレス帳情報を読み込みます。");
 		HttpPost post = new HttpPost(PcAddrListUrl);
 		JSONObject json = null;
@@ -639,9 +640,7 @@ public class ImodeNetClient implements Closeable{
 			String result = json.getJSONObject("common").getString("result");
 			if(!result.equals("PW1000")){
 				log.debug(json.toString(2));
-				this.clearCookie();
-				this.logined = Boolean.FALSE;
-				throw new LoginException("Bad response "+result);
+				throw new IOException("Bad response "+result);
 			}
 		}finally{
 			post.abort();
@@ -679,7 +678,7 @@ public class ImodeNetClient implements Closeable{
 	/*
 	 * ケータイデータお預かりサービスで登録したアドレス帳情報を読み込む
 	 */
-	private void loadDsAddressBook(AddressBook ab) throws IOException, LoginException{
+	private void loadDsAddressBook(AddressBook ab) throws IOException{
 		log.info("# ケータイデータお預かりサービスで登録したアドレス帳情報を読み込みます。");
 		HttpPost post = new HttpPost(DsAddrListUrl);
 		JSONObject json = null;
@@ -697,9 +696,7 @@ public class ImodeNetClient implements Closeable{
 			String result = json.getJSONObject("common").getString("result");
 			if(!result.equals("PW1000")){
 				log.debug(json.toString(2));
-				this.clearCookie();
-				this.logined = Boolean.FALSE;
-				throw new LoginException("Bad response "+result);
+				throw new IOException("Bad response "+result);
 			}
 		}finally{
 			post.abort();
@@ -805,7 +802,7 @@ public class ImodeNetClient implements Closeable{
 		req.setHeader("Cache-Control", "no-cache");
 		req.setHeader("User-Agent","Mozilla/4.0 (compatible;MSIE 7.0; Windows NT 6.0;)");
 		req.setHeader("x-pw-service","PCMAIL/1.0");
-		req.setHeader("Referer","https://imode.net/imail/aclrs/ahtm/index_f.html#");
+		req.setHeader("Referer","https://imode.net/imail/oexaf/ahtm/index_f.html");
 	}
 	
 	public void setSoTimeout(int millisec){
