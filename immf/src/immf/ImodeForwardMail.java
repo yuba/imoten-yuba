@@ -37,8 +37,6 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
 
-import net.htmlparser.jericho.Source;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -140,7 +138,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		String plain = this.imm.getBody();
 		if(this.imm.isDecomeFlg()){
 			// HTMLメール
-			plain = html2text(plain);
+			plain = Util.html2text(plain);
 		}else{
 			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
 		}
@@ -151,12 +149,12 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		// htmlメール
 		html = cidAddedBody(html,inlineFiles);
 		if(conf.isHeaderToBody()){
-			html = html.replaceAll("(<body[^>]*>)", "$1"+this.getHeaderInfo(true));
+			html = html.replaceAll("(<body[^>]*>)", "$1"+Util.getHeaderInfo(this.imm, true, this.conf.isSubjectEmojiReplace()));
 		}
 
 		// テキスト
 		if(conf.isHeaderToBody()){
-			plainText = this.getHeaderInfo(false)+plainText;
+			plainText = Util.getHeaderInfo(this.imm, false, this.conf.isSubjectEmojiReplace())+plainText;
 		}
 
 		html = "<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset="+this.charset+"\"></head>"+html+"</html>";
@@ -174,7 +172,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		String plain = this.imm.getBody();
 		if(this.imm.isDecomeFlg()){
 			// HTMLメール
-			plain = html2text(EmojiUtil.replaceToLabel(plain));
+			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
 			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
 			plain = EmojiUtil.replaceToLabel(plain);
@@ -213,7 +211,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		if(this.imm.isDecomeFlg()){
 			// HTMLメール
 			html = EmojiUtil.replaceToWebLink(html);
-			plain = html2text(EmojiUtil.replaceToLabel(plain));
+			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
 			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
 			html = EmojiUtil.replaceToWebLink(html);
@@ -227,18 +225,13 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		if(this.imm.isDecomeFlg()){
 			// HTMLメール
 			html = EmojiUtil.replaceToLabel(html);
-			plain = html2text(EmojiUtil.replaceToLabel(plain));
+			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
 			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
 			html = EmojiUtil.replaceToLabel(html);
 			plain = EmojiUtil.replaceToLabel(plain);
 		}
 		this.setBodyDontReplace(plain,html,this.imm.getInlineFileList());
-	}
-	
-	private static String html2text(String html){
-		Source src = new Source(html);
-		return src.getRenderer().toString();
 	}
 	
 	/*
@@ -273,49 +266,6 @@ public class ImodeForwardMail extends MyHtmlEmail {
 
 	}
 	
-	
-	/*
-	 * From,CCなどの情報をBodyの先頭に付加する場合の文字列
-	 */
-	private String getHeaderInfo(boolean isHtml){
-		StringBuilder buf = new StringBuilder();
-		StringBuilder header = new StringBuilder();
-
-		header.append(" From:    ").append(this.imm.getFromAddr().toUnicodeString()).append("\r\n");
-		header.append(" To:      ").append(this.imm.getMyMailAddr()).append("\r\n");
-		for(InternetAddress addr : imm.getToAddrList()){
-			header.append("          ").append(addr.toUnicodeString()).append("\r\n");
-		}
-		String prefix = " Cc:";
-		for(InternetAddress addr : imm.getCcAddrList()){
-			header.append(prefix+"      ").append(addr.toUnicodeString()).append("\r\n");
-			prefix = "    ";
-		}
-		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd (EEE) HH:mm:ss");
-		header.append(" Date:    ").append(df.format(this.imm.getTimeDate())).append("\r\n");
-		String subject = this.imm.getSubject();
-		if(conf.isSubjectEmojiReplace()){
-			subject = EmojiUtil.replaceToLabel(subject);
-		}
-		header.append(" Subject: ").append(subject).append("\r\n");
-		
-		
-		if(isHtml){
-			buf.append("<pre>");
-		}
-		buf.append("----").append("\r\n");
-		if(isHtml){
-			buf.append(Util.easyEscapeHtml(header.toString()));
-		}else{
-			buf.append(header.toString());
-		}
-		buf.append("----").append("\r\n");
-		if(isHtml){
-			buf.append("</pre>");
-		}
-		buf.append("\r\n");
-		return buf.toString();
-	}
 	
 	@Override
 	public void buildMimeMessage() throws EmailException {

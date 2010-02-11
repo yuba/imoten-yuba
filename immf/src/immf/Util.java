@@ -23,13 +23,17 @@ package immf;
 
 import java.io.Closeable;
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
 
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.HeaderTokenizer;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeUtility;
+
+import net.htmlparser.jericho.Source;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -232,7 +236,53 @@ public class Util {
 		}
 		return new String(result);
 	}
+	
+	public static String html2text(String html){
+		Source src = new Source(html);
+		return src.getRenderer().toString();
+	}
+	/*
+	 * From,CCなどの情報をBodyの先頭に付加する場合の文字列
+	 */
+	public static String getHeaderInfo(ImodeMail imm, boolean isHtml, boolean subjectEmojiReplace){
+		StringBuilder buf = new StringBuilder();
+		StringBuilder header = new StringBuilder();
 
+		header.append(" From:    ").append(imm.getFromAddr().toUnicodeString()).append("\r\n");
+		header.append(" To:      ").append(imm.getMyMailAddr()).append("\r\n");
+		for(InternetAddress addr : imm.getToAddrList()){
+			header.append("          ").append(addr.toUnicodeString()).append("\r\n");
+		}
+		String prefix = " Cc:";
+		for(InternetAddress addr : imm.getCcAddrList()){
+			header.append(prefix+"      ").append(addr.toUnicodeString()).append("\r\n");
+			prefix = "    ";
+		}
+		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd (EEE) HH:mm:ss");
+		header.append(" Date:    ").append(df.format(imm.getTimeDate())).append("\r\n");
+		String subject = imm.getSubject();
+		if(subjectEmojiReplace){
+			subject = EmojiUtil.replaceToLabel(subject);
+		}
+		header.append(" Subject: ").append(subject).append("\r\n");
+		
+		
+		if(isHtml){
+			buf.append("<pre>");
+		}
+		buf.append("----").append("\r\n");
+		if(isHtml){
+			buf.append(Util.easyEscapeHtml(header.toString()));
+		}else{
+			buf.append(header.toString());
+		}
+		buf.append("----").append("\r\n");
+		if(isHtml){
+			buf.append("</pre>");
+		}
+		buf.append("\r\n");
+		return buf.toString();
+	}
 	/** check if contains only ascii characters in text. */
 	public static boolean isAllAscii(String text) {
 		for (int i = 0; i < text.length(); i++) {

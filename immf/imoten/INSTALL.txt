@@ -16,7 +16,7 @@ Imotenは JavaSE6 以上を必要とします。
 
 ■Javaコマンドで直接実行する方法
 　binディレクトリに移動して以下のコマンドを実行します。
-　java -jar ../imoten.jar
+　java -Dfile.encoding=UTF-8 -Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS -cp ../lib/skype.jar -jar ../imoten.jar
 
 
 ★バックグラウンドで動作させる場合

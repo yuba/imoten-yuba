@@ -2,15 +2,14 @@ package immf;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.mail.internet.InternetAddress;
+
+import net.htmlparser.jericho.Source;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import net.htmlparser.jericho.Source;
 
 public class SenderMail {
 	private static final Log log = LogFactory.getLog(SenderMail.class);

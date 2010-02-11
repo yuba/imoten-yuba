@@ -142,6 +142,10 @@ public class Config {
 	private String senderTlsKeyType;
 	private String senderTlsKeyPasswd;
 	
+	// Skyeに転送
+	private String forwardSkypeChat;
+	private String forwardSkypeSms;
+	
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -182,6 +186,8 @@ public class Config {
 		this.forwardTo = splitComma(getString("forward.to", ""));
 		this.forwardCc = splitComma(getString("forward.cc", ""));
 		this.forwardBcc = splitComma(getString("forward.bcc", ""));
+		this.forwardSkypeChat = getString("forward.skype.chat", null);
+		this.forwardSkypeSms = getString("forward.skype.sms", null);
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
@@ -423,6 +429,14 @@ public class Config {
 
 	public boolean isMailAlternative() {
 		return mailAlternative;
+	}
+
+	public String getForwardSkypeChat() {
+		return forwardSkypeChat;
+	}
+
+	public String getForwardSkypeSms() {
+		return forwardSkypeSms;
 	}
 
 	

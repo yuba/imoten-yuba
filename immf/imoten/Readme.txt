@@ -21,9 +21,7 @@ imotenはNTT Docomoの携帯宛てのメールをimode.net(有料サービス)�
 　imode.netの重たいインタフェースを使用せずに、
 　自分の普段使用しているメーラからメールを使用して携帯メールを
 　送信できます。
-　＊) 現在のところ、HTML、添付ファイル、マルチパートのメールは
-　　　対応していません。テキスト形式のメールを送信する必要があります。
-　　　TLSにも対応していません。
+
 
 Windowsサービス、UNIXデーモンへの対応には
 Java Service Wrapper(http://wrapper.tanukisoftware.org/)の

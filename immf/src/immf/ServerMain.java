@@ -35,12 +35,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.9";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.10";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
 	private Config conf;
 	private StatusManager status;
+	private SkypeForwarder skypeForwarder;
 	
 	public ServerMain(File conffile){
 		System.out.println("StartUp ["+Version+"]");
@@ -88,6 +89,10 @@ public class ServerMain {
 		
 		// メール送信
 		new SendMailBridge(conf, this.client);
+		
+		// skype
+		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms());
+		
 		boolean first = true;
 		while(true){
 			Map<Integer,List<String>> mailIdListMap = null;
@@ -239,6 +244,13 @@ public class ServerMain {
 						
 		}catch (Exception e) {
 			log.error("mail["+mailId+"] forward Error.",e);
+			return;
+		}
+		
+		try{
+			this.skypeForwarder.forward(mail);
+		}catch (Exception e) {
+			log.error("mail["+mailId+"] skype forward Error.",e);
 			return;
 		}
 		try{
