@@ -20,7 +20,10 @@
  */
 package immf;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -85,6 +88,7 @@ public class ImodeNetClient implements Closeable{
 	
 	private AddressBook addressBook;
 	private String mailAddrCharset = "ISO-2022-jP";
+	private String csvAddressBook;
 	
 	public ImodeNetClient(String name, String pass){
 		this.name = name;
@@ -620,6 +624,12 @@ public class ImodeNetClient implements Closeable{
 		}catch (Exception e) {
 			log.warn("ケータイデータお預かりサービスのアドレス帳情報が読み込めませんでした。");
 		}
+		try{
+			this.loadCsvAddressBook(ab);
+		}catch (Exception e) {
+			log.warn("CSVのアドレス帳情報が読み込めませんでした。");
+		}
+
 		this.addressBook = ab;
 	}
 	/*
@@ -731,7 +741,62 @@ public class ImodeNetClient implements Closeable{
 			}
 		}
 	}
-	
+	/*
+	 * CSVのアドレス帳情報を読み込む
+	 */
+	private void loadCsvAddressBook(AddressBook ab) throws IOException{
+		if(this.csvAddressBook==null){
+			return;
+		}
+		File csvFile = new File(this.csvAddressBook);
+		if(!csvFile.exists()){
+			log.info("# CSVアドレス帳ファイル("+this.csvAddressBook+")は存在しません。");
+			return;
+		}
+		log.info("# CSVアドレス帳情報を読み込みます。");
+		BufferedReader br = null;
+		FileReader fr = null;
+		try{
+			// デフォルトエンコードで読み込まれる
+			// wrapper.confで-Dfile.encoding=UTF-8を指定しているのでUTF-8になる
+			fr = new FileReader(csvFile);
+			br = new BufferedReader(fr);
+			int id = 0;
+
+			String line = null;
+			while((line = br.readLine()) != null){
+				// フォーマット:
+				// メールアドレス,ディスプレイネーム
+				id++;
+				try{
+					String[] field = line.split(",");
+					if(field.length < 2){
+						continue;
+					}
+					InternetAddress[] addrs = InternetAddress.parse(field[0]);
+					if(addrs.length == 0)
+						continue;
+					ImodeAddress ia = new ImodeAddress();
+					ia.setMailAddress(addrs[0].getAddress());
+					ia.setName(field[1]);
+					ia.setId(String.valueOf(id));
+					ab.addCsvAddr(ia);
+					log.debug("ID:"+ia.getId()+" / Name:"+ia.getName()+" / Address:"+ia.getMailAddress());
+					
+				}catch (Exception e) {
+					log.warn("CSVファイル("+id+"行目)に問題があります["+line+"]");
+				}
+			}
+			br.close();
+		}catch (Exception e){
+			log.warn("loadCsvAddressBook "+this.csvAddressBook+" error.",e);
+			
+		}finally{
+			Util.safeclose(br);
+			Util.safeclose(fr);
+		}
+	}
+
 
 	private static boolean isJson(HttpResponse res){
 		if(res==null){
@@ -815,6 +880,10 @@ public class ImodeNetClient implements Closeable{
 	
 	public void setMailAddrCharset(String str){
 		this.mailAddrCharset = str;
+	}
+	
+	public void setCsvAddressBook(String filename){
+		this.csvAddressBook = filename;
 	}
 	
 	public void clearCookie(){

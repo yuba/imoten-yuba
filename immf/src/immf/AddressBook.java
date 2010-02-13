@@ -15,27 +15,37 @@ public class AddressBook {
 	// メールアドレスからimodeAddressを検索
 	private Map<String, ImodeAddress> pcAddrMap;	// iモード.net 上で登録したアドレス帳
 	private Map<String, ImodeAddress> dsAddrMap;	// ケータイデータお預かりサービスの携帯電話帳
-	
+	private Map<String, ImodeAddress> csvAddrMap;	// CSVの電話帳
+
 	private Date created;
 	
 	public AddressBook(){
 		this.created = new Date();
 		this.pcAddrMap = new HashMap<String, ImodeAddress>();
 		this.dsAddrMap = new HashMap<String, ImodeAddress>();
+		this.csvAddrMap = new HashMap<String, ImodeAddress>();
+
 	}
 	
 	/*
 	 * メールアドレスから名前の入ったImodeAddressを取得
-	 * iモード.net 上で登録したアドレス帳が、
-	 * ケータイデータお預かりサービスの携帯電話帳より優先される
+	 * 以下の順で優先される
+	 * 
+	 * 1. CSVファイル
+	 * 2. iモード.netの簡易アドレス帳
+	 * 3. ケータイデータお預かりサービスの携帯電話帳
 	 */
 	public ImodeAddress getImodeAddress(String mailAddress){
-		ImodeAddress r = this.pcAddrMap.get(mailAddress);
+		ImodeAddress r = this.csvAddrMap.get(mailAddress);
 		if(r!=null){
 			return r;
-		}else{
-			return this.dsAddrMap.get(mailAddress);
 		}
+		r = this.pcAddrMap.get(mailAddress);
+		if(r!=null){
+			return r;
+		}
+		return this.dsAddrMap.get(mailAddress);
+
 	}
 	
 	public InternetAddress getInternetAddress(String mailAddress, String charset){
@@ -63,6 +73,11 @@ public class AddressBook {
 	public void addDsAddr(ImodeAddress ia){
 		this.dsAddrMap.put(ia.getMailAddress(), ia);
 	}
+	
+	public void addCsvAddr(ImodeAddress ia){
+		this.csvAddrMap.put(ia.getMailAddress(), ia);
+	}
+
 	public Date getCreated(){
 		return created;
 	}

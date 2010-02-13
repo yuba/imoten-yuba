@@ -35,6 +35,8 @@ import org.apache.commons.logging.LogFactory;
 public class Config {
 	public static final String ConfFile = "../imoten.ini";
 	public static final String StatusFile = "../status.ini";
+	public static final String CsvAddressFile = "../address.csv";
+	
 	private static final Log log = LogFactory.getLog(Config.class);
 	private Properties prop = new Properties();
 	
@@ -110,6 +112,9 @@ public class Config {
 	
 	// 最後のメールID,cookie(設定による)の情報を保存するファイル
 	private String statusFile = StatusFile;
+	
+	// CSV形式のアドレス帳ファイル
+	private String csvAddressFile = CsvAddressFile;
 	
 	// httpクライアントの接続タイムアウト
 	private int httpConnectTimeoutSec = 10;
@@ -195,6 +200,7 @@ public class Config {
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
 		this.saveCookie = getBoolean("save.cookie", this.saveCookie);
 		this.statusFile = getString("save.filename", this.statusFile);
+		this.csvAddressFile = getString("addressbook.csv", this.csvAddressFile);
 		this.httpConnectTimeoutSec = getInt("http.conntimeout", this.httpConnectTimeoutSec);
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
@@ -437,6 +443,10 @@ public class Config {
 
 	public String getForwardSkypeSms() {
 		return forwardSkypeSms;
+	}
+
+	public String getCsvAddressFile() {
+		return csvAddressFile;
 	}
 
 	
