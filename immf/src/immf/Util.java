@@ -268,7 +268,7 @@ public class Util {
 		
 		
 		if(isHtml){
-			buf.append("<pre>");
+			buf.append("<pre style=\"white-space:pre-wrap;word-wrap:break-word;\">");
 		}
 		buf.append("----").append("\r\n");
 		if(isHtml){

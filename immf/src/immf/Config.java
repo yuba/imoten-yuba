@@ -141,6 +141,7 @@ public class Config {
 	private String senderPasswd = "<87a!Oa#3gpoYz0'->L";
 	private String senderAlwaysBcc = null;
 	private boolean senderMailForcePlainText = true;
+	private String senderCharCovertFile = null;
 	
 	// 送信用TLS
 	private String senderTlsKeystore;
@@ -211,6 +212,7 @@ public class Config {
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
 		this.senderAlwaysBcc = getString("sender.alwaysbcc", this.senderAlwaysBcc);
+		this.senderCharCovertFile = getString("sender.charconvfile", null);
 		// imode.netでhtmlをチェックしてるようで、PCで作成したhtmlメールはエラーになるのでテキストのみ許可
 		this.senderMailForcePlainText = getBoolean("sender.forceplaintext", this.senderMailForcePlainText);
 		this.senderTlsKeystore = getString("sender.smtp.tls.keystore", null);
@@ -447,6 +449,10 @@ public class Config {
 
 	public String getCsvAddressFile() {
 		return csvAddressFile;
+	}
+
+	public String getSenderCharCovertFile() {
+		return senderCharCovertFile;
 	}
 
 	

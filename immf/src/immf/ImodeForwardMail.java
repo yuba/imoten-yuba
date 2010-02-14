@@ -140,7 +140,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			// HTMLメール
 			plain = Util.html2text(plain);
 		}else{
-			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
 		}
 		this.setBodyDontReplace(plain, html,this.imm.getInlineFileList());
 	}
@@ -174,7 +174,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			// HTMLメール
 			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
-			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
 			plain = EmojiUtil.replaceToLabel(plain);
 		}
 		
@@ -213,7 +213,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			html = EmojiUtil.replaceToWebLink(html);
 			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
-			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
 			html = EmojiUtil.replaceToWebLink(html);
 			plain = EmojiUtil.replaceToLabel(plain);
 		}
@@ -227,7 +227,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			html = EmojiUtil.replaceToLabel(html);
 			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
-			html = "<body><pre>"+Util.easyEscapeHtml(html)+"</pre></body>";
+			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
 			html = EmojiUtil.replaceToLabel(html);
 			plain = EmojiUtil.replaceToLabel(plain);
 		}

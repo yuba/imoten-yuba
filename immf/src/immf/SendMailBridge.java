@@ -22,6 +22,7 @@
 package immf;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private boolean forcePlainText;
 	
 	private MyWiser wiser;
+	private CharacterConverter charConv;
 	
 	public SendMailBridge(Config conf, ImodeNetClient client){
 		if(conf.getSenderSmtpPort()<=0){
@@ -64,6 +66,14 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.passwd = conf.getSenderPasswd();
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
 		this.forcePlainText = conf.isSenderMailForcePlainText();
+		this.charConv = new CharacterConverter();
+		if(conf.getSenderCharCovertFile()!=null){
+			try{
+				this.charConv.load(new File(conf.getSenderCharCovertFile()));
+			}catch (Exception e) {
+				log.error("文字変換表("+conf.getSenderCharCovertFile()+")が読み込めませんでした。",e);
+			}
+		}
 		
 		log.info("SMTPサーバを起動します。");
 		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this,
@@ -111,8 +121,11 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				log.warn("送信先が多すぎます。iモード.netの送信先は最大5です。");
 				throw new IOException("Too Much Recipients");
 			}
-			log.info("subject  "+mime.getSubject());
-			senderMail.setSubject(mime.getSubject());
+			String subject = mime.getSubject();
+			log.info("subject  "+subject);
+			subject = this.charConv.convert(subject);
+			log.debug(" conv "+subject);
+			senderMail.setSubject(subject);
 			
 			String contentType = mime.getContentType().toLowerCase();
 			log.info("ContentType:"+contentType);
@@ -123,9 +136,13 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				String strContent = (String) content;
 				if(contentType.toLowerCase().startsWith("text/html")){
 					log.info("Single plainText part "+strContent);
+					strContent = this.charConv.convert(strContent);
+					log.debug(" conv "+strContent);
 					senderMail.setHtmlContent(strContent);
 				}else{
 					log.info("Single html part "+strContent);
+					strContent = this.charConv.convert(strContent);
+					log.debug(" conv "+strContent);
 					senderMail.setPlainTextContent(strContent);
 				}
 			}else if(content instanceof Multipart){
@@ -154,7 +171,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	/*
 	 * マルチパートを処理
 	 */
-	private static void parseMultipart(SenderMail sendMail, Multipart mp, String subtype) throws IOException{
+	private void parseMultipart(SenderMail sendMail, Multipart mp, String subtype) throws IOException{
 		String contentType = mp.getContentType();
 		log.info("Multipart ContentType:"+contentType);
 
@@ -183,7 +200,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	/*
 	 * 各パートの処理
 	 */
-	private static void parseBodypart(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
+	private void parseBodypart(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
 		try{
 			String contentType = bp.getContentType().toLowerCase();
 			log.info("Bodypart ContentType:"+contentType);
@@ -195,16 +212,22 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			}else if(sendMail.getPlainTextContent()==null
 					&& contentType.startsWith("text/plain")){
 				// 最初に存在するplain/textは本文
-				log.info("set Content text ["+(String)bp.getContent()+"]");
-				sendMail.setPlainTextContent((String)bp.getContent());
+				String content = (String)bp.getContent();
+				log.info("set Content text ["+content+"]");
+				content = this.charConv.convert(content);
+				log.debug(" conv "+content);
+				sendMail.setPlainTextContent(content);
 				
 			}else if(sendMail.getHtmlContent()==null 
 					&& contentType.startsWith("text/html") 
 					&& (subtype.equalsIgnoreCase("alternative")
 							|| subtype.equalsIgnoreCase("related"))){
-				log.info("set Content html ["+(String)bp.getContent()+"]");
+				String content = (String)bp.getContent();
+				log.info("set Content html ["+content+"]");
+				content = this.charConv.convert(content);
+				log.debug(" conv "+content);
 				// 本文 htmlはテキスト形式に変換
-				sendMail.setHtmlContent((String)bp.getContent());
+				sendMail.setHtmlContent(content);
 
 			}else{
 				log.debug("attach");
