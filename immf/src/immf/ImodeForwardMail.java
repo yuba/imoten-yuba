@@ -195,7 +195,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 						cid = this.embed(emojiUrl, "emoji"+((int)c));
 						emojiToCid.put(emojiUrl, cid);
 					}
-					buf.append("<img src=\"cid:"+cid+"\">");
+					buf.append("<img src=\"cid:"+cid+"\" style=\"margin: 0pt 0.2ex; vertical-align: middle;\">");
 				}
 			}catch (Exception e) {
 				log.warn("Emoji to inline image Error.",e);
