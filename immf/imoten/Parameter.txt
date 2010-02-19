@@ -230,6 +230,15 @@ sender.charconvfile
 　置換先が0～9,a～z,A～Zだけで構成されている場合はUnicode、そうでない場合は文字列として
 　処理されます。「#」で始まる行はコメント行となります。
 
+　convディレクトリにサンプルファイルがあります。[../conv/～]のように設定して使用することができます。
+　・SbToDocomo.csv
+　　wkazuwさんが作成してくれたソフトバンクの絵文字をドコモの絵文字に変換してくれます。
+　・gen(Au/Sb)2docomo.csv
+　　「http://emoji4unicode.googlecode.com/svn/trunk/data/emoji4unicode.xml」から
+　　スクリプトで生成した変換表で、Auもしくはソフトバンクの絵文字を、ドコモの絵文字もしくは
+　　その絵文字があらわす文字列に変更してくれます。
+
+
 sender.forceplaintext
 　imode.net経由でメールを送信する場合に、SMTPで受信したメールがHTMLメールだった
 　場合の動作を設定します。trueの場合、multipart/alternativeの場合はtext/plainを
