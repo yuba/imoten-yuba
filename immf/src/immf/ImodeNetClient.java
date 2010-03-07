@@ -23,6 +23,7 @@ package immf;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -89,6 +90,7 @@ public class ImodeNetClient implements Closeable{
 	private AddressBook addressBook;
 	private String mailAddrCharset = "ISO-2022-jP";
 	private String csvAddressBook;
+	private String vcAddressBook;
 	
 	public ImodeNetClient(String name, String pass){
 		this.name = name;
@@ -629,6 +631,11 @@ public class ImodeNetClient implements Closeable{
 		}catch (Exception e) {
 			log.warn("CSVのアドレス帳情報が読み込めませんでした。");
 		}
+		try{
+			this.loadVcAddressBook(ab);
+		}catch (Exception e) {
+			log.warn("vCardのアドレス帳情報が読み込めませんでした。");
+		}
 
 		this.addressBook = ab;
 	}
@@ -797,6 +804,116 @@ public class ImodeNetClient implements Closeable{
 		}
 	}
 
+	/*
+	 * vCardのアドレス帳情報を読み込む
+	 */
+	private void loadVcAddressBook(AddressBook ab) throws IOException{
+		if(this.vcAddressBook==null){
+			return;
+		}
+		File vcFile = new File(this.vcAddressBook);
+		if(!vcFile.exists()){
+			log.info("# vCardアドレス帳ファイル("+this.vcAddressBook+")は存在しません。");
+			return;
+		}
+		log.info("# vCardアドレス帳情報を読み込みます。");
+		FileInputStream fis = null;
+		byte[] vcData = null;
+		try{
+			fis = new FileInputStream(vcFile);
+			vcData = new byte[(int)vcFile.length()];
+			fis.read(vcData);
+		}catch (Exception e){
+			log.warn("loadVcAddressBook "+this.vcAddressBook+" error.",e);
+		}finally{
+			Util.safeclose(fis);
+		}
+
+		int id = 0;
+		boolean vcBegin = false;
+		String vcName = null;
+		String vcEmail = null;
+
+		int lineStart = 0;
+		int lineLength = 0;
+
+		for(int i=lineStart; i<=vcFile.length(); i++){
+			try{
+				if(i == vcFile.length() || vcData[i] == '\n'){
+					String line = new String(vcData, lineStart, lineLength);
+					int curLineStart = lineStart;
+					int curLineLength = lineLength;
+
+					lineStart = i+1;
+					lineLength = 0;
+
+					String field[] = line.split(":");
+					if(field[0].equalsIgnoreCase("BEGIN")){
+						vcBegin = true;
+						vcName = null;
+						vcEmail = null;
+						id++;
+					}
+					if(vcBegin == true && field[0].equalsIgnoreCase("END")){
+						vcBegin = false;
+
+						if (vcName == null || vcEmail == null)
+							continue;
+
+						String vcEmails[] = vcEmail.split(";");
+						for(int j=0; j<vcEmails.length; j++){
+							InternetAddress[] addrs = InternetAddress.parse(vcEmails[j]);
+							if(addrs.length == 0)
+								continue;
+							ImodeAddress ia = new ImodeAddress();
+							ia.setMailAddress(addrs[0].getAddress());
+							ia.setName(vcName);
+							ia.setId(String.valueOf(id+"-"+(j+1)));
+							ab.addVcAddr(ia);
+							log.debug("ID:"+ia.getId()+" / Name:"+ia.getName()+" / Address:"+ia.getMailAddress());
+						}
+					}
+
+					if(vcBegin != true || field.length < 2)
+						continue;
+
+					String label[] = field[0].split(";");
+					String value[] = field[1].split(";");
+					// 姓名
+					if(label[0].equalsIgnoreCase("FN")){
+						vcName = field[1].replace(";"," ").trim();
+						if(label.length < 2)
+							continue;
+						String option[] = label[1].split("=");
+						if(option.length < 1 || !option[0].equalsIgnoreCase("CHARSET"))
+							continue;
+						int valueStart = curLineStart;
+						for(int pos=curLineStart; pos<curLineStart+curLineLength; pos++){
+							if(vcData[pos] == ':'){
+								valueStart = pos+1;
+								break;
+							}
+						}
+						vcName = new String(vcData, valueStart, curLineLength-(valueStart-curLineStart), option[1]).replace(";"," ").trim();
+					
+					}
+					// EMAIL
+					if(label[0].equalsIgnoreCase("EMAIL")){
+						if(vcEmail == null)
+							vcEmail = value[0];
+						else
+							vcEmail = vcEmail + ';' + value[0];
+					}
+
+				}else if(vcData[i] != '\r'){
+					lineLength++;
+				}
+			}catch (Exception e) {
+				log.warn("vCardファイル("+id+"件目)に問題があります");
+			}
+		}
+	}
+
 
 	private static boolean isJson(HttpResponse res){
 		if(res==null){
@@ -884,6 +1001,10 @@ public class ImodeNetClient implements Closeable{
 	
 	public void setCsvAddressBook(String filename){
 		this.csvAddressBook = filename;
+	}
+	
+	public void setVcAddressBook(String filename){
+		this.vcAddressBook = filename;
 	}
 	
 	public void clearCookie(){

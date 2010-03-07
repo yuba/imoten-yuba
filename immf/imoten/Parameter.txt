@@ -162,6 +162,15 @@ addressbook.csv
 　　　　　　　　　　:
 　　メールアドレスN,ディスプレイネームN
 
+addressbook.vcard
+　vCard形式のアドレス帳ファイル名を指定します。
+　アドレス帳にメールアドレスが登録されていると、
+　iモード.net->imoten->[smtp.server]で転送されるときに、
+　送信元、送信先のメールアドレスにディスプレイネームを付加します。
+　　"ディスプレイネーム"<myname@example.com>
+　相対パスを指定した場合、binディレクトリからの相対パスになります。
+　デフォルト[../address.vcf]
+
 http.conntimeout
 　httpでの接続タイムアウト時間(秒)を指定します。
 　デフォルト[10]。

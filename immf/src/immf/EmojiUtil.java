@@ -336,7 +336,7 @@ public class EmojiUtil {
 			if(e==null){
 				buf.append(UnknownReplace);
 			}else{
-				buf.append("<img src=\""+URLPrefix+e.getgoogleImage()+"\"　style=\"margin: 0pt 0.2ex; vertical-align: middle;\">");
+				buf.append("<img src=\""+URLPrefix+e.getgoogleImage()+"\" style=\"margin: 0pt 0.2ex; vertical-align: middle;\">");
 			}
 		}
 		return buf.toString();

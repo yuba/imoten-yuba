@@ -35,7 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.13";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.14";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 	
 	private ImodeNetClient client;
@@ -77,6 +77,7 @@ public class ServerMain {
 		this.client.setSoTimeout(this.conf.getHttpSoTimeoutSec()*1000);
 		this.client.setMailAddrCharset(this.conf.getMailEncode());
 		this.client.setCsvAddressBook(this.conf.getCsvAddressFile());
+		this.client.setVcAddressBook(this.conf.getVcAddressFile());
 		
 		try{
 			// 前回のcookie

@@ -36,6 +36,7 @@ public class Config {
 	public static final String ConfFile = "../imoten.ini";
 	public static final String StatusFile = "../status.ini";
 	public static final String CsvAddressFile = "../address.csv";
+	public static final String VcAddressFile = "../address.vcf";
 	
 	private static final Log log = LogFactory.getLog(Config.class);
 	private Properties prop = new Properties();
@@ -115,6 +116,9 @@ public class Config {
 	
 	// CSV形式のアドレス帳ファイル
 	private String csvAddressFile = CsvAddressFile;
+	
+	// vCard形式のアドレス帳ファイル
+	private String vcAddressFile = VcAddressFile;
 	
 	// httpクライアントの接続タイムアウト
 	private int httpConnectTimeoutSec = 10;
@@ -202,6 +206,7 @@ public class Config {
 		this.saveCookie = getBoolean("save.cookie", this.saveCookie);
 		this.statusFile = getString("save.filename", this.statusFile);
 		this.csvAddressFile = getString("addressbook.csv", this.csvAddressFile);
+		this.vcAddressFile = getString("addressbook.vcard", this.vcAddressFile);
 		this.httpConnectTimeoutSec = getInt("http.conntimeout", this.httpConnectTimeoutSec);
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
@@ -449,6 +454,10 @@ public class Config {
 
 	public String getCsvAddressFile() {
 		return csvAddressFile;
+	}
+
+	public String getVcAddressFile() {
+		return vcAddressFile;
 	}
 
 	public String getSenderCharCovertFile() {
