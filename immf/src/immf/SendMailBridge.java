@@ -184,7 +184,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			}
 		}catch (Exception e) {
 			log.error("parse multipart error.",e);
-			throw new IOException("MimeMultiPart error."+e.getMessage(),e);
+			//throw new IOException("MimeMultiPart error."+e.getMessage(),e);
 		}
 	}
 	

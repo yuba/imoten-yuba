@@ -231,6 +231,10 @@ public class ImodeNetClient implements Closeable{
 				log.debug("FolderId "+folderId);
 				@SuppressWarnings("unchecked")
 				Collection<String> mailIdlist = (Collection<String>)JSONArray.toCollection(json.getJSONArray("mailIdList"),String.class);
+				if(mailIdlist.isEmpty()){
+					// 削除済みフォルダはスキップ(folderId=0でmailIdが空)
+					continue;
+				}
 				List<String> list = new ArrayList<String>(mailIdlist);
 				Collections.sort(list);
 				Collections.reverse(list);
