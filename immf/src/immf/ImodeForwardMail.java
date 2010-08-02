@@ -48,6 +48,8 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	private static final Log log = LogFactory.getLog(ImodeForwardMail.class);
 	private ImodeMail imm;
 	private Config conf;
+	private static CharacterConverter subjectCharConv = null;
+	private static CharacterConverter goomojiSubjectCharConv = null;
 
 	public ImodeForwardMail(ImodeMail imm, Config conf) throws EmailException{
 		this.imm = imm;
@@ -310,11 +312,20 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			if(conf.isSubjectEmojiReplace()){
 				subject = EmojiUtil.replaceToLabel(subject);
 			}
-			msg.setSubject(MimeUtility.encodeText(subject,this.charset,"B"));			
+
+			if(ImodeForwardMail.goomojiSubjectCharConv != null){
+				String goomojiSubject = ImodeForwardMail.goomojiSubjectCharConv.convert(subject);
+				msg.setHeader("X-Goomoji-Source", "docomo_ne_jp");
+				msg.setHeader("X-Goomoji-Subject", Util.encodeGoomojiSubject(goomojiSubject));
+			}
 			
+			subject = ImodeForwardMail.subjectCharConv.convert(subject);
+			msg.setSubject(MimeUtility.encodeText(subject,this.charset,"B"));			
+	
 			if(this.conf.getContentTransferEncoding()!=null){
 				msg.setHeader("Content-Transfer-Encoding", this.conf.getContentTransferEncoding());
 			}
+
 		}catch (Exception e) {
 			log.warn(e);
 		}
@@ -373,5 +384,11 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		return super.setSubject(Util.replaceUnicodeMapping(subject));
 	}
 	
-	
+	public static void setSubjectCharConv(CharacterConverter subjectCharConv) {
+		ImodeForwardMail.subjectCharConv = subjectCharConv;
+	}
+
+	public static void setGoomojiSubjectCharConv(CharacterConverter goomojiSubjectCharConv) {
+		ImodeForwardMail.goomojiSubjectCharConv = goomojiSubjectCharConv;
+	}
 }

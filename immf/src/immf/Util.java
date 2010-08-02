@@ -292,4 +292,41 @@ public class Util {
 		}
 		return true;
 	}
+	
+	/* MimeUtility.encodeTextはサロゲートペアの間で分割することがあるので、自前のencoderを用意 */
+	public static String encodeGoomojiSubject(String subject) throws UnsupportedEncodingException {
+		final int maxlen = 75 - ("=?UTF-8?B?".length() + "?=".length());
+		StringBuilder sb = new StringBuilder();
+		
+		int mark = 0;
+		int utf8len = "X-Goomoji-Subject: ".length();
+		for (int i = 0; i < subject.length(); ) {
+			int cp = subject.codePointAt(i);
+			int len;
+			if (cp < 0x7f)
+				len = 1;
+			else if (cp <= 0x7ff)
+				len = 2;
+			else if (cp <= 0xffff)
+				len = 3;
+			else
+				len = 4;
+			
+			if (4 * ((utf8len + len - 1) / 3 + 1) >= maxlen) {
+				if (mark > 0)
+					sb.append("\r\n ");
+				sb.append(MimeUtility.encodeWord(subject.substring(mark, i), "UTF-8", "B"));
+				mark = i;
+				utf8len = 0;
+			}
+				
+			utf8len += len;
+			i += Character.charCount(cp);
+		}
+		if (mark > 0)
+			sb.append("\r\n ");
+		sb.append(MimeUtility.encodeWord(subject.substring(mark), "UTF-8", "B"));
+		
+		return sb.toString();
+	}
 }

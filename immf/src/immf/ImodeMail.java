@@ -63,7 +63,7 @@ public class ImodeMail {
 		for (InternetAddress to : this.toAddrList) {
 			buf.appendln("To           "+to.toUnicodeString());
 		}
-		for (InternetAddress cc : this.toAddrList) {
+		for (InternetAddress cc : this.ccAddrList) {
 			buf.appendln("Cc           "+cc.toUnicodeString());
 		}
 		for(AttachedFile f : this.attachFileList){

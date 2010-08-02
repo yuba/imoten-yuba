@@ -74,6 +74,23 @@ forward.subject.prefix
 　転送時に題名の先頭に追加する文字列を指定します。
 　デフォルト空文字列。
 
+forward.subject.charconvfile
+  転送時に題名の特定の文字を置き換えるための対応表のCSVファイルを指定します。
+  絵文字を置き換えるのが主な目的ですが、絵文字以外の文字も置き換え可能です。
+  ソフトバンクiPhoneに転送する場合は ../conv/genDocomo2sb.csv を指定します。  
+
+forward.subject.addgoomoji
+  [true] 転送時にGmail用のX-Goomoji-Subjectヘッダを付与します。
+  trueに設定すると、Gmailに転送した場合でも、絵文字を含んだ題名を表示できます。
+  forward.subject.googlecharconvfile も指定する必要がります。
+  [false] X-Goomoji-Subjectヘッダを付与しません。
+  デフォルト false
+
+forward.subject.googlecharconvfile
+  forward.subject.addgoomoji=trueの場合に、DoCoMoの絵文字からGmailの
+  絵文字に変換するCSVファイルを指定します。通常は ../conv/genDocomo2google.csv
+  を指定します。
+  
 forward.to
 　転送時のTOのアドレスです。複数ある場合[,]区切りで指定します。
 　自分のiモードメールアドレスを設定してループしないように気をつけてください。
@@ -247,7 +264,24 @@ sender.charconvfile
 　　スクリプトで生成した変換表で、Auもしくはソフトバンクの絵文字を、ドコモの絵文字もしくは
 　　その絵文字があらわす文字列に変更してくれます。
 
-
+sender.convertsoftbanksjis
+  [true] imode.net経由でメールを送信する場合に、ソフトバンクiPhoneのShift_JISからUnicodeへの
+  変換を補正します。
+  [false] JavaのShift_JIS -> Unicode 変換をそのまま使います。
+  デフォルト false
+  
+sender.usegoomojisubject
+  [true] imode.net経由でメールを送信する場合に、imotenがSMTPで受け取ったメールに
+  X-Goomoji-Subjectヘッダが付いているときには、それをメールの題名としてします。
+  絵文字を含んだ題名付きのメールをGmailで返信した場合でも、もとの題名を正しく送信することができます。
+  [false] X-Goomoji-Subjectヘッダが付いていても無視します。
+  デフォルト false
+  
+sender.googlecharconvfile
+  imode.net経由でメールを送信する場合に、題名のGoogle絵文字をDocomo絵文字に変換する
+  対応表のCSVファイルを指定します。通常は ../conv/genGoogle2docomo.csv を指定します。
+  本文の絵文字の変換には対応していません。
+  
 sender.forceplaintext
 　imode.net経由でメールを送信する場合に、SMTPで受信したメールがHTMLメールだった
 　場合の動作を設定します。trueの場合、multipart/alternativeの場合はtext/plainを
@@ -269,6 +303,17 @@ sender.smtp.tls.keytype
 
 sender.smtp.tls.keypasswd
 　[sender.smtp.tls.keystore]のパスワードを指定します。
+
+sender.duplicationchecktime
+  imode.net経由でメールを送信する場合に、同じMessage-IDをもつメールが複数送られてくるかを確認する
+  期間を指定します。単位は秒です。この期間に同じMessage-IDをもつメールが複数送られてきた場合には、
+  ひとつのメールにまとめてimode.netに渡します。これは、GmailのSMTPサーバにimotenを指定した場合に
+  発生する問題への対応です。Gmailでは、複数宛先のメールを送信する際には、宛先のドメインごとにSMTP
+  リクエストを分割してしまいます。imotenではメールヘッダーのTo/CCをそのままimode.netへ渡してしまう
+  ため、SMTPリクエストが分割されてしまうと、例えば宛先が4人のメールを誤って４回送信してしまうことが
+  あります。その場合、受け取り人は同一内容のメールを４回受け取ります。このパラメータを3秒程度に設定すれば、
+  この問題を回避することができます。
+  デフォルト 0
 
 
 ■サンプル

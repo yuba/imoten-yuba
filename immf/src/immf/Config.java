@@ -98,6 +98,13 @@ public class Config {
 	// trueにするとiモードメールのFrom,To,CCなどの情報をBodyの先頭に付加します
 	private boolean headerToBody = true;
 	
+	// 転送メールの題名の文字変換ファイル
+	private String forwardSubjectCharConvertFile = null;
+
+	// X-Goomoji-Subject関連
+	private boolean forwardAddGoomojiSubject = false;
+	private String forwardGoogleCharConvertFile = null;
+	
 	// 定期的に新着をチェックする場合のチェック間隔(秒)
 	private int checkIntervalSec = 60;
 	
@@ -146,6 +153,10 @@ public class Config {
 	private String senderAlwaysBcc = null;
 	private boolean senderMailForcePlainText = true;
 	private String senderCharCovertFile = null;
+	private boolean senderUseGoomojiSubject = false;
+	private String senderGoogleCharConvertFile = null;
+	private boolean senderConvertSoftbankSjis = false;
+	private int senderDuplicationCheckTimeSec = 0;	
 	
 	// 送信用TLS
 	private String senderTlsKeystore;
@@ -201,6 +212,9 @@ public class Config {
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
+		this.forwardSubjectCharConvertFile = getString("forward.subject.charconvfile", this.forwardSubjectCharConvertFile);
+		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
+		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
 		this.saveCookie = getBoolean("save.cookie", this.saveCookie);
@@ -223,7 +237,10 @@ public class Config {
 		this.senderTlsKeystore = getString("sender.smtp.tls.keystore", null);
 		this.senderTlsKeyType = getString("sender.smtp.tls.keytype", "JKS");
 		this.senderTlsKeyPasswd = getString("sender.smtp.tls.keypasswd", null);
-		
+		this.senderGoogleCharConvertFile = getString("sender.googlecharconvfile", null);
+		this.senderUseGoomojiSubject = getBoolean("sender.usegoomojisubject", this.senderUseGoomojiSubject);
+		this.senderConvertSoftbankSjis = getBoolean("sender.convertsoftbanksjis", this.senderConvertSoftbankSjis);
+		this.senderDuplicationCheckTimeSec = getInt("sender.duplicationchecktime", this.senderDuplicationCheckTimeSec);
 		
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
@@ -464,7 +481,33 @@ public class Config {
 		return senderCharCovertFile;
 	}
 
+	public String getSenderGoogleCharConvertFile() {
+		return senderGoogleCharConvertFile;
+	}
+
+	public boolean isSenderUseGoomojiSubject() {
+		return senderUseGoomojiSubject;
+	}
+
+	public boolean isSenderConvertSoftbankSjis() {
+		return senderConvertSoftbankSjis;
+	}
 	
+	public int getSenderDuplicationCheckTimeSec() {
+		return senderDuplicationCheckTimeSec;
+	}
+
+	public String getForwardSubjectCharConvertFile() {
+		return forwardSubjectCharConvertFile;
+	}
+
+	public boolean isForwardAddGoomojiSubject() {
+		return forwardAddGoomojiSubject;
+	}
+
+	public String getForwardGoogleCharConvertFile() {
+		return forwardGoogleCharConvertFile;
+	}
 	
 }
 

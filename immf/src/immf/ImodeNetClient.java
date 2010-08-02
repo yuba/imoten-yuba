@@ -64,6 +64,7 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.util.EntityUtils;
 
@@ -200,7 +201,8 @@ public class ImodeNetClient implements Closeable{
 			post = new HttpPost(JsonUrl+"mailidlist");
 			HttpResponse res = this.requestPost(post,null);
 			if(!isJson(res)){
-				toStringBody(res);
+				if (res != null)
+					toStringBody(res);
 				post.abort();
 				this.clearCookie();
 				this.logined = Boolean.FALSE;
@@ -243,7 +245,8 @@ public class ImodeNetClient implements Closeable{
 
 			return r;
 		}finally{
-			post.abort();
+			if (post != null)
+				post.abort();
 		}
 	}
 	
@@ -492,7 +495,7 @@ public class ImodeNetClient implements Closeable{
 				multi.addPart("folder.mail.addrinfo("+recipient+").type", new StringBody("3",Charset.forName("UTF-8")));
 				recipient++;
 			}
-			if(recipient>=5){
+			if(recipient>5){
 				throw new IOException("Too Much Recipient");
 			}
 			
@@ -531,7 +534,8 @@ public class ImodeNetClient implements Closeable{
 				HttpResponse res = this.executeHttp(post);
 				if(!isJson(res)){
 					log.warn("応答がJSON形式ではありません。");
-					log.debug(toStringBody(res));
+					if (res != null)
+						log.debug(toStringBody(res));
 					throw new IOException("Bad response. no json format.");
 				}
 				JSONObject json = JSONObject.fromObject(toStringBody(res));
@@ -589,7 +593,8 @@ public class ImodeNetClient implements Closeable{
 			}
 			if(!isJson(res)){
 				log.warn("Fileuploadの応答がJSON形式ではありません。");
-				log.debug(toStringBody(res));
+				if (res != null)
+					log.debug(toStringBody(res));
 				throw new IOException("Bad attached file");
 			}
 			JSONObject json = JSONObject.fromObject(toStringBody(res));
@@ -959,7 +964,19 @@ public class ImodeNetClient implements Closeable{
 					return res;
 				}
 			}
-		}catch (Exception e) {e.printStackTrace();}
+		}catch (IllegalStateException e) {
+			e.printStackTrace();
+			log.info("HttpClient Fatal Error. Restarting HttpCient");
+			HttpParams params = this.httpClient.getParams();
+			this.httpClient.getConnectionManager().shutdown();
+			this.httpClient = new DefaultHttpClient();
+			this.httpClient.setParams(params);
+		}catch (IOException e) {
+			e.printStackTrace();
+		}catch (Exception e) {
+			e.printStackTrace();
+			req.abort();
+		}
 		return null;
 	}
 

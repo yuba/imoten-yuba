@@ -59,7 +59,12 @@
 	</target>
 	
 	<target name="compile" depends="mkdir" description ="Compile">
-		<javac srcdir="${src}" destdir="${bin}" />
+		<javac srcdir="${src}" destdir="${bin}" encoding="UTF-8">
+			<classpath>
+				<fileset dir="lib" includes="*.jar" />
+				<pathelement location="imoten/lib/skype.jar" />				
+			</classpath> 
+		</javac>
 	</target>
 	
 	<target name="release" depends="create_run_jar" description="Release">

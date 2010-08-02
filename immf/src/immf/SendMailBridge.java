@@ -26,12 +26,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.internet.AddressException;
+import javax.mail.internet.ContentType;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeUtility;
@@ -56,6 +59,11 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	
 	private MyWiser wiser;
 	private CharacterConverter charConv;
+	private CharacterConverter googleCharConv;
+	private boolean useGoomojiSubject;
+	private int duplicationCheckTimeSec;
+	
+	private Map<String, List<String>>receivedMessageTable;
 	
 	public SendMailBridge(Config conf, ImodeNetClient client){
 		if(conf.getSenderSmtpPort()<=0){
@@ -74,6 +82,22 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				log.error("文字変換表("+conf.getSenderCharCovertFile()+")が読み込めませんでした。",e);
 			}
 		}
+		this.charConv.setConvertSoftbankSjis(conf.isSenderConvertSoftbankSjis());
+		this.googleCharConv = new CharacterConverter();
+		if(conf.getSenderGoogleCharConvertFile()!=null){
+			try{
+				this.googleCharConv.load(new File(conf.getSenderGoogleCharConvertFile()));
+			}catch (Exception e) {
+				log.error("文字変換表("+conf.getSenderGoogleCharConvertFile()+")が読み込めませんでした。",e);
+			}
+		}
+		this.useGoomojiSubject = conf.isSenderUseGoomojiSubject();
+		
+		this.duplicationCheckTimeSec = conf.getSenderDuplicationCheckTimeSec();
+		if (this.duplicationCheckTimeSec > 0)
+			this.receivedMessageTable = new HashMap<String, List<String>>();
+		else
+			this.receivedMessageTable = null;
 		
 		log.info("SMTPサーバを起動します。");
 		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this,
@@ -98,15 +122,35 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("Recipients  "+msg.getEnvelopeReceiver());
 
 			MimeMessage mime = msg.getMimeMessage();
-						
+
+			String messageId = mime.getHeader("Message-ID", null);
+			log.info("messageID  "+messageId);
+			List<String> recipients;
+			if (messageId != null && receivedMessageTable != null) {
+				synchronized (receivedMessageTable) {
+					recipients = receivedMessageTable.get(messageId);
+					if (recipients != null) {
+						recipients.addAll(msg.getEnvelopeReceiver());
+						log.info("Duplicated message ignored");
+						return;
+					}
+					
+					recipients = new ArrayList<String>();
+					receivedMessageTable.put(messageId, recipients);
+					receivedMessageTable.wait(this.duplicationCheckTimeSec*1000);
+					receivedMessageTable.remove(messageId);
+				}
+			} else {
+				recipients = msg.getEnvelopeReceiver();
+			}
+			
 			List<InternetAddress> to = getRecipients(mime, "To");
 			List<InternetAddress> cc = getRecipients(mime, "Cc");		
-			List<InternetAddress> bcc = getBccRecipients(msg.getEnvelopeReceiver(),to,cc);
+			List<InternetAddress> bcc = getBccRecipients(recipients,to,cc);
 			
 			int maxRecipients = MaxRecipient;
 			if(this.alwaysBcc!=null){
 				log.debug("add alwaysbcc "+this.alwaysBcc);
-				maxRecipients--;
 				bcc.add(new InternetAddress(this.alwaysBcc));
 			}
 			log.info("To   "+StringUtils.join(to," / "));
@@ -121,27 +165,41 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				log.warn("送信先が多すぎます。iモード.netの送信先は最大5です。");
 				throw new IOException("Too Much Recipients");
 			}
-			String subject = mime.getSubject();
-			log.info("subject  "+subject);
-			subject = this.charConv.convert(subject);
-			log.debug(" conv "+subject);
-			senderMail.setSubject(subject);
 			
 			String contentType = mime.getContentType().toLowerCase();
 			log.info("ContentType:"+contentType);
+			
+			String charset = (new ContentType(contentType)).getParameter("charset");
+			log.info("charset:"+charset);
+			
+			String mailer = mime.getHeader("X-Mailer", null);
+			log.info("mailer  "+mailer);
+			
+			String subject = mime.getHeader("Subject", null);
+			log.info("subject  "+subject);
+			subject = this.charConv.convertSubject(subject);
+			log.debug(" conv "+subject);
+			
+			if (this.useGoomojiSubject) {
+				String goomojiSubject = mime.getHeader("X-GoomojiSubject", null);
+				if (goomojiSubject != null)
+					subject = this.googleCharConv.convertSubject(goomojiSubject);
+			}
+
+			senderMail.setSubject(subject);			
 			
 			Object content = mime.getContent();
 			if (content instanceof String) {
 				// テキストメール
 				String strContent = (String) content;
 				if(contentType.toLowerCase().startsWith("text/html")){
-					log.info("Single plainText part "+strContent);
-					strContent = this.charConv.convert(strContent);
+					log.info("Single html part "+strContent);
+					strContent = this.charConv.convert(strContent, charset);
 					log.debug(" conv "+strContent);
 					senderMail.setHtmlContent(strContent);
 				}else{
-					log.info("Single html part "+strContent);
-					strContent = this.charConv.convert(strContent);
+					log.info("Single plainText part "+strContent);
+					strContent = this.charConv.convert(strContent, charset);
 					log.debug(" conv "+strContent);
 					senderMail.setPlainTextContent(strContent);
 				}
@@ -214,7 +272,8 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				// 最初に存在するplain/textは本文
 				String content = (String)bp.getContent();
 				log.info("set Content text ["+content+"]");
-				content = this.charConv.convert(content);
+				String charset = (new ContentType(contentType)).getParameter("charset");
+				content = this.charConv.convert(content, charset);
 				log.debug(" conv "+content);
 				sendMail.setPlainTextContent(content);
 				
@@ -224,7 +283,8 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 							|| subtype.equalsIgnoreCase("related"))){
 				String content = (String)bp.getContent();
 				log.info("set Content html ["+content+"]");
-				content = this.charConv.convert(content);
+				String charset = (new ContentType(contentType)).getParameter("charset");
+				content = this.charConv.convert(content, charset);
 				log.debug(" conv "+content);
 				// 本文 htmlはテキスト形式に変換
 				sendMail.setHtmlContent(content);

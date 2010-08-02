@@ -78,7 +78,29 @@ public class ServerMain {
 		this.client.setMailAddrCharset(this.conf.getMailEncode());
 		this.client.setCsvAddressBook(this.conf.getCsvAddressFile());
 		this.client.setVcAddressBook(this.conf.getVcAddressFile());
+
+		CharacterConverter subjectCharConv = new CharacterConverter();
+		if(conf.getForwardSubjectCharConvertFile()!=null){
+			try {
+				subjectCharConv.load(new File(conf.getForwardSubjectCharConvertFile()));
+			} catch (Exception e) {
+				log.error("文字変換表("+conf.getForwardSubjectCharConvertFile()+")が読み込めませんでした。",e);
+			}
+		}
+		ImodeForwardMail.setSubjectCharConv(subjectCharConv);
 		
+		if(conf.isForwardAddGoomojiSubject()){
+			CharacterConverter goomojiSubjectCharConv = new CharacterConverter();
+			if(conf.getForwardGoogleCharConvertFile()!=null) {
+				try {
+					goomojiSubjectCharConv.load(new File(conf.getForwardGoogleCharConvertFile()));
+				} catch (Exception e) {
+					log.error("文字変換表("+conf.getForwardGoogleCharConvertFile()+")が読み込めませんでした。",e);
+				}
+			}
+			ImodeForwardMail.setGoomojiSubjectCharConv(goomojiSubjectCharConv);
+		}
+
 		try{
 			// 前回のcookie
 			if(this.conf.isSaveCookie()){

@@ -170,6 +170,7 @@ public class MyWiser implements MyMessageListener,MessageHandlerFactory {
 		}
 
 		byte[] bytes = out.toByteArray();
+		//log.info("raw message:" + new String(bytes));
 
 		if (log.isDebugEnabled())
 			log.debug("Creating message from data with " + bytes.length + " bytes");

@@ -4,8 +4,13 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.mail.internet.MimeUtility;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -13,10 +18,11 @@ import org.apache.commons.logging.LogFactory;
 
 public class CharacterConverter {
 	private static final Log log = LogFactory.getLog(CharacterConverter.class);
-	private Map<Character,String> replaceMap;
+	private Map<Integer,String> replaceMap;
+	private boolean convertSoftbankSjis = false;
 	
 	public CharacterConverter(){
-		this.replaceMap = new HashMap<Character, String>();
+		this.replaceMap = new HashMap<Integer, String>();			
 	}
 	
 	public void load(File f) throws IOException{
@@ -46,12 +52,18 @@ public class CharacterConverter {
 					if(vals[1].matches("^[0-9a-fA-F]+$")){
 						// 16進数の場合はUnicode
 						int unicode = Integer.parseInt(vals[1], 16);
-						to = Character.toString((char)unicode);
+						to = String.valueOf(Character.toChars(unicode));
+					}else if(vals[1].matches("^[0-9a-fA-F]+[+][0-9a-fA-F]+$")){
+						String pair[] = vals[1].split("[+]");
+						int unicode1 = Integer.parseInt(pair[0], 16);
+						int unicode2 = Integer.parseInt(pair[1], 16);
+						to = String.valueOf(Character.toChars(unicode1));
+						to += String.valueOf(Character.toChars(unicode2));
 					}else{
 						to = vals[1];
 					}
-					log.debug("CharConv From ["+((char)from)+"("+vals[0]+")], to ["+to+"("+vals[1]+")]");
-					this.replaceMap.put(Character.valueOf((char)from), to);
+					log.debug("CharConv From ["+String.valueOf(Character.toChars(from))+"("+vals[0]+")], to ["+to+"("+vals[1]+")]");
+					this.replaceMap.put(from, to);
 				}catch (Exception e) {
 					log.warn("文字変換表 "+f.getName()+"("+lineCount+"行目)に問題があります。");
 				}
@@ -68,17 +80,39 @@ public class CharacterConverter {
 			return str;
 		}
 		StringBuilder buf = new StringBuilder();
-		char[] cs = str.toCharArray();
-		for (char c : cs) {
-			String s = this.replaceMap.get(c);
+		for (int i = 0; i < str.length(); ) {
+			int cp = str.codePointAt(i);
+			String s = this.replaceMap.get(cp);
 			if(s==null){
 				// 置換なし
-				buf.append(c);
+				buf.appendCodePoint(cp);
 			}else{
-				System.err.println(c+"=>"+s);
+				System.err.printf("U+%X=>%s", cp, s);
 				buf.append(s);
 			}
+			i += Character.charCount(cp);
 		}
 		return buf.toString();
+	}
+	
+	public String convert(String str, String charset) {
+		if (this.convertSoftbankSjis && charset != null &&
+			(charset.equalsIgnoreCase("Shift_JIS") || charset.equalsIgnoreCase("CP932")))
+			str = SoftbankSjisConverter.convert(str);
+		return convert(str);
+	}
+
+	private static final Pattern charsetPattern  = Pattern.compile("=\\?(\\w*)\\?[BQ]\\?[^\\s?]*\\?=");
+
+	public String convertSubject(String subject) throws UnsupportedEncodingException {
+		String charset = null;
+		Matcher m = charsetPattern.matcher(subject);
+		if (m.find())
+			charset = m.group(1);
+		return convert(MimeUtility.decodeText(subject), charset);
+	}
+	
+	public void setConvertSoftbankSjis(boolean convertSoftbankSjis) {
+		this.convertSoftbankSjis = convertSoftbankSjis;
 	}
 }
