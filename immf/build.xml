@@ -4,7 +4,7 @@
 	<property name="bin" value="./bin" />
 	<property name="release-dir" value="./imoten" />
 	<property name="onejar" value="${release-dir}/imoten.jar" />
-	<property name="release-name" value="imoten-1.1.15.zip" />
+	<property name="release-name" value="imoten-1.1.16.zip" />
 
 	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
@@ -48,28 +48,28 @@
           	</fileset>
         </jar>
     </target>
-	
+
 	<target name="deleteOld" description="Old Jar delete">
 		<delete file="${onejar}" />
 		<delete file="${release-name}" />
 	</target>
-	
+
 	<target name="mkdir" description="Mkdir ${bin}">
 		<mkdir dir="${bin}"/>
 	</target>
-	
+
 	<target name="compile" depends="mkdir" description ="Compile">
 		<javac srcdir="${src}" destdir="${bin}" encoding="UTF-8">
 			<classpath>
 				<fileset dir="lib" includes="*.jar" />
-				<pathelement location="imoten/lib/skype.jar" />				
-			</classpath> 
+				<pathelement location="imoten/lib/skype.jar" />
+			</classpath>
 		</javac>
 	</target>
-	
+
 	<target name="release" depends="create_run_jar" description="Release">
 		<zip destfile="${release-name}" description="release zip Archive" update="false" >
-			<fileset dir="${release-dir}">				
+			<fileset dir="${release-dir}">
 				<exclude name="**/.svn" />
 			</fileset>
 		</zip>

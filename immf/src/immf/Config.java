@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 
 package immf;
@@ -37,14 +37,14 @@ public class Config {
 	public static final String StatusFile = "../status.ini";
 	public static final String CsvAddressFile = "../address.csv";
 	public static final String VcAddressFile = "../address.vcf";
-	
+
 	private static final Log log = LogFactory.getLog(Config.class);
 	private Properties prop = new Properties();
-	
+
 	// imode.netアカウント
 	private String docomoId;
 	private String docomoPasswd;
-	
+
 	// SMTPサーバ
 	private String smtpServer;
 	private int smtpPort = 25;
@@ -56,17 +56,17 @@ public class Config {
 	// SMTP認証
 	private String smtpUser;
 	private String smtpPasswd;
-	
+
 	// POP before SMTP認証
 	private String popServer;
 	//private int popPort = 110;
 	private String popUser;
 	private String popPasswd;
 	//private boolean popSsl = false;
-	
+
 	// 題名の絵文字を[晴れ]のような文字列に置き換えるかどうか
 	private boolean subjectEmojiReplace=true;
-	
+
 	// DontReplace:   置き換えない
 	// ToString:      [晴れ]のような文字列に置き換え
 	// ToInlineImage: Gmailの画像をダウンロードしてメールに添付(HTMLメールになる)
@@ -75,77 +75,77 @@ public class Config {
 
 	// メールのボディの絵文字置き換え方法
 	private BodyEmojiReplace bodyEmojiReplace=BodyEmojiReplace.ToInlineImage;
-	
+
 	// 転送後の題名の先頭に追加する文字列
 	private String subjectAppendPrefix="";
-	
+
 	// 転送先 TO
 	private List<String> forwardTo = new ArrayList<String>();
-	
+
 	// 転送先 CC
 	private List<String> forwardCc = new ArrayList<String>();
-	
+
 	// 転送先 BCC
 	private List<String> forwardBcc = new ArrayList<String>();
-	
+
 	// 転送メールのreplay-to
 	private List<String>  forwardReplyTo = new ArrayList<String>();
-	
+
 	// 転送時にメールヘッダのFrom,To,CCなどの情報を送信用アカウントで送信するかどうか
 	// falseの場合はiモードメールの情報をFrom,Toヘッダに設定します
 	private boolean rewriteAddress = true;
-	
+
 	// trueにするとiモードメールのFrom,To,CCなどの情報をBodyの先頭に付加します
 	private boolean headerToBody = true;
-	
+
 	// 転送メールの題名の文字変換ファイル
 	private String forwardSubjectCharConvertFile = null;
 
 	// X-Goomoji-Subject関連
 	private boolean forwardAddGoomojiSubject = false;
 	private String forwardGoogleCharConvertFile = null;
-	
+
 	// 定期的に新着をチェックする場合のチェック間隔(秒)
 	private int checkIntervalSec = 60;
-	
+
 	// ログインエラー時のリトライ間隔(秒)
 	// 失敗時はimode.netのメンテナンスの可能性があるので長めで
 	private int loginRetryIntervalSec = 60 * 10;
-	
+
 	// trueの場合はcookieの情報をファイルに保存する。
 	// 再起動など短時間プログラムを停止してもログイン状態が保持されるので
 	// ログインメールが飛ばなくてすむ
 	// 保存していても長時間間隔が空くと再ログインが必要になる
 	private boolean saveCookie = true;
-	
+
 	// 最後のメールID,cookie(設定による)の情報を保存するファイル
 	private String statusFile = StatusFile;
-	
+
 	// CSV形式のアドレス帳ファイル
 	private String csvAddressFile = CsvAddressFile;
-	
+
 	// vCard形式のアドレス帳ファイル
 	private String vcAddressFile = VcAddressFile;
-	
+
 	// httpクライアントの接続タイムアウト
 	private int httpConnectTimeoutSec = 10;
-	
+
 	// httpクライアントのreadタイムアウト
 	private int httpSoTimeoutSec = 10;
-	
+
 	// Javamailのdebugフラグ
 	private boolean mailDebugEnable = false;
-	
+
 	// メールのエンコード(charset)
 	private static final String DefaultMailEncode = "UTF-8";
 	private String mailEncode = DefaultMailEncode;
-	
+
 	// 転送メールを multipart/alternative にするかどうか
 	private boolean mailAlternative = false;
-	
+
 	// メールのhtml部分のContent-Transfer-Encoding
 	private String contentTransferEncoding = null;
-	
+
 	// 送信用設定
 	private int senderSmtpPort = -1;
 	private String senderUser = "z8$k>Lo2#aEeo@a(aw!";
@@ -156,17 +156,21 @@ public class Config {
 	private boolean senderUseGoomojiSubject = false;
 	private String senderGoogleCharConvertFile = null;
 	private boolean senderConvertSoftbankSjis = false;
-	private int senderDuplicationCheckTimeSec = 0;	
-	
+	private int senderDuplicationCheckTimeSec = 0;
+
 	// 送信用TLS
 	private String senderTlsKeystore;
 	private String senderTlsKeyType;
 	private String senderTlsKeyPasswd;
-	
+
 	// Skyeに転送
 	private String forwardSkypeChat;
 	private String forwardSkypeSms;
-	
+
+	// im.kayac.com設定
+	private String forwardImKayacUsername;
+	private String forwardImKayacSecret;
+
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -175,8 +179,8 @@ public class Config {
 		}finally{
 			Util.safeclose(reader);
 		}
-	
-		
+
+
 		this.docomoId = 		getString("docomo.id", null);
 		this.docomoPasswd = 	getString("docomo.passwd", null);
 		this.smtpServer = 		getString("smtp.server", null);
@@ -209,6 +213,8 @@ public class Config {
 		this.forwardBcc = splitComma(getString("forward.bcc", ""));
 		this.forwardSkypeChat = getString("forward.skype.chat", null);
 		this.forwardSkypeSms = getString("forward.skype.sms", null);
+		this.forwardImKayacUsername = getString("forward.im.kayac.username", "");
+		this.forwardImKayacSecret = getString("forward.im.kayac.secret", "");
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
@@ -241,7 +247,7 @@ public class Config {
 		this.senderUseGoomojiSubject = getBoolean("sender.usegoomojisubject", this.senderUseGoomojiSubject);
 		this.senderConvertSoftbankSjis = getBoolean("sender.convertsoftbanksjis", this.senderConvertSoftbankSjis);
 		this.senderDuplicationCheckTimeSec = getInt("sender.duplicationchecktime", this.senderDuplicationCheckTimeSec);
-		
+
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
 		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 3);
@@ -249,7 +255,7 @@ public class Config {
 		this.loginRetryIntervalSec = Math.max(this.loginRetryIntervalSec, 3);
 		this.httpConnectTimeoutSec = Math.max(this.httpConnectTimeoutSec, 3);
 		this.httpSoTimeoutSec = Math.max(this.httpSoTimeoutSec, 3);
-		
+
 		try{
 			Charset.forName(this.mailEncode).name();
 		}catch (Throwable e) {
@@ -257,7 +263,7 @@ public class Config {
 			this.mailEncode = DefaultMailEncode;
 		}
 	}
-	
+
 	private static List<String> splitComma(String str){
 		List<String> r = new ArrayList<String>();
 		for(String s : str.split(",")){
@@ -469,6 +475,14 @@ public class Config {
 		return forwardSkypeSms;
 	}
 
+	public String getForwardImKayacUsername() {
+		return forwardImKayacUsername;
+	}
+
+	public String getForwardImKayacSecret() {
+		return forwardImKayacSecret;
+	}
+
 	public String getCsvAddressFile() {
 		return csvAddressFile;
 	}
@@ -492,7 +506,7 @@ public class Config {
 	public boolean isSenderConvertSoftbankSjis() {
 		return senderConvertSoftbankSjis;
 	}
-	
+
 	public int getSenderDuplicationCheckTimeSec() {
 		return senderDuplicationCheckTimeSec;
 	}
@@ -508,6 +522,6 @@ public class Config {
 	public String getForwardGoogleCharConvertFile() {
 		return forwardGoogleCharConvertFile;
 	}
-	
+
 }
 

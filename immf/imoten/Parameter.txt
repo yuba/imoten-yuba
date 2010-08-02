@@ -77,7 +77,7 @@ forward.subject.prefix
 forward.subject.charconvfile
   転送時に題名の特定の文字を置き換えるための対応表のCSVファイルを指定します。
   絵文字を置き換えるのが主な目的ですが、絵文字以外の文字も置き換え可能です。
-  ソフトバンクiPhoneに転送する場合は ../conv/genDocomo2sb.csv を指定します。  
+  ソフトバンクiPhoneに転送する場合は ../conv/genDocomo2sb.csv を指定します。
 
 forward.subject.addgoomoji
   [true] 転送時にGmail用のX-Goomoji-Subjectヘッダを付与します。
@@ -90,7 +90,7 @@ forward.subject.googlecharconvfile
   forward.subject.addgoomoji=trueの場合に、DoCoMoの絵文字からGmailの
   絵文字に変換するCSVファイルを指定します。通常は ../conv/genDocomo2google.csv
   を指定します。
-  
+
 forward.to
 　転送時のTOのアドレスです。複数ある場合[,]区切りで指定します。
 　自分のiモードメールアドレスを設定してループしないように気をつけてください。
@@ -123,6 +123,14 @@ forward.skype.sms
 　補助的に使用するようにしてください。
 　この機能はSkypeAPI(Skype4javaを使用)を使用しています。別途Skypeを
 　起動しておく必要があります。
+
+forward.im.kayac.username
+　メールが来るとim.kayac.comにnotificationを送信する場合に、im.kayac.com の
+　ユーザー名を指定します。
+
+forward.im.kayac.secret
+　メールが来るとim.kayac.comにnotificationを送信する場合に、im.kayac.com の
+　秘密鍵を指定します。
 
 forward.replyto
 　転送時のReply-Toのアドレスです。複数ある場合[,]区切りで指定します。
@@ -252,7 +260,7 @@ sender.charconvfile
 　　3042,3044
 　　# 「Ａ」を「[全角A]」に置換える
 　　FF21,[全角A]
-	
+
 　置換先が0～9,a～z,A～Zだけで構成されている場合はUnicode、そうでない場合は文字列として
 　処理されます。「#」で始まる行はコメント行となります。
 
@@ -269,19 +277,19 @@ sender.convertsoftbanksjis
   変換を補正します。
   [false] JavaのShift_JIS -> Unicode 変換をそのまま使います。
   デフォルト false
-  
+
 sender.usegoomojisubject
   [true] imode.net経由でメールを送信する場合に、imotenがSMTPで受け取ったメールに
   X-Goomoji-Subjectヘッダが付いているときには、それをメールの題名としてします。
   絵文字を含んだ題名付きのメールをGmailで返信した場合でも、もとの題名を正しく送信することができます。
   [false] X-Goomoji-Subjectヘッダが付いていても無視します。
   デフォルト false
-  
+
 sender.googlecharconvfile
   imode.net経由でメールを送信する場合に、題名のGoogle絵文字をDocomo絵文字に変換する
   対応表のCSVファイルを指定します。通常は ../conv/genGoogle2docomo.csv を指定します。
   本文の絵文字の変換には対応していません。
-  
+
 sender.forceplaintext
 　imode.net経由でメールを送信する場合に、SMTPで受信したメールがHTMLメールだった
 　場合の動作を設定します。trueの場合、multipart/alternativeの場合はtext/plainを
