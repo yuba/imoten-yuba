@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 
 package immf;
@@ -51,20 +51,20 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private static final Log log = LogFactory.getLog(SendMailBridge.class);
 
 	private ImodeNetClient client;
-	
+
 	private String user;
 	private String passwd;
 	private String alwaysBcc;
 	private boolean forcePlainText;
-	
+
 	private MyWiser wiser;
 	private CharacterConverter charConv;
 	private CharacterConverter googleCharConv;
 	private boolean useGoomojiSubject;
 	private int duplicationCheckTimeSec;
-	
+
 	private Map<String, List<String>>receivedMessageTable;
-	
+
 	public SendMailBridge(Config conf, ImodeNetClient client){
 		if(conf.getSenderSmtpPort()<=0){
 			return;
@@ -92,13 +92,13 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			}
 		}
 		this.useGoomojiSubject = conf.isSenderUseGoomojiSubject();
-		
+
 		this.duplicationCheckTimeSec = conf.getSenderDuplicationCheckTimeSec();
 		if (this.duplicationCheckTimeSec > 0)
 			this.receivedMessageTable = new HashMap<String, List<String>>();
 		else
 			this.receivedMessageTable = null;
-		
+
 		log.info("SMTPサーバを起動します。");
 		this.wiser = new MyWiser(this, conf.getSenderSmtpPort(),this,
 				conf.getSenderTlsKeystore(),
@@ -107,7 +107,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.wiser.start();
 
 	}
-	
+
 	/**
 	 * SMTPでメールが送られてきた
 	 * @param msg
@@ -134,7 +134,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 						log.info("Duplicated message ignored");
 						return;
 					}
-					
+
 					recipients = new ArrayList<String>();
 					receivedMessageTable.put(messageId, recipients);
 					receivedMessageTable.wait(this.duplicationCheckTimeSec*1000);
@@ -143,11 +143,11 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			} else {
 				recipients = msg.getEnvelopeReceiver();
 			}
-			
+
 			List<InternetAddress> to = getRecipients(mime, "To");
-			List<InternetAddress> cc = getRecipients(mime, "Cc");		
+			List<InternetAddress> cc = getRecipients(mime, "Cc");
 			List<InternetAddress> bcc = getBccRecipients(recipients,to,cc);
-			
+
 			int maxRecipients = MaxRecipient;
 			if(this.alwaysBcc!=null){
 				log.debug("add alwaysbcc "+this.alwaysBcc);
@@ -160,34 +160,34 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			senderMail.setTo(to);
 			senderMail.setCc(cc);
 			senderMail.setBcc(bcc);
-			
+
 			if(maxRecipients< (to.size()+cc.size()+bcc.size())){
 				log.warn("送信先が多すぎます。iモード.netの送信先は最大5です。");
 				throw new IOException("Too Much Recipients");
 			}
-			
+
 			String contentType = mime.getContentType().toLowerCase();
 			log.info("ContentType:"+contentType);
-			
+
 			String charset = (new ContentType(contentType)).getParameter("charset");
 			log.info("charset:"+charset);
-			
+
 			String mailer = mime.getHeader("X-Mailer", null);
 			log.info("mailer  "+mailer);
-			
+
 			String subject = mime.getHeader("Subject", null);
 			log.info("subject  "+subject);
 			subject = this.charConv.convertSubject(subject);
 			log.debug(" conv "+subject);
-			
+
 			if (this.useGoomojiSubject) {
-				String goomojiSubject = mime.getHeader("X-GoomojiSubject", null);
+				String goomojiSubject = mime.getHeader("X-Goomoji-Subject", null);
 				if (goomojiSubject != null)
 					subject = this.googleCharConv.convertSubject(goomojiSubject);
 			}
 
-			senderMail.setSubject(subject);			
-			
+			senderMail.setSubject(subject);
+
 			Object content = mime.getContent();
 			if (content instanceof String) {
 				// テキストメール
@@ -206,17 +206,17 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			}else if(content instanceof Multipart){
 				Multipart mp = (Multipart)content;
 				parseMultipart(senderMail, mp, getSubtype(contentType));
-				
+
 			}else{
 				log.warn("未知のコンテンツ "+content.getClass().getName());
 				throw new IOException("Unsupported type "+content.getClass().getName()+".");
 			}
-			
+
 			log.info("Content  "+mime.getContent());
 			log.info("====");
-			
+
 			this.client.sendMail(senderMail, this.forcePlainText);
-			
+
 		}catch (IOException e) {
 			log.warn("Bad Mail Received.",e);
 			throw e;
@@ -225,7 +225,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			throw new IOException("ReceiveMail Error."+e.getMessage(),e);
 		}
 	}
-	
+
 	/*
 	 * マルチパートを処理
 	 */
@@ -245,7 +245,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			//throw new IOException("MimeMultiPart error."+e.getMessage(),e);
 		}
 	}
-	
+
 	private static String getSubtype(String contenttype){
 		try{
 			String r = contenttype.split("\\r?\\n")[0];
@@ -254,7 +254,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 		return "";
 	}
-	
+
 	/*
 	 * 各パートの処理
 	 */
@@ -263,10 +263,10 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			String contentType = bp.getContentType().toLowerCase();
 			log.info("Bodypart ContentType:"+contentType);
 			log.info("subtype:"+subtype);
-			
+
 			if(contentType.startsWith("multipart/")){
 				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType));
-				
+
 			}else if(sendMail.getPlainTextContent()==null
 					&& contentType.startsWith("text/plain")){
 				// 最初に存在するplain/textは本文
@@ -276,9 +276,9 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				content = this.charConv.convert(content, charset);
 				log.debug(" conv "+content);
 				sendMail.setPlainTextContent(content);
-				
-			}else if(sendMail.getHtmlContent()==null 
-					&& contentType.startsWith("text/html") 
+
+			}else if(sendMail.getHtmlContent()==null
+					&& contentType.startsWith("text/html")
 					&& (subtype.equalsIgnoreCase("alternative")
 							|| subtype.equalsIgnoreCase("related"))){
 				String content = (String)bp.getContent();
@@ -291,7 +291,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 			}else{
 				log.debug("attach");
-				// 本文ではない 
+				// 本文ではない
 
 				if(subtype.equalsIgnoreCase("related")){
 					// インライン添付
@@ -304,7 +304,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					file.setContentId(bp.getHeader("Content-Id")[0]);
 					sendMail.addAttachmentFileIdList(file);
 					log.info("Inline Attachment "+file.loggingString());
-					
+
 				}else{
 					// 通常の添付ファイル
 					SenderAttachment file = new SenderAttachment();
@@ -348,7 +348,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 		return bos.toByteArray();
 	}
-	
+
 	private static List<InternetAddress> getBccRecipients(List<String> allRecipients, List<InternetAddress> to, List<InternetAddress> cc) throws AddressException{
 		List<String> addrList = new ArrayList<String>();
 		for (String addr : allRecipients) {
@@ -366,7 +366,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 		return r;
 	}
-	
+
 	private static List<InternetAddress> getRecipients(MimeMessage msg, String type) throws MessagingException{
 		List<InternetAddress> r = new ArrayList<InternetAddress>();
 		String[] headers = msg.getHeader(type);
