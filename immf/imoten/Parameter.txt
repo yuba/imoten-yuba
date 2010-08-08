@@ -143,6 +143,8 @@ forward.rewriteaddress
 
 forward.headertobody
 　[true]の場合、メールの先頭にimodeメールのFrom,CCなどの情報を追加します。
+　添付ファイルに「ファイル制限(コピー禁止)」が掛かっていて添付ファイルが転送されない場合、
+　 その情報も付加されます。
 　デフォルト[true]。
 
 imodenet.checkinterval

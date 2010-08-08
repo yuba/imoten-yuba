@@ -49,6 +49,7 @@ public class ImodeMail {
 	private List<AttachedFile> attachFileList = new ArrayList<AttachedFile>();
 	private List<AttachedFile> inlineFileList = new ArrayList<AttachedFile>();
 
+	private List<String> otherInfoList = new ArrayList<String>();
 	
 	public String toLoggingString(){
 		StrBuilder buf = new StrBuilder();
@@ -207,5 +208,10 @@ public class ImodeMail {
 			return null;
 		}
 	}
-	
+	public void addOtherInfo(String s){
+		this.otherInfoList.add(s);
+	}
+	public List<String> getOtherInfoList(){
+		return this.otherInfoList;
+	}
 }

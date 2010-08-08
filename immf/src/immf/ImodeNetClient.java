@@ -321,9 +321,19 @@ public class ImodeNetClient implements Closeable{
 		JSONArray attaches = json.getJSONArray("attachmentFile");
 		log.info("添付ファイル "+attaches.size());
 		for(int i=0; i<attaches.size(); i++){
-			JSONObject attacheJson = attaches.getJSONArray(i).getJSONObject(0);
-			AttachedFile f = this.getAttachedFile(AttachType.Attach, folderId, mailId, attacheJson.getString("id"));
-			attache.add(f);
+			try{
+				JSONObject attacheJson = attaches.getJSONArray(i).getJSONObject(0);
+				if(attacheJson.getInt("drmFlg")==0){
+					AttachedFile f = this.getAttachedFile(AttachType.Attach, folderId, mailId, attacheJson.getString("id"));
+					attache.add(f);
+				}else{
+					String fname = attacheJson.getString("name");
+					r.addOtherInfo("添付ファイル ["+fname+"]はファイル制限(コピー禁止)が掛かっていてiモード.netで削除されています。");
+					log.warn("ファイル制限(コピー禁止)がかかっていてiモード.netで削除されています　"+fname);
+				}
+			}catch (Exception e) {
+				log.error("添付ファイルダウンロードエラー", e);
+			}
 		}
 		
 		attaches = json.getJSONArray("inlineInfo");

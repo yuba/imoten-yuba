@@ -266,6 +266,9 @@ public class Util {
 		}
 		header.append(" Subject: ").append(subject).append("\r\n");
 		
+		for(String s : imm.getOtherInfoList()){
+			header.append(" 追加情報:").append(s).append("\r\n");
+		}
 		
 		if(isHtml){
 			buf.append("<pre style=\"white-space:pre-wrap;word-wrap:break-word;\">");
