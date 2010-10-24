@@ -187,7 +187,6 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		}else{
 			String fontfamily = conf.getMailFontFamily();
 			if(fontfamily!=null){
-				//html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'Hiragino Kaku Gothic ProN\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
 				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'"+fontfamily+"\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
 			}else{
 				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
