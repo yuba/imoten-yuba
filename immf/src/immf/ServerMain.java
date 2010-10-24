@@ -123,6 +123,20 @@ public class ServerMain {
 
 		boolean first = true;
 		while(true){
+			if(!first){
+				// 接続フラグを見るためにステータスファイルをチェック
+				try{
+					this.status.load();
+				}catch (Exception e) {}
+				if(!this.status.needConnect()){
+					//接続フラグが立っていなければ次のチェックまで待つ
+					try{
+						Thread.sleep(conf.getCheckFileIntervalSec()*1000);
+					}catch (Exception e) {}
+					continue;
+				}
+			}
+
 			Map<Integer,List<String>> mailIdListMap = null;
 			try{
 				// メールID一覧取得(降順)
@@ -169,6 +183,9 @@ public class ServerMain {
 				}
 			}
 
+			// 接続フラグのリセット
+			this.status.resetNeedConnect();
+			
 			// status.ini の更新
 			if(StringUtils.isBlank(this.status.getLastMailId())){
 				this.status.setLastMailId(newestId);

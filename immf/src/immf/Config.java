@@ -113,6 +113,7 @@ public class Config {
 
 	// 定期的に新着をチェックする場合のチェック間隔(秒)
 	private int checkIntervalSec = 60;
+	private int checkFileIntervalSec = checkIntervalSec;
 
 	// ログインエラー時のリトライ間隔(秒)
 	// 失敗時はimode.netのメンテナンスの可能性があるので長めで
@@ -235,6 +236,7 @@ public class Config {
 		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
 		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
+		this.checkFileIntervalSec = getInt("imodenet.checkfileinterval", this.checkIntervalSec);
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
 		this.saveCookie = getBoolean("save.cookie", this.saveCookie);
 		this.statusFile = getString("save.filename", this.statusFile);
@@ -264,6 +266,7 @@ public class Config {
 
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
+		this.checkFileIntervalSec = Math.max(this.checkFileIntervalSec, 3);
 		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 3);
 		this.smtpTimeoutSec = Math.max(this.smtpTimeoutSec, 3);
 		this.loginRetryIntervalSec = Math.max(this.loginRetryIntervalSec, 3);
@@ -407,6 +410,10 @@ public class Config {
 
 	public int getCheckIntervalSec() {
 		return checkIntervalSec;
+	}
+
+	public int getCheckFileIntervalSec() {
+		return checkFileIntervalSec;
 	}
 
 	public int getLoginRetryIntervalSec() {

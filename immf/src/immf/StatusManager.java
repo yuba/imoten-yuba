@@ -41,6 +41,7 @@ public class StatusManager {
 	
 	private List<Cookie> cookies;
 	private String lastMailId;
+	private String needConnect;
 	
 	public StatusManager(File f){
 		this.f = f;
@@ -54,6 +55,7 @@ public class StatusManager {
 			fis = new FileInputStream(this.f);
 			prop.load(fis);
 			this.lastMailId = prop.getProperty("lastmailid");
+			this.needConnect = prop.getProperty("needconnect");
 			Enumeration<Object> enu = prop.keys();
 			List<Cookie> list = new ArrayList<Cookie>();
 			while(enu.hasMoreElements()){
@@ -80,6 +82,19 @@ public class StatusManager {
 	public void setLastMailId(String s){
 		this.lastMailId = s;
 	}
+	public boolean needConnect(){
+		if(this.needConnect==null)
+			return true;
+		if(this.needConnect.equals("0")){
+			return false;
+		}else{
+			return true;
+		}
+	}
+	public void resetNeedConnect(){
+		if(this.needConnect!=null)
+			this.needConnect = "0";
+	}
 	public List<Cookie> getCookies(){
 		return new ArrayList<Cookie>(this.cookies);
 	}
@@ -94,6 +109,9 @@ public class StatusManager {
 		}
 		if(this.lastMailId!=null){
 			prop.setProperty("lastmailid", this.lastMailId);
+		}
+		if(this.needConnect!=null){
+			prop.setProperty("needconnect", this.needConnect);
 		}
 		FileOutputStream fos = null;
 		try{
