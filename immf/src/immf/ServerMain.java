@@ -116,7 +116,7 @@ public class ServerMain {
 		new SendMailBridge(conf, this.client);
 
 		// skype
-		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms());
+		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);
 
 		// im.kayac.com
 		this.imKayacNotifier = new ImKayacNotifier(conf.getForwardImKayacUsername(),conf.getForwardImKayacSecret());

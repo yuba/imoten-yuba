@@ -244,7 +244,7 @@ public class Util {
 	/*
 	 * From,CCなどの情報をBodyの先頭に付加する場合の文字列
 	 */
-	public static String getHeaderInfo(ImodeMail imm, boolean isHtml, boolean subjectEmojiReplace){
+	public static String getHeaderInfo(ImodeMail imm, boolean isHtml, boolean subjectEmojiReplace, Config conf){
 		StringBuilder buf = new StringBuilder();
 		StringBuilder header = new StringBuilder();
 
@@ -271,7 +271,12 @@ public class Util {
 		}
 		
 		if(isHtml){
-			buf.append("<pre style=\"white-space:pre-wrap;word-wrap:break-word;\">");
+			String fontfamily = conf.getMailFontFamily();
+			if(fontfamily!=null){
+				buf.append("<pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'"+fontfamily+"\';\">");
+			}else{
+				buf.append("<pre style=\"white-space:pre-wrap;word-wrap:break-word;\">");
+			}
 		}
 		buf.append("----").append("\r\n");
 		if(isHtml){

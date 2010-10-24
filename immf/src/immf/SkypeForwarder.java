@@ -14,12 +14,14 @@ public class SkypeForwarder implements Runnable{
 	private static final int MaxQueueLength = 10;
 	private String chat;
 	private String sms;
+	private Config conf;
 	
 	private List<ImodeMail> queue = new LinkedList<ImodeMail>();
 	
-	public SkypeForwarder(String chat,String sms){
+	public SkypeForwarder(String chat,String sms, Config conf){
 		this.chat = chat;
 		this.sms = sms;
+		this.conf = conf;
 		
 		if(this.chat!=null || this.sms!=null){
 			Thread t = new Thread(this);
@@ -76,7 +78,7 @@ public class SkypeForwarder implements Runnable{
 		if(mail.isDecomeFlg()){
 			text = Util.html2text(text);
 		}
-		text = Util.getHeaderInfo(mail, false, true) + text;
+		text = Util.getHeaderInfo(mail, false, true, conf) + text;
 		log.info("Skype send Chat to ["+this.chat+"]");
 		log.info(text);
 		try{

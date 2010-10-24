@@ -325,7 +325,7 @@ public class EmojiUtil {
 	 * @param s
 	 * @return
 	 */
-	public static String replaceToWebLink(String s){
+	public static String replaceToWebLink(String s, String va, String px){
 		StringBuilder buf = new StringBuilder();
 		for(char c : s.toCharArray()){
 			if(!isEmoji(c)){
@@ -336,7 +336,11 @@ public class EmojiUtil {
 			if(e==null){
 				buf.append(UnknownReplace);
 			}else{
-				buf.append("<img src=\""+URLPrefix+e.getgoogleImage()+"\" style=\"margin: 0pt 0.2ex; vertical-align: middle;\">");
+				String wh = null;
+				if(px!=null){
+					wh = " width: "+px+"; height: "+px+";";
+				}
+				buf.append("<img src=\""+URLPrefix+e.getgoogleImage()+"\" style=\"margin: 0pt 0.2ex; vertical-align: "+va+";"+wh+"\">");
 			}
 		}
 		return buf.toString();

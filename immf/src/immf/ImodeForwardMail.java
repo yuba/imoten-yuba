@@ -142,7 +142,12 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			// HTMLメール
 			plain = Util.html2text(plain);
 		}else{
-			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			String fontfamily = conf.getMailFontFamily();
+			if (fontfamily!=null){
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'"+fontfamily+"\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}else{
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}
 		}
 		this.setBodyDontReplace(plain, html,this.imm.getInlineFileList());
 	}
@@ -151,12 +156,12 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		// htmlメール
 		html = cidAddedBody(html,inlineFiles);
 		if(conf.isHeaderToBody()){
-			html = html.replaceAll("(<body[^>]*>)", "$1"+Util.getHeaderInfo(this.imm, true, this.conf.isSubjectEmojiReplace()));
+			html = html.replaceAll("(<body[^>]*>)", "$1"+Util.getHeaderInfo(this.imm, true, this.conf.isSubjectEmojiReplace(), conf));
 		}
 
 		// テキスト
 		if(conf.isHeaderToBody()){
-			plainText = Util.getHeaderInfo(this.imm, false, this.conf.isSubjectEmojiReplace())+plainText;
+			plainText = Util.getHeaderInfo(this.imm, false, this.conf.isSubjectEmojiReplace(), conf)+plainText;
 		}
 
 		html = "<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset="+this.charset+"\"></head>"+html+"</html>";
@@ -172,12 +177,24 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	private void setBodyToInlineImage() throws EmailException{
 		String html = this.imm.getBody();
 		String plain = this.imm.getBody();
+		String va;
+		String px;
 		if(this.imm.isDecomeFlg()){
 			// HTMLメール
 			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
+			va = conf.getBodyEmojiVAlignHtml();
+			px = conf.getBodyEmojiSizeHtml();
 		}else{
-			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			String fontfamily = conf.getMailFontFamily();
+			if(fontfamily!=null){
+				//html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'Hiragino Kaku Gothic ProN\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'"+fontfamily+"\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}else{
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}
 			plain = EmojiUtil.replaceToLabel(plain);
+			va = conf.getBodyEmojiVAlign();
+			px = conf.getBodyEmojiSize();
 		}
 		
 		Map<URL, String> emojiToCid = new HashMap<URL, String>();
@@ -197,7 +214,11 @@ public class ImodeForwardMail extends MyHtmlEmail {
 						cid = this.embed(emojiUrl, "emoji"+((int)c));
 						emojiToCid.put(emojiUrl, cid);
 					}
-					buf.append("<img src=\"cid:"+cid+"\" style=\"margin: 0pt 0.2ex; vertical-align: middle;\">");
+					String wh = null;
+					if(px!=null){
+						wh = " width: "+px+"; height: "+px+";";
+					}
+					buf.append("<img src=\"cid:"+cid+"\" style=\"margin: 0pt 0.2ex; vertical-align: "+va+";"+wh+"\">");
 				}
 			}catch (Exception e) {
 				log.warn("Emoji to inline image Error.",e);
@@ -210,13 +231,24 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	private void setBodyToWebLink() throws EmailException{
 		String html = this.imm.getBody();
 		String plain = this.imm.getBody();
+		String va;
+		String px;
 		if(this.imm.isDecomeFlg()){
 			// HTMLメール
-			html = EmojiUtil.replaceToWebLink(html);
+			va = conf.getBodyEmojiVAlignHtml();
+			px = conf.getBodyEmojiSizeHtml();
+			html = EmojiUtil.replaceToWebLink(html, va, px);
 			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
-			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
-			html = EmojiUtil.replaceToWebLink(html);
+			String fontfamily = conf.getMailFontFamily();
+			if(fontfamily!=null){
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'"+fontfamily+"\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}else{
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}
+			va = conf.getBodyEmojiVAlign();
+			px = conf.getBodyEmojiSize();
+			html = EmojiUtil.replaceToWebLink(html, va, px);
 			plain = EmojiUtil.replaceToLabel(plain);
 		}
 		this.setBodyDontReplace(plain, html, this.imm.getInlineFileList());
@@ -229,7 +261,12 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			html = EmojiUtil.replaceToLabel(html);
 			plain = Util.html2text(EmojiUtil.replaceToLabel(plain));
 		}else{
-			html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			String fontfamily = conf.getMailFontFamily();
+			if(fontfamily!=null){
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;font-family:\'"+fontfamily+"\';\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}else{
+				html = "<body><pre style=\"white-space:pre-wrap;word-wrap:break-word;\">"+Util.easyEscapeHtml(html)+"</pre></body>";
+			}
 			html = EmojiUtil.replaceToLabel(html);
 			plain = EmojiUtil.replaceToLabel(plain);
 		}

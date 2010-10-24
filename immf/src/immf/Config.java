@@ -76,6 +76,12 @@ public class Config {
 	// メールのボディの絵文字置き換え方法
 	private BodyEmojiReplace bodyEmojiReplace=BodyEmojiReplace.ToInlineImage;
 
+	// メールのボディの絵文字の位置とサイズ
+	private String bodyEmojiVAlign = "middle";
+	private String bodyEmojiSize = null;
+	private String bodyEmojiVAlignHtml = null;
+	private String bodyEmojiSizeHtml = null;
+	
 	// 転送後の題名の先頭に追加する文字列
 	private String subjectAppendPrefix="";
 
@@ -140,6 +146,9 @@ public class Config {
 	private static final String DefaultMailEncode = "UTF-8";
 	private String mailEncode = DefaultMailEncode;
 
+	// メールのフォント
+	private String mailFontFamily = null;
+	
 	// 転送メールを multipart/alternative にするかどうか
 	private boolean mailAlternative = false;
 
@@ -207,6 +216,10 @@ public class Config {
 		}else{
 			this.bodyEmojiReplace = BodyEmojiReplace.DontReplace;
 		}
+		this.bodyEmojiVAlign = getString("mail.emojiverticalalign", this.bodyEmojiVAlign);
+		this.bodyEmojiSize = getString("mail.emojisize", null);
+		this.bodyEmojiVAlignHtml = getString("mail.emojiverticalalignhtml", this.bodyEmojiVAlign);
+		this.bodyEmojiSizeHtml = getString("mail.emojisizehtml", this.bodyEmojiSize);
 		this.subjectAppendPrefix = getString("forward.subject.prefix", this.subjectAppendPrefix);
 		this.forwardTo = splitComma(getString("forward.to", ""));
 		this.forwardCc = splitComma(getString("forward.cc", ""));
@@ -232,6 +245,7 @@ public class Config {
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
 		this.mailEncode = getString("mail.encode", this.mailEncode);
 		this.contentTransferEncoding = getString("mail.contenttransferencoding", null);
+		this.mailFontFamily = getString("mail.fontfamily", null);
 		this.mailAlternative = getBoolean("mail.alternative", this.mailAlternative);
 		this.senderSmtpPort = getInt("sender.smtp.port", this.senderSmtpPort);
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
@@ -351,6 +365,22 @@ public class Config {
 		return bodyEmojiReplace;
 	}
 
+	public String getBodyEmojiVAlign() {
+		return bodyEmojiVAlign;
+	}
+
+	public String getBodyEmojiSize() {
+		return bodyEmojiSize;
+	}
+
+	public String getBodyEmojiVAlignHtml() {
+		return bodyEmojiVAlignHtml;
+	}
+
+	public String getBodyEmojiSizeHtml() {
+		return bodyEmojiSizeHtml;
+	}
+
 	public String getSubjectAppendPrefix() {
 		return subjectAppendPrefix;
 	}
@@ -425,6 +455,10 @@ public class Config {
 
 	public String getMailEncode() {
 		return mailEncode;
+	}
+
+	public String getMailFontFamily() {
+		return mailFontFamily;
 	}
 
 	public int getSenderSmtpPort() {
