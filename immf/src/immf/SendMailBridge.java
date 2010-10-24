@@ -135,7 +135,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 						return;
 					}
 
-					recipients = new ArrayList<String>();
+					recipients = msg.getEnvelopeReceiver();
 					receivedMessageTable.put(messageId, recipients);
 					receivedMessageTable.wait(this.duplicationCheckTimeSec*1000);
 					receivedMessageTable.remove(messageId);
@@ -351,15 +351,17 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 	private static List<InternetAddress> getBccRecipients(List<String> allRecipients, List<InternetAddress> to, List<InternetAddress> cc) throws AddressException{
 		List<String> addrList = new ArrayList<String>();
+		List<String> toccAddrList = new ArrayList<String>();
 		for (String addr : allRecipients) {
 			addrList.add(addr);
 		}
 		for (InternetAddress ia : to) {
-			addrList.remove(ia.getAddress());
+			toccAddrList.add(ia.getAddress());
 		}
 		for (InternetAddress ia : cc) {
-			addrList.remove(ia.getAddress());
+			toccAddrList.add(ia.getAddress());
 		}
+		addrList.removeAll(toccAddrList);
 		List<InternetAddress> r = new ArrayList<InternetAddress>();
 		for (String addr : addrList) {
 			r.add(new InternetAddress(addr));
