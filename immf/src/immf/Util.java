@@ -22,7 +22,7 @@
 package immf;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream; //
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -30,11 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
-import java.util.Iterator; //
+import java.util.Iterator;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader; //
-import javax.imageio.stream.ImageInputStream; //
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.internet.ContentDisposition;
