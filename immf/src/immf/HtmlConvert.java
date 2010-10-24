@@ -62,6 +62,10 @@ public class HtmlConvert {
 		
 		s = replaceAllCaseInsenstive(s, "<[^<>]+/>", "");
 		
+		// spanタグも削除
+		s = replaceAllCaseInsenstive(s,"<span[^>]*>","");
+		s = replaceAllCaseInsenstive(s,"</span>","");
+		
 		// ブロック要素は改行に置き換える
 		// 入れ子のdivはエラーになるので、最後に各行を<div>で囲んで入れ子を防ぐ
 		s = replaceAllCaseInsenstive(s, "</?p[^>]*>", "\n");
@@ -161,7 +165,11 @@ public class HtmlConvert {
 		buf.append(lines[0]);
 		for(int i=1; i<lines.length-1; i++){
 			//System.out.println(">>>>>>>>>>"+lines[i]);
-			buf.append("<div>"+lines[i]+"</div>");
+			if(lines[i].length()==0){
+				buf.append("<div>&nbsp;</div>");
+			}else{
+				buf.append("<div>"+lines[i]+"</div>");
+			}
 		}
 		buf.append(lines[lines.length-1]);
 		return buf.toString();
