@@ -176,7 +176,7 @@ public class HtmlConvert {
 		
 	}
 	
-	private static String replaceAllCaseInsenstive(String str, String regex, String repl){
+	public static String replaceAllCaseInsenstive(String str, String regex, String repl){
 		return Pattern.compile(regex,Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(str).replaceAll(repl);
 	}
 	

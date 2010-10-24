@@ -21,10 +21,20 @@
 
 package immf;
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream; //
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.Iterator; //
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader; //
+import javax.imageio.stream.ImageInputStream; //
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.internet.ContentDisposition;
@@ -480,5 +490,42 @@ public class Util {
 		sb.append(MimeUtility.encodeWord(subject.substring(mark), "UTF-8", "B"));
 		
 		return sb.toString();
+	}
+	
+	public static InputStream png2gif(InputStream is) throws IOException{
+		InputStream gis = null;
+		BufferedInputStream pis = new BufferedInputStream(is);
+
+		try{
+			pis.mark(0);
+			ImageInputStream iis = ImageIO.createImageInputStream(pis);
+			Iterator i = ImageIO.getImageReaders(iis);
+			if(i.hasNext()&&((ImageReader)i.next()).getFormatName().equals("gif")){
+				// 渡されたデータがgifそのものであればそのまま返却
+				pis.reset();
+				gis = pis;
+			}
+		}catch(Exception e){}finally{
+			pis.reset();
+		}
+		if(gis!=null){
+			return gis;
+		}
+
+		// PNG -> GIF変換
+		try{
+			BufferedImage png = ImageIO.read(pis);
+			ByteArrayOutputStream converted = new ByteArrayOutputStream();
+			if(ImageIO.write(png, "gif", converted)){
+				gis = new ByteArrayInputStream(converted.toByteArray());
+			}
+		}catch(Exception e){}finally{
+			pis.reset();
+		}
+		if(gis!=null){
+			return gis;
+		}else{
+			return pis;
+		}
 	}
 }

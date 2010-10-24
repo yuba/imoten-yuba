@@ -80,7 +80,6 @@ public class ImodeNetClient implements Closeable{
 	private static final String ImgupUrl = 		"https://imode.net/imail/oexaf/acgi/pcimgupd";
 	private static final String PcAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/pcaddrlist";
 	private static final String DsAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/dsaddrlist";
-	private static final int MaxSendAttachment = 10;	
 
 	private String name;
 	private String pass;
@@ -444,10 +443,6 @@ public class ImodeNetClient implements Closeable{
 			}
 		}
 		List<SenderAttachment> attachFiles = mail.getAttachmentFile();
-		if(attachFiles.size()>MaxSendAttachment){
-			log.warn("添付ファイルの数は最大"+MaxSendAttachment+"個");
-			throw new IOException("Too mush attachment file. Max "+MaxSendAttachment);
-		}
 		for (SenderAttachment file : attachFiles) {
 			// 添付ファイルを送信
 			this.sendAttachFile(
@@ -472,6 +467,12 @@ public class ImodeNetClient implements Closeable{
 			}else{
 				htmlMail = true;
 			}
+		}
+		
+		// htmlメールにある参照先のないcidを削除する
+		if(htmlMail){
+			// (イメージ実体のある場合は <img src="40_... となる)
+			body = HtmlConvert.replaceAllCaseInsenstive(body,"<img src=\"cid:[^>]*>","");
 		}
 		log.info("Html "+htmlMail);
 		log.info("body "+body);

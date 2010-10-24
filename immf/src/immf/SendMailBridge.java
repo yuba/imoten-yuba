@@ -33,6 +33,7 @@ import java.util.Map;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
+import javax.mail.Part;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.InternetAddress;
@@ -238,8 +239,30 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			int count = mp.getCount();
 			log.info("count "+count);
 
-			for(int i=0; i<count; i++){
-				parseBodypart(sendMail, mp.getBodyPart(i), subtype);
+			boolean hasHtmlPart = false;
+			boolean hasInlinePart = false;
+			if(subtype.equalsIgnoreCase("mixed")){
+				for(int i=0; i<count; i++){
+					String c = mp.getBodyPart(i).getContentType();
+					if(c!=null && c.toLowerCase().startsWith("text/html"))
+						hasHtmlPart = true;
+					String d = mp.getBodyPart(i).getDisposition();
+					if(d!=null && d.equalsIgnoreCase(Part.INLINE))
+						hasInlinePart = true;
+				}
+			}
+			if(!hasHtmlPart && hasInlinePart){
+				log.info("parseBodypart(no html part)");
+				for(int i=0; i<count; i++){
+					parseBodypartmixed(sendMail, mp.getBodyPart(i), subtype);
+				}
+				if(sendMail.getHtmlContent()!=null){
+					sendMail.addHtmlContent("</body>");
+				}
+			}else{
+				for(int i=0; i<count; i++){
+					parseBodypart(sendMail, mp.getBodyPart(i), subtype);
+				}
 			}
 		}catch (Exception e) {
 			log.error("parse multipart error.",e);
@@ -255,11 +278,26 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 		return "";
 	}
+	
+	private static String getBasename(String filename){
+		try{
+			int dot = filename.lastIndexOf(".");
+			if(dot>0){
+				return filename.substring(0,dot);
+			}else{
+				return filename;
+			}
+		}catch (Exception e) {
+		}
+		return filename;
+	}
 
 	/*
-	 * 各パートの処理
+	 * 各パートの処理(multipart/alternative)
 	 */
 	private void parseBodypart(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
+		boolean limiterr = false;
+		String badfile = null;
 		try{
 			String contentType = bp.getContentType().toLowerCase();
 			log.info("Bodypart ContentType:"+contentType);
@@ -297,14 +335,41 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				if(subtype.equalsIgnoreCase("related")){
 					// インライン添付
 					SenderAttachment file = new SenderAttachment();
+					String fname = uniqId();
+					String fname2 = Util.getFileName(bp);
+					
+					// iPhoneはgifをpngとして報告してくることがあるのでContentType修正(本当にpngだったらgif変換)
+					if(getSubtype(contentType).equalsIgnoreCase("png")){
+						file.setContentType("image/gif");
+						fname = fname+".gif";
+						fname2 = getBasename(fname2)+".gif";
+						file.setData(inputstream2bytes(Util.png2gif(bp.getInputStream())));
+					}else{
+						file.setContentType(contentType);
+						fname = fname+"."+getSubtype(contentType);
+						file.setData(inputstream2bytes(bp.getInputStream()));
+					}
+					
 					file.setInline(true);
-					file.setContentType(contentType);
-					//file.setFilename(bp.getFileName());
-					file.setFilename(uniqId()+"."+getSubtype(contentType));
-					file.setData(inputstream2bytes(bp.getInputStream()));
-					file.setContentId(bp.getHeader("Content-Id")[0]);
+					boolean inline = sendMail.checkAttachmentCapability(file);
+					if(!inline){
+						file.setInline(false);
+						if(!sendMail.checkAttachmentCapability(file)){
+							limiterr = true;
+							badfile = fname2;
+							throw new Exception("Attachments: size limit or file count limit exceeds!");
+						}
+					}
+
+					if(inline){
+						file.setFilename(fname);
+						file.setContentId(bp.getHeader("Content-Id")[0]);
+						log.info("Inline Attachment "+file.loggingString()+", Hash:"+file.getHash());
+					}else{
+						file.setFilename(fname2);
+						log.info("Attachment "+file.loggingString());
+					}
 					sendMail.addAttachmentFileIdList(file);
-					log.info("Inline Attachment "+file.loggingString());
 
 				}else{
 					// 通常の添付ファイル
@@ -312,15 +377,173 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					file.setInline(false);
 					file.setContentType(contentType);
 					String fname = Util.getFileName(bp);
-					file.setFilename(fname);
-					file.setData(inputstream2bytes(bp.getInputStream()));
+					if(getSubtype(contentType).equalsIgnoreCase("png")){
+						file.setContentType("image/gif");
+						file.setFilename(getBasename(fname)+".gif");
+						file.setData(inputstream2bytes(Util.png2gif(bp.getInputStream())));
+					}else{
+						file.setFilename(fname);
+						file.setData(inputstream2bytes(bp.getInputStream()));
+					}
+					if(!sendMail.checkAttachmentCapability(file)){
+						limiterr = true;
+						badfile = file.getFilename();
+						throw new Exception("Attachments: size limit or file count limit exceeds!");
+					}
 					sendMail.addAttachmentFileIdList(file);
 					log.info("Attachment "+file.loggingString());
 				}
 			}
 		}catch (Exception e) {
 			log.error("parse bodypart error.",e);
-			throw new IOException("BodyPart error."+e.getMessage(),e);
+			if(limiterr){
+				sendMail.addPlainTextContent("\n[添付ﾌｧｲﾙ削除("+badfile+")]");
+				sendMail.addHtmlContent("[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+			}else{
+				throw new IOException("BodyPart error."+e.getMessage(),e);
+			}
+		}
+	}
+	/*
+	 * 各パートの処理(multipart/mixed)
+	 *  - text/htmlがなくインライン添付ファイルがあるケースを処理(text/plainメールへのインライン添付)
+	 */
+	private void parseBodypartmixed(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
+		boolean limiterr = false;
+		String badfile = null;
+		try{
+			String contentType = bp.getContentType().toLowerCase();
+			log.info("Bodypart ContentType:"+contentType);
+			log.info("subtype:"+subtype);
+
+			if(contentType.startsWith("multipart/")){
+				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType));
+
+			}else if(sendMail.getPlainTextContent()==null
+					&& contentType.startsWith("text/plain")){
+				// 最初に存在するplain/textは本文
+				String content = (String)bp.getContent();
+				log.info("set Content text ["+content+"]");
+				String charset = (new ContentType(contentType)).getParameter("charset");
+				content = this.charConv.convert(content, charset);
+				log.debug(" conv "+content);
+				sendMail.setPlainTextContent(content);
+				
+				// HTMLを作成。改行はとりあえず<br>を入れておいて、あとでHtmlConverterで整形。
+				if(sendMail.getHtmlContent()==null){
+					sendMail.setHtmlContent("<body>" + Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>") + "<br>");
+				}else{
+					sendMail.addHtmlContent(Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>") + "<br>");
+				}
+
+			}else{
+				log.debug("attach");
+				// 本文ではない
+
+				String contentDisposition = bp.getDisposition();
+				if(contentDisposition!=null && contentDisposition.equalsIgnoreCase(Part.INLINE)){
+					// インライン添付
+					SenderAttachment file = new SenderAttachment();
+					String uniqId = uniqId();
+					String fname = uniqId;
+					String fname2 = Util.getFileName(bp);
+					
+					// iPhoneはgifをpngとして報告してくることがあるのでgifに戻す(本当にpngだったらgif変換)
+					if(getSubtype(contentType).equalsIgnoreCase("png")){
+						file.setContentType("image/gif");
+						fname = fname+".gif";
+						fname2 = getBasename(fname2)+".gif";
+						file.setData(inputstream2bytes(Util.png2gif(bp.getInputStream())));
+					}else{
+						file.setContentType(contentType);
+						fname = fname+"."+getSubtype(contentType);
+						file.setData(inputstream2bytes(bp.getInputStream()));
+					}
+
+					file.setInline(true);
+					boolean inline = sendMail.checkAttachmentCapability(file);
+					if(!inline){
+						file.setInline(false);
+						if(!sendMail.checkAttachmentCapability(file)){
+							limiterr = true;
+							badfile = fname2;
+							throw new Exception("Attachments: size limit or file count limit exceeds!");
+						}
+					}
+					
+					if(inline){
+						file.setFilename(fname);
+						if(bp.getHeader("Content-Id")==null){
+							file.setContentId(uniqId);
+						}else{
+							file.setContentId(bp.getHeader("Content-Id")[0]);
+						}
+						log.info("Inline Attachment(mixed) "+file.loggingString()+", Hash:"+file.getHash());
+
+						// インライン添付ファイルを参照するHTMLを作成
+						if(sendMail.getHtmlContent()==null){
+							sendMail.setHtmlContent("<body><img src=\"cid:" + file.getContentId() + "\"><br>");
+						}else{
+							sendMail.addHtmlContent("<img src=\"cid:" + file.getContentId() + "\"><br>");
+						}
+					}else{
+						file.setFilename(fname2);
+						log.info("Attachment "+file.loggingString());
+					}
+					sendMail.addAttachmentFileIdList(file);
+					
+				}else{
+					// 通常の添付ファイル
+					SenderAttachment file = new SenderAttachment();
+					file.setInline(false);
+					file.setContentType(contentType);
+					String fname = Util.getFileName(bp);
+					if(fname==null && sendMail.getPlainTextContent()!=null
+							&& contentType.startsWith("text/plain")){
+						// 本文の続き。本文に結合する
+						String content = (String)bp.getContent();
+						log.info("add Content text ["+content+"]");
+						String charset = (new ContentType(contentType)).getParameter("charset");
+						content = this.charConv.convert(content, charset);
+						log.debug(" conv "+content);
+
+						// 同内容のHTMLを作成。同様に改行は<br>
+						sendMail.addPlainTextContent("\n"+content);
+						sendMail.addHtmlContent(Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>")+"<br>");
+
+					}else{
+						// 添付ファイルとしての通常の処理
+						if(getSubtype(contentType).equalsIgnoreCase("png")){
+							file.setContentType("image/gif");
+							file.setFilename(getBasename(fname)+".gif");
+							file.setData(inputstream2bytes(Util.png2gif(bp.getInputStream())));
+						}else{
+							file.setFilename(fname);
+							file.setData(inputstream2bytes(bp.getInputStream()));
+						}
+						if(!sendMail.checkAttachmentCapability(file)){
+							limiterr = true;
+							badfile = file.getFilename();
+							throw new Exception("Attachments: size limit or file count limit exceeds!");
+						}
+						sendMail.addAttachmentFileIdList(file);
+						log.info("Attachment "+file.loggingString());
+						
+					}
+				}
+			}
+		}catch (Exception e) {
+			log.error("parse bodypart error(mixed).",e);
+			if(limiterr){
+				sendMail.addPlainTextContent("\n[添付ﾌｧｲﾙ削除("+badfile+")]");
+				if(sendMail.getHtmlContent()==null){
+					sendMail.setHtmlContent("<body>[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+				}else{
+					sendMail.addHtmlContent("[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+				}
+			}else{
+				throw new IOException("BodyPart error(mixed)."+e.getMessage(),e);
+			}
 		}
 	}
 	private static int fileNameId=0;

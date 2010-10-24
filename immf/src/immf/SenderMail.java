@@ -21,6 +21,15 @@ public class SenderMail {
 	private String htmlContent;
 	private List<SenderAttachment> attachments = new ArrayList<SenderAttachment>();
 	
+	/*
+	 * 添付ファイル：10個、合計2MBまで
+	 * デコメ絵文字／デコメピクチャ：最大20種類、合計90KBまで
+	 */
+	private static final int MaxAttachmentCount = 10;	
+	private static final int MaxAttachmentSize = 2000000;
+	private static final int MaxInlineAttachmentCount = 20;
+	private static final int MaxInlineAttachmentSize = 90000;
+	
 	public List<InternetAddress> getTo() {
 		return to;
 	}
@@ -56,14 +65,71 @@ public class SenderMail {
 	public void setPlainTextContent(String plainTextContent) {
 		this.plainTextContent = plainTextContent;
 	}
+	public void addPlainTextContent(String plainTextContent) {
+		this.plainTextContent += plainTextContent;
+	}
 	public String getHtmlContent() {
 		return htmlContent;
 	}
 	public void setHtmlContent(String htmlContent) {
 		this.htmlContent = htmlContent;
 	}
+	public void addHtmlContent(String htmlContent) {
+		this.htmlContent += htmlContent;
+	}
 	public void addAttachmentFileIdList(SenderAttachment file) {
+		for (SenderAttachment f : this.attachments) {
+			if(!f.isInline()){
+				continue;
+			}
+			if(f.getHash().equals(file.getHash())){
+				// すでに同じ内容のファイルが添付予定であれば重複して登録しない
+				htmlContent = StringUtils.replace(htmlContent, file.getContentIdWithoutBracket(), f.getContentIdWithoutBracket());
+				return;
+			}
+		}
 		this.attachments.add(file);
+	}
+	public boolean checkAttachmentCapability(SenderAttachment file) {
+		boolean inline = file.isInline();
+		int count = 1;
+		int size = file.getData().length;
+		if(inline){
+			for (SenderAttachment f : this.attachments){
+				if(!f.isInline()){
+					continue;
+				}
+				if(f.getHash().equals(file.getHash())){
+					return true;
+				}
+			}
+			for (SenderAttachment f : this.attachments){
+				if(f.isInline()){
+					count++;
+					size += f.getData().length;
+				}
+			}
+			if(count > MaxInlineAttachmentCount){
+				return false;
+			}
+			if(size > MaxInlineAttachmentSize){
+				return false;
+			}
+		}else{
+			for (SenderAttachment f : this.attachments){
+				if(!f.isInline()){
+					count++;
+					size += f.getData().length;
+				}
+			}
+			if(count > MaxAttachmentCount){
+				return false;
+			}
+			if(size > MaxAttachmentSize){
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	/*

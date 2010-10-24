@@ -1,5 +1,7 @@
 package immf;
 
+import java.security.MessageDigest;
+
 import org.apache.commons.lang.StringUtils;
 
 public class SenderAttachment {
@@ -7,6 +9,7 @@ public class SenderAttachment {
 	private boolean inline;
 	private String filename;
 	private byte[] data;
+	private String hash;
 	private String contentId;
 	
 	private String docomoFileId;
@@ -44,6 +47,20 @@ public class SenderAttachment {
 	}
 	public void setData(byte[] data) {
 		this.data = data;
+		try{
+			byte[] digest;
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			digest = md.digest(data);
+			this.hash = "";
+			for(int i=0;i<digest.length;i++){
+				this.hash += Integer.toHexString((int)digest[i]&0xff);
+			}
+		}catch(Exception e){
+			this.hash = null;
+		}
+	}
+	public String getHash() {
+		return hash;
 	}
 	public String getContentId() {
 		return contentId;
