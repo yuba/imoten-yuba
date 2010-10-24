@@ -177,7 +177,8 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 			String subject = mime.getHeader("Subject", null);
 			log.info("subject  "+subject);
-			subject = this.charConv.convertSubject(subject);
+			if (subject != null)
+				subject = this.charConv.convertSubject(subject);
 			log.debug(" conv "+subject);
 
 			if (this.useGoomojiSubject) {
@@ -310,7 +311,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					SenderAttachment file = new SenderAttachment();
 					file.setInline(false);
 					file.setContentType(contentType);
-					String fname = MimeUtility.decodeText(bp.getFileName());
+					String fname = Util.getFileName(bp);
 					file.setFilename(fname);
 					file.setData(inputstream2bytes(bp.getInputStream()));
 					sendMail.addAttachmentFileIdList(file);
@@ -331,7 +332,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		try{
 			byte[] buf = new byte[1024 * 4];
-			while(is.available()>0){
+			while(true){
 				int len = is.read(buf);
 				if(len<=0){
 					break;

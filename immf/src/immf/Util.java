@@ -32,6 +32,7 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeUtility;
+import javax.mail.internet.ParseException;
 
 import net.htmlparser.jericho.Source;
 
@@ -237,6 +238,149 @@ public class Util {
 		return new String(result);
 	}
 	
+    public static String getFileName(Part part) throws MessagingException {
+        String[] disposition = part.getHeader("Content-Disposition");
+        if (disposition == null || disposition.length < 1) {
+            return null;
+        }
+        // 本来そのまま返すところだが日本固有のデコード処理を挟む。
+        return decodeParameterSpciallyJapanese(
+        		getParameter(disposition[0], "filename"));
+    }
+
+    static class Encoding {
+        String encoding = "us-ascii";
+        String lang = "";
+    }
+
+    public static String getParameter(String header, String name) {
+
+        HeaderTokenizer tokenizer =
+                new HeaderTokenizer(header, HeaderTokenizer.MIME, true);
+        HeaderTokenizer.Token token;
+        StringBuffer sb = new StringBuffer();
+        // It is specified in first encoded-part.
+        Encoding encoding = new Encoding();
+
+        String n;
+        String v;
+
+        try {
+            while (true) {
+                token = tokenizer.next();
+                if (token.getType() == token.EOF) break;
+                if (token.getType() != ';') continue;
+
+                token = tokenizer.next();
+                checkType(token);
+                n = token.getValue();
+
+                token = tokenizer.next();
+                if (token.getType() != '=') {
+                    throw new ParseException(
+                            "Illegal token : " + token.getValue());
+                }
+
+                token = tokenizer.next();
+                checkType(token);
+                v = token.getValue();
+
+                if (n.equalsIgnoreCase(name)) {
+                    // It is not divided and is not encoded.
+                    return v;
+                }
+
+                int index = name.length();
+
+                if (!n.startsWith(name) || n.charAt(index) != '*') {
+                    // another parameter
+                    continue;
+                }
+                // be folded, or be encoded
+                int lastIndex = n.length() - 1;
+                if (n.charAt(lastIndex) == '*') {
+                    sb.append(decodeRFC2231(v, encoding));
+                } else {
+                    sb.append(v);
+                }
+                if (index == lastIndex) {
+                    // not folding
+                    break;
+                }
+            }
+            return new String(sb);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        throw new InternalError();
+    }
+
+    private static void checkType(HeaderTokenizer.Token token)
+                throws ParseException {
+        int t = token.getType();
+        if (t != HeaderTokenizer.Token.ATOM &&
+            t != HeaderTokenizer.Token.QUOTEDSTRING) {
+            throw new ParseException("Illegal token : " + token.getValue());
+        }
+    }
+
+    // "lang" tag is ignored...
+    private static String decodeRFC2231(String s, Encoding encoding)
+                throws ParseException, UnsupportedEncodingException {
+        StringBuffer sb = new StringBuffer();
+        int i = 0;
+
+        int work = s.indexOf('\'');
+        if (work > 0) {
+            encoding.encoding = s.substring(0, work);
+            work++;
+            i = s.indexOf('\'', work);
+            encoding.lang = s.substring(work, i);
+            i++;
+        }
+
+        try {
+            for (; i < s.length(); i++) {
+                if (s.charAt(i) == '%') {
+                    sb.append((char)Integer.parseInt(
+                            s.substring(i + 1, i + 3), 16));
+                    i += 2;
+                    continue;
+                }
+                sb.append(s.charAt(i));
+            }
+            return new String(
+                    new String(sb).getBytes("ISO-8859-1"),
+                    encoding.encoding);
+        } catch (IndexOutOfBoundsException e) {
+            throw new ParseException(s + " :: this string were not decoded.");
+        }
+    }
+    
+    public static String decodeParameterSpciallyJapanese(String s)
+    		throws ParseException {
+    	try {
+    		boolean unicode = false;
+    		for (int i = 0; i < s.length(); i++) {
+			    if (s.charAt(i) > 0xff) { // Unicode
+			        unicode = true;
+			        break;
+			    }
+			}
+			if (!unicode) {
+			    // decode by character encoding.
+			    s = new String(s.getBytes("ISO-8859-1"), "JISAutoDetect");
+			}
+			// decode by RFC2047.
+			// if variable s isn't encoded-word, it's ignored.
+			return MimeUtility.decodeText(s);
+		} catch (UnsupportedEncodingException e) {
+		}
+		throw new ParseException("Unsupported Encoding");
+	}
+    
 	public static String html2text(String html){
 		Source src = new Source(html);
 		return src.getRenderer().toString();
