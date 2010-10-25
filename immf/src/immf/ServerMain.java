@@ -35,7 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.18";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.19";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
@@ -185,7 +185,7 @@ public class ServerMain {
 
 			// 接続フラグのリセット
 			this.status.resetNeedConnect();
-			
+
 			// status.ini の更新
 			if(StringUtils.isBlank(this.status.getLastMailId())){
 				this.status.setLastMailId(newestId);

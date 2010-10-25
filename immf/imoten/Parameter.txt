@@ -151,6 +151,21 @@ imodenet.checkinterval
 　imode.netで新着メールをチェックする間隔(秒)を指定します。
 　デフォルト[60]。
 
+imodenet.checkfileinterval
+　imode.netで新着メールをチェックのタイミングを定期チェックでなく別のプログラムで指定する場合に
+　使用します。チェックをさせたくない場合にはstatus.iniに[needconnect=0]を追記します。
+　これが指定されている場合は[imodenet.checkinterval]で指定したチェックタイミングになっても
+　チェックが行われず[imodenet.checkfileinterval]で指定した時間(秒)だけ待ちます。
+　時間が経過した後に再度status.iniを確認し[needconnect]のパラメータが存在しない、
+　もしくは[0]以外の値が設定されていた場合には新着メールのチェックが行われます。
+　[needconnect]が存在する場合、新着メールのチェック後に[needconnect=0]でstatus.iniが
+　保存されます。再度チェックを新着メールのチェックをしたいタイミングで[needconnect]を[1]などの
+　値を追記してください。
+　通常はstatus.iniに[needconnect]を記述せず、定期チェックで使用してください。
+　外部プログラムでチェックタイミングを指定したい場合だけ、status.iniに[needconnect]を
+　指定してください。
+　[imodenet.checkfileinterval]を未設定の場合は[imodenet.checkinterval]と同じ時間で動作します。
+
 imodenet.logininterval
 　imode.netへのログインが失敗した場合、再度ログインを行うまでの時間(秒)を
 　指定します。
@@ -228,6 +243,26 @@ mail.alternative
 　trueを設定すると、転送するメールにtext/plainも含めて、
 　multipart/alternativeで送信する。
 　デフォルト[false]
+
+mail.fontfamily
+　転送メール本文に使用するcssのfontfamilyの値を指定します。
+　デフォルトは未設定でメーラのデフォルトフォントになります。
+
+mail.emojiverticalalign
+　転送メール本文にインライン添付するドコモ(基本・拡張)絵文字のimgタグの縦位置を調整。cssのvertical-alignの値を指定します。
+　デフォルト[middle]
+
+mail.emojisize
+　メール本文にインライン添付するドコモ(基本・拡張)絵文字のimgタグのpixelサイズを指定。cssのwidth,heightの値を指定します。
+　デフォルトはwidth,height未指定になります。
+
+mail.emojiverticalalignhtml
+　転送メール本文にインライン添付するデコメ絵文字のimgタグの縦位置を調整。cssのvertical-alignの値を指定します。
+　未設定時は[mail.emojiverticalalign]で設定した値になります。それも未設定の場合は[middle]になります。
+
+mail.emojisizehtml
+　メール本文にインライン添付するデコメ絵文字のimgタグのpixelサイズを指定。cssのwidth,heightの値を指定します。
+　未設定時は[mail.emojisize]で設定した値になります。それも未設定の場合はwidth,height未指定になります。
 
 sender.smtp.port
 　imode.net経由でメールを送信する場合、imotenが動作しているPCで

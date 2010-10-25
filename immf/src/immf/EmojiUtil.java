@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 
 package immf;
@@ -297,7 +297,7 @@ public class EmojiUtil {
 		char c = (char)unicode;
 		map.put(Character.valueOf(c), new Emoji(c,label,googleImage));
 	}
-	
+
 	/**
 	 * 絵文字があったら[晴れ]のような説明に置き換える
 	 * @param s
@@ -319,7 +319,7 @@ public class EmojiUtil {
 		}
 		return buf.toString();
 	}
-	
+
 	/**
 	 * 絵文字があったら<img src="絵文字画像URL">に置き換える
 	 * @param s
@@ -336,7 +336,7 @@ public class EmojiUtil {
 			if(e==null){
 				buf.append(UnknownReplace);
 			}else{
-				String wh = null;
+				String wh = "";
 				if(px!=null){
 					wh = " width: "+px+"; height: "+px+";";
 				}
@@ -345,7 +345,7 @@ public class EmojiUtil {
 		}
 		return buf.toString();
 	}
-	
+
 	/**
 	 * 絵文字の画像ファイルのURL
 	 * @param c
@@ -375,13 +375,13 @@ public class EmojiUtil {
 			return false;
 		}
 	}
-	
+
 	// 絵文字の一覧を作成
 	public static void main(String[] args){
 		BufferedWriter br = null;
 		try{
 			br = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./emoji.html"),"UTF-8"));
-			
+
 			br.write("<html>" +
 					"<head>" +
 					"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">"+

@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 
 package immf;
@@ -54,18 +54,18 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	public ImodeForwardMail(ImodeMail imm, Config conf) throws EmailException{
 		this.imm = imm;
 		this.conf = conf;
-		
+
 		this.setDebug(conf.isMailDebugEnable());
 		this.setCharset(this.conf.getMailEncode());
 		this.setContentTransferEncoding(this.conf.getContentTransferEncoding());
-		
+
 		// SMTP Server
 		this.setHostName(conf.getSmtpServer());
 		this.setSmtpPort(conf.getSmtpPort());
 		this.setSocketConnectionTimeout(conf.getSmtpConnectTimeoutSec()*1000);
 		this.setSocketTimeout(conf.getSmtpTimeoutSec()*1000);
 		this.setTLS(conf.isSmtpTls());
-		
+
 		if(!StringUtils.isBlank(conf.getSmtpUser())){
 			this.setAuthentication(conf.getSmtpUser(), conf.getSmtpPasswd());
 		}
@@ -75,7 +75,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			// POP before SMTP
 			this.setPopBeforeSmtp(true, conf.getPopServer(), conf.getPopUser(), conf.getPopPasswd());
 		}
-		
+
 		this.setFrom(conf.getSmtpMailAddress());
 
 		if(!conf.getForwardReplyTo().isEmpty()){
@@ -83,29 +83,29 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				this.addReplyTo(addr);
 			}
 		}
-		
+
 		String subject = conf.getSubjectAppendPrefix()+imm.getSubject();
 		if(conf.isSubjectEmojiReplace()){
 			this.setSubject(EmojiUtil.replaceToLabel(subject));
 		}else{
 			this.setSubject(subject);
 		}
-		
+
 		List<String> list = conf.getForwardTo();
 		for (String addr : list) {
 			this.addTo(addr);
 		}
-		
+
 		list = conf.getForwardCc();
 		for (String addr : list) {
 			this.addCc(addr);
 		}
-		
+
 		list = conf.getForwardBcc();
 		for (String addr : list) {
 			this.addBcc(addr);
 		}
-		
+
 		Config.BodyEmojiReplace emojiReplace = conf.getBodyEmojiReplace();
 		if(emojiReplace==Config.BodyEmojiReplace.DontReplace){
 			this.setBodyDontReplace();
@@ -120,7 +120,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		this.attacheFile();
 		this.attacheInline();
 	}
-	
+
 	/*
 	 * デコメールで<img src=".....">でインライン表示させるが、
 	 * imode.netのhtmlでは[cid:]という部分が抜けているので付加する。
@@ -131,7 +131,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		}
 		return html;
 	}
-	
+
 	/*
 	 * 絵文字の置き換えは行わない
 	 */
@@ -195,7 +195,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			va = conf.getBodyEmojiVAlign();
 			px = conf.getBodyEmojiSize();
 		}
-		
+
 		Map<URL, String> emojiToCid = new HashMap<URL, String>();
 		StringBuilder buf = new StringBuilder();
 		for(char c : html.toCharArray()){
@@ -213,7 +213,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 						cid = this.embed(emojiUrl, "emoji"+((int)c));
 						emojiToCid.put(emojiUrl, cid);
 					}
-					String wh = null;
+					String wh = "";
 					if(px!=null){
 						wh = " width: "+px+"; height: "+px+";";
 					}
@@ -225,7 +225,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			}
 		}
 		this.setBodyDontReplace(plain,buf.toString(),this.imm.getInlineFileList());
-		
+
 	}
 	private void setBodyToWebLink() throws EmailException{
 		String html = this.imm.getBody();
@@ -271,7 +271,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		}
 		this.setBodyDontReplace(plain,html,this.imm.getInlineFileList());
 	}
-	
+
 	/*
 	 * 添付ファイルを追加する
 	 */
@@ -303,15 +303,15 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		}
 
 	}
-	
-	
+
+
 	@Override
 	public void buildMimeMessage() throws EmailException {
 		super.buildMimeMessage();
 		MimeMessage msg = this.getMimeMessage();
 		try{
 			msg.setHeader("X-Mailer", ServerMain.Version);
-			
+
 			if(!this.conf.isRewriteAddress()){
 				// もとのimodeメールの送信元送信先に置き換える
 				msg.setHeader("Resent-From",this.conf.getSmtpMailAddress());
@@ -327,7 +327,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				SimpleDateFormat df = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z (z)",Locale.US);
 				msg.setHeader("Resent-Date", df.format(new Date()));
 				msg.setHeader("Date", df.format(this.imm.getTimeDate()));
-				
+
 				msg.removeHeader("To");
 				msg.removeHeader("Cc");
 				msg.removeHeader("Bcc");
@@ -336,14 +336,14 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				list.add(this.imm.getMyInternetAddress());
 				list.addAll(this.imm.getToAddrList());
 				msg.setHeader("To", InternetAddress.toString(list.toArray(new InternetAddress[0])));
-				
+
 				if(this.imm.getCcAddrList().size()>0){
 					msg.setHeader("Cc", InternetAddress.toString(this.imm.getCcAddrList().toArray(new InternetAddress[0])));
 				}
-				
+
 				msg.setFrom(this.imm.getFromAddr());
 			}
-			
+
 			String subject = conf.getSubjectAppendPrefix()+imm.getSubject();
 			if(conf.isSubjectEmojiReplace()){
 				subject = EmojiUtil.replaceToLabel(subject);
@@ -354,10 +354,10 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				msg.setHeader("X-Goomoji-Source", "docomo_ne_jp");
 				msg.setHeader("X-Goomoji-Subject", Util.encodeGoomojiSubject(goomojiSubject));
 			}
-			
+
 			subject = ImodeForwardMail.subjectCharConv.convert(subject);
-			msg.setSubject(MimeUtility.encodeText(subject,this.charset,"B"));			
-	
+			msg.setSubject(MimeUtility.encodeText(subject,this.charset,"B"));
+
 			if(this.conf.getContentTransferEncoding()!=null){
 				msg.setHeader("Content-Transfer-Encoding", this.conf.getContentTransferEncoding());
 			}
@@ -419,7 +419,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	public Email setSubject(String subject) {
 		return super.setSubject(Util.replaceUnicodeMapping(subject));
 	}
-	
+
 	public static void setSubjectCharConv(CharacterConverter subjectCharConv) {
 		ImodeForwardMail.subjectCharConv = subjectCharConv;
 	}
