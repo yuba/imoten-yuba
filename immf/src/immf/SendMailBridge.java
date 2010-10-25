@@ -207,7 +207,10 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				}
 			}else if(content instanceof Multipart){
 				Multipart mp = (Multipart)content;
-				parseMultipart(senderMail, mp, getSubtype(contentType));
+				parseMultipart(senderMail, mp, getSubtype(contentType), null);
+				if(senderMail.getHtmlContent()==null && senderMail.getHtmlWorkingContent()!=null){
+					senderMail.setHtmlContent(senderMail.getHtmlWorkingContent());
+				}
 
 			}else{
 				log.warn("未知のコンテンツ "+content.getClass().getName());
@@ -231,7 +234,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	/*
 	 * マルチパートを処理
 	 */
-	private void parseMultipart(SenderMail sendMail, Multipart mp, String subtype) throws IOException{
+	private void parseMultipart(SenderMail sendMail, Multipart mp, String subtype, String parentSubtype) throws IOException{
 		String contentType = mp.getContentType();
 		log.info("Multipart ContentType:"+contentType);
 
@@ -239,29 +242,28 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			int count = mp.getCount();
 			log.info("count "+count);
 
-			boolean hasHtmlPart = false;
 			boolean hasInlinePart = false;
 			if(subtype.equalsIgnoreCase("mixed")){
 				for(int i=0; i<count; i++){
-					String c = mp.getBodyPart(i).getContentType();
-					if(c!=null && c.toLowerCase().startsWith("text/html"))
-						hasHtmlPart = true;
 					String d = mp.getBodyPart(i).getDisposition();
 					if(d!=null && d.equalsIgnoreCase(Part.INLINE))
 						hasInlinePart = true;
 				}
 			}
-			if(!hasHtmlPart && hasInlinePart){
-				log.info("parseBodypart(no html part)");
+			if(hasInlinePart){
+				log.info("parseBodypart(Content-Disposition:inline)");
 				for(int i=0; i<count; i++){
-					parseBodypartmixed(sendMail, mp.getBodyPart(i), subtype);
+					parseBodypartmixed(sendMail, mp.getBodyPart(i), subtype, parentSubtype);
 				}
 				if(sendMail.getHtmlContent()!=null){
 					sendMail.addHtmlContent("</body>");
 				}
+				if(sendMail.getHtmlWorkingContent()!=null){
+					sendMail.addHtmlWorkingContent("</body>");
+				}
 			}else{
 				for(int i=0; i<count; i++){
-					parseBodypart(sendMail, mp.getBodyPart(i), subtype);
+					parseBodypart(sendMail, mp.getBodyPart(i), subtype, parentSubtype);
 				}
 			}
 		}catch (Exception e) {
@@ -295,7 +297,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	/*
 	 * 各パートの処理(multipart/alternative)
 	 */
-	private void parseBodypart(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
+	private void parseBodypart(SenderMail sendMail, BodyPart bp, String subtype, String parentSubtype) throws IOException{
 		boolean limiterr = false;
 		String badfile = null;
 		try{
@@ -304,7 +306,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("subtype:"+subtype);
 
 			if(contentType.startsWith("multipart/")){
-				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType));
+				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType), subtype);
 
 			}else if(sendMail.getPlainTextContent()==null
 					&& contentType.startsWith("text/plain")){
@@ -327,6 +329,12 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				log.debug(" conv "+content);
 				// 本文 htmlはテキスト形式に変換
 				sendMail.setHtmlContent(content);
+
+			}else if(contentType.startsWith("text/html")){
+				// 内容は text/plain と同じはずなので捨ててしまう。
+				// (HtmlConvertが少し動くようになったら拾うようにするかも)
+				String content = (String)bp.getContent();
+				log.info("Discarding duplicate content ["+content+"]");
 
 			}else{
 				log.debug("attach");
@@ -406,9 +414,9 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	}
 	/*
 	 * 各パートの処理(multipart/mixed)
-	 *  - text/htmlがなくインライン添付ファイルがあるケースを処理(text/plainメールへのインライン添付)
+	 * (Content-Dispositionで指定されたインライン添付ファイルがあるケースのみを処理)
 	 */
-	private void parseBodypartmixed(SenderMail sendMail, BodyPart bp, String subtype) throws IOException{
+	private void parseBodypartmixed(SenderMail sendMail, BodyPart bp, String subtype, String parentSubtype) throws IOException{
 		boolean limiterr = false;
 		String badfile = null;
 		try{
@@ -417,7 +425,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("subtype:"+subtype);
 
 			if(contentType.startsWith("multipart/")){
-				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType));
+				parseMultipart(sendMail, (Multipart)bp.getContent(), getSubtype(contentType), subtype);
 
 			}else if(sendMail.getPlainTextContent()==null
 					&& contentType.startsWith("text/plain")){
@@ -430,12 +438,27 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				sendMail.setPlainTextContent(content);
 				
 				// HTMLを作成。改行はとりあえず<br>を入れておいて、あとでHtmlConverterで整形。
-				if(sendMail.getHtmlContent()==null){
-					sendMail.setHtmlContent("<body>" + Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>") + "<br>");
+				// ここで作成したHTMLは、実際に何もHTMLパートがなかった時に使う。
+				if(sendMail.getHtmlWorkingContent()==null){
+					sendMail.setHtmlWorkingContent("<body>" + Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>") + "<br>");
 				}else{
-					sendMail.addHtmlContent(Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>") + "<br>");
+					sendMail.addHtmlWorkingContent(Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>") + "<br>");
 				}
 
+			}else if(sendMail.getHtmlContent()==null
+					&& contentType.startsWith("text/html")
+					&& (parentSubtype.equalsIgnoreCase("alternative")
+							|| parentSubtype.equalsIgnoreCase("related"))){
+				// これは本文のtext/html
+				String content = (String)bp.getContent();
+				log.info("set Content html ["+content+"]");
+				String charset = (new ContentType(contentType)).getParameter("charset");
+				// 第2、第3のHTMLパートの存在が予想されるので、結合用に</body>から後ろを消しておく
+				content = this.charConv.convert(content, charset);
+				content = HtmlConvert.replaceAllCaseInsenstive(content, "</body>.*","");
+				log.debug(" conv "+content);
+				sendMail.setHtmlContent(content);
+				
 			}else{
 				log.debug("attach");
 				// 本文ではない
@@ -481,10 +504,13 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 						log.info("Inline Attachment(mixed) "+file.loggingString()+", Hash:"+file.getHash());
 
 						// インライン添付ファイルを参照するHTMLを作成
-						if(sendMail.getHtmlContent()==null){
-							sendMail.setHtmlContent("<body><img src=\"cid:" + file.getContentId() + "\"><br>");
-						}else{
+						if(sendMail.getHtmlContent()!=null){
 							sendMail.addHtmlContent("<img src=\"cid:" + file.getContentId() + "\"><br>");
+						}
+						if(sendMail.getHtmlWorkingContent()==null){
+							sendMail.setHtmlWorkingContent("<body><img src=\"cid:" + file.getContentId() + "\"><br>");
+						}else{
+							sendMail.addHtmlWorkingContent("<img src=\"cid:" + file.getContentId() + "\"><br>");
 						}
 					}else{
 						file.setFilename(fname2);
@@ -509,7 +535,21 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 						// 同内容のHTMLを作成。同様に改行は<br>
 						sendMail.addPlainTextContent("\n"+content);
-						sendMail.addHtmlContent(Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>")+"<br>");
+						sendMail.addHtmlWorkingContent(Util.easyEscapeHtml(content).replaceAll("\\r\\n","<br>")+"<br>");
+
+					}else if(fname==null && sendMail.getHtmlContent()!=null
+							&& contentType.startsWith("text/html")
+							&& (parentSubtype.equalsIgnoreCase("alternative")
+									|| parentSubtype.equalsIgnoreCase("related"))){
+						// 本文の続きのtext/html。本文に結合する。
+						String content = (String)bp.getContent();
+						log.info("add Content html ["+content+"]");
+						String charset = (new ContentType(contentType)).getParameter("charset");
+						content = this.charConv.convert(content, charset);
+						content = HtmlConvert.replaceAllCaseInsenstive(content, ".*<body[^>]*>","");
+						content = HtmlConvert.replaceAllCaseInsenstive(content, "</body>.*","");
+						log.debug(" conv "+content);
+						sendMail.addHtmlContent(content);
 
 					}else{
 						// 添付ファイルとしての通常の処理
@@ -536,10 +576,13 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.error("parse bodypart error(mixed).",e);
 			if(limiterr){
 				sendMail.addPlainTextContent("\n[添付ﾌｧｲﾙ削除("+badfile+")]");
-				if(sendMail.getHtmlContent()==null){
-					sendMail.setHtmlContent("<body>[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
-				}else{
+				if(sendMail.getHtmlContent()!=null){
 					sendMail.addHtmlContent("[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+				}
+				if(sendMail.getHtmlWorkingContent()==null){
+					sendMail.setHtmlWorkingContent("<body>[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+				}else{
+					sendMail.addHtmlWorkingContent("[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
 				}
 			}else{
 				throw new IOException("BodyPart error(mixed)."+e.getMessage(),e);

@@ -19,6 +19,7 @@ public class SenderMail {
 	private String subject;
 	private String plainTextContent;
 	private String htmlContent;
+	private String htmlWorkingContent;
 	private List<SenderAttachment> attachments = new ArrayList<SenderAttachment>();
 	
 	/*
@@ -76,6 +77,15 @@ public class SenderMail {
 	}
 	public void addHtmlContent(String htmlContent) {
 		this.htmlContent += htmlContent;
+	}
+	public String getHtmlWorkingContent() {
+		return htmlWorkingContent;
+	}
+	public void setHtmlWorkingContent(String htmlContent) {
+		this.htmlWorkingContent = htmlContent;
+	}
+	public void addHtmlWorkingContent(String htmlContent) {
+		this.htmlWorkingContent += htmlContent;
 	}
 	public void addAttachmentFileIdList(SenderAttachment file) {
 		for (SenderAttachment f : this.attachments) {
