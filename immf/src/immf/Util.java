@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 
 package immf;
@@ -56,7 +56,7 @@ public class Util {
 			}catch (Exception e) {}
 		}
 	}
-	
+
 	/**
 	 * 「〜」などの文字を置き換える
 	 * @param s
@@ -77,7 +77,7 @@ public class Util {
 
 		return s;
 	}
-	
+
 	public static String reverseReplaceUnicodeMapping(String s){
 		s = StringUtils.replace(s, "\u301c", "\uff5e");
 		s = StringUtils.replace(s, "\u2016", "\u2225");
@@ -86,9 +86,12 @@ public class Util {
 		s = StringUtils.replace(s, "\u00a3", "\uffe1");
 		s = StringUtils.replace(s, "\u00ac", "\uffe2");
 		s = StringUtils.replace(s, "\u2014", "\u2015");
+
+		// UTF-8の「ゔ 」(1文字)はShift_JISで変換されないので「う゛」(2文字)に変換
+		s = StringUtils.replace(s, "\u3094", "う゛");
 		return s;
 	}
-	
+
 	public static String easyEscapeHtml(String s){
 		StringBuilder buf = new StringBuilder();
 		for(char c : s.toCharArray()){
@@ -107,7 +110,7 @@ public class Util {
 		return buf.toString();
 	}
 
-	
+
 	/*
 	 * JavaMail完全解説 のページから使用させていただきました
 	 * http://www.sk-jp.com/book/javamail/contents/
@@ -247,7 +250,7 @@ public class Util {
 		}
 		return new String(result);
 	}
-	
+
     public static String getFileName(Part part) throws MessagingException {
         String[] disposition = part.getHeader("Content-Disposition");
         if (disposition == null || disposition.length < 1) {
@@ -278,7 +281,7 @@ public class Util {
         try {
             while (true) {
                 token = tokenizer.next();
-                if (token.getType() == token.EOF) break;
+                if (token.getType() == HeaderTokenizer.Token.EOF) break;
                 if (token.getType() != ';') continue;
 
                 token = tokenizer.next();
@@ -368,7 +371,7 @@ public class Util {
             throw new ParseException(s + " :: this string were not decoded.");
         }
     }
-    
+
     public static String decodeParameterSpciallyJapanese(String s)
     		throws ParseException {
     	try {
@@ -390,7 +393,7 @@ public class Util {
 		}
 		throw new ParseException("Unsupported Encoding");
 	}
-    
+
 	public static String html2text(String html){
 		Source src = new Source(html);
 		return src.getRenderer().toString();
@@ -419,11 +422,11 @@ public class Util {
 			subject = EmojiUtil.replaceToLabel(subject);
 		}
 		header.append(" Subject: ").append(subject).append("\r\n");
-		
+
 		for(String s : imm.getOtherInfoList()){
 			header.append(" 追加情報:").append(s).append("\r\n");
 		}
-		
+
 		if(isHtml){
 			String fontfamily = conf.getMailFontFamily();
 			if(fontfamily!=null){
@@ -454,12 +457,12 @@ public class Util {
 		}
 		return true;
 	}
-	
+
 	/* MimeUtility.encodeTextはサロゲートペアの間で分割することがあるので、自前のencoderを用意 */
 	public static String encodeGoomojiSubject(String subject) throws UnsupportedEncodingException {
 		final int maxlen = 75 - ("=?UTF-8?B?".length() + "?=".length());
 		StringBuilder sb = new StringBuilder();
-		
+
 		int mark = 0;
 		int utf8len = "X-Goomoji-Subject: ".length();
 		for (int i = 0; i < subject.length(); ) {
@@ -473,7 +476,7 @@ public class Util {
 				len = 3;
 			else
 				len = 4;
-			
+
 			if (4 * ((utf8len + len - 1) / 3 + 1) >= maxlen) {
 				if (mark > 0)
 					sb.append("\r\n ");
@@ -481,17 +484,18 @@ public class Util {
 				mark = i;
 				utf8len = 0;
 			}
-				
+
 			utf8len += len;
 			i += Character.charCount(cp);
 		}
 		if (mark > 0)
 			sb.append("\r\n ");
 		sb.append(MimeUtility.encodeWord(subject.substring(mark), "UTF-8", "B"));
-		
+
 		return sb.toString();
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	public static InputStream png2gif(InputStream is) throws IOException{
 		InputStream gis = null;
 		BufferedInputStream pis = new BufferedInputStream(is);
