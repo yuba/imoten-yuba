@@ -57,6 +57,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private String passwd;
 	private String alwaysBcc;
 	private boolean forcePlainText;
+	private boolean stripAppleQuote;
 
 	private MyWiser wiser;
 	private CharacterConverter charConv;
@@ -75,6 +76,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.passwd = conf.getSenderPasswd();
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
 		this.forcePlainText = conf.isSenderMailForcePlainText();
+		this.stripAppleQuote = conf.isSenderStripiPhoneQuote();
 		this.charConv = new CharacterConverter();
 		if(conf.getSenderCharCovertFile()!=null){
 			try{
@@ -216,6 +218,11 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				log.warn("未知のコンテンツ "+content.getClass().getName());
 				throw new IOException("Unsupported type "+content.getClass().getName()+".");
 			}
+
+			if(stripAppleQuote){
+				Util.stripAppleQuotedLines(senderMail);
+			}
+			Util.stripLastEmptyLines(senderMail);
 
 			log.info("Content  "+mime.getContent());
 			log.info("====");

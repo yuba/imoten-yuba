@@ -335,6 +335,11 @@ sender.forceplaintext
 　画像をインラインで添付できます。
 　デフォルト[true]
 
+sender.stripiphonequote
+　iPhoneでメール返信を行うと元メールが必ず引用されます。このパラメータがtrueの場合、
+　メールの引用部分(引用開始部からメール末尾まで)を自動的に削除してから送信します。
+　デフォルト[false]
+
 sender.smtp.tls.keystore
 　imode.net経由でメールを送信する場合にTLSを使用する場合に、keystoreファイルの
 　場所を指定します。相対パスを指定した場合、binディレクトリからの相対パスになります。

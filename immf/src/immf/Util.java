@@ -532,4 +532,68 @@ public class Util {
 			return pis;
 		}
 	}
+	
+	/*
+	 * メール末尾の空行を削除する
+	 */
+	public static void stripLastEmptyLines(SenderMail sendMail){
+		String plainText = sendMail.getPlainTextContent();
+		if(plainText!=null){
+			String term = "d51ded3800e80423";
+			sendMail.addPlainTextContent(term);
+			plainText = HtmlConvert.replaceAllCaseInsenstive(plainText, "(.*)[\r\n]*"+term,"$1");
+			sendMail.setPlainTextContent(plainText);
+			//log.info("Stripped text: " + sendMail.getPlainTextContent());
+		}
+		
+		String html = sendMail.getHtmlContent();
+		if(html!=null){
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(<br>|<div>(<br>)*</div>)*</body>", "</body>");
+			sendMail.setHtmlContent(html);
+			//log.info("Stripped html: " + sendMail.getHtmlContent());
+		}
+	}
+	
+	/*
+	 * iPhoneのMobileMail.appで返信時に必ず引用返信されて付加される部分を削除する
+	 */
+	public static void stripAppleQuotedLines(SenderMail sendMail){
+		/*
+		 * TEXTパート - 以下の形式を削除
+		 * 
+		 * | :
+		 * |
+		 * |On 年/月/日, at 時:分, メールアドレス wrote:
+		 * |
+		 * |>
+		 */
+		String plainText = sendMail.getPlainTextContent();
+		if(plainText!=null){
+			plainText = HtmlConvert.replaceAllCaseInsenstive(plainText, "[\r\n]*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^\n]* wrote:.*","");
+			sendMail.setPlainTextContent(plainText);
+			//log.info("Stripped text: " + sendMail.getPlainTextContent());
+		}
+		
+		/*
+		 * HTMLパート - 以下の形式を削除
+		 * 
+		 * | :
+		 * | <div><br></div>
+		 * |</div>
+		 * |<div><br>
+		 * |On 年/月/日, at 時:分, メールアドレス &lt;<a href="mailto:...></a>&gt; wrote:<br>
+		 * |<br><br></div>
+		 * |<div></div>
+		 * |<blockquote type="cite">
+		 */
+		String html = sendMail.getHtmlContent();
+		if(html!=null){
+			// 厳密一致（仮）
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(<div><br></div>)*</div><div><br>On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]*<a href=[^<>]*>[^<>]*</a>[^<>]* wrote:(<br>)*(</?div>)+<blockquote type=.*</blockquote>", "</div>");
+			// htmlWorkingContent由来
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(<br>)*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]* wrote:(<br>)*&gt;.*</body>", "</body>");
+			sendMail.setHtmlContent(html);
+			//log.info("Stripped html: " + sendMail.getHtmlContent());
+		}
+	}
 }

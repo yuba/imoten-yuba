@@ -167,6 +167,7 @@ public class Config {
 	private String senderGoogleCharConvertFile = null;
 	private boolean senderConvertSoftbankSjis = false;
 	private int senderDuplicationCheckTimeSec = 0;
+	private boolean senderStripiPhoneQuote = false;
 
 	// 送信用TLS
 	private String senderTlsKeystore;
@@ -263,6 +264,7 @@ public class Config {
 		this.senderUseGoomojiSubject = getBoolean("sender.usegoomojisubject", this.senderUseGoomojiSubject);
 		this.senderConvertSoftbankSjis = getBoolean("sender.convertsoftbanksjis", this.senderConvertSoftbankSjis);
 		this.senderDuplicationCheckTimeSec = getInt("sender.duplicationchecktime", this.senderDuplicationCheckTimeSec);
+		this.senderStripiPhoneQuote = getBoolean("sender.stripiphonequote", this.senderStripiPhoneQuote);
 
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
@@ -546,6 +548,10 @@ public class Config {
 
 	public boolean isSenderConvertSoftbankSjis() {
 		return senderConvertSoftbankSjis;
+	}
+	
+	public boolean isSenderStripiPhoneQuote() {
+		return senderStripiPhoneQuote;
 	}
 
 	public int getSenderDuplicationCheckTimeSec() {
