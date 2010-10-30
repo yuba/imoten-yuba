@@ -89,6 +89,15 @@ public class Util {
 
 		// UTF-8の「ゔ 」(1文字)はShift_JISで変換されないので「う゛」(2文字)に変換
 		s = StringUtils.replace(s, "\u3094", "う゛");
+
+		// 通常日本語では使用しないはずの半角記号
+		s = StringUtils.replace(s, "\u00ab", "\u226a"); // 「«」→「≪」
+		s = StringUtils.replace(s, "\u00af", "\uffe3"); // 「¯」→「￣」
+		s = StringUtils.replace(s, "\u00b5", "\u03bc"); // 「µ」→「μ」
+		s = StringUtils.replace(s, "\u00b7", "\u30fb"); // 「·」→「・」
+		s = StringUtils.replace(s, "\u00b8", "\uff0c"); // 「¸」→「，」
+		s = StringUtils.replace(s, "\u00bb", "\u226b"); // 「»」→「≫」
+		s = StringUtils.replace(s, "\u203e", "\u007e"); // 「‾」→「~」
 		return s;
 	}
 
