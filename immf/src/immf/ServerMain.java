@@ -39,6 +39,7 @@ public class ServerMain {
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
+	private SendMailPicker picker;
 	private Config conf;
 	private StatusManager status;
 	private SkypeForwarder skypeForwarder;
@@ -113,7 +114,8 @@ public class ServerMain {
 		}catch (Exception e) {}
 
 		// メール送信
-		new SendMailBridge(conf, this.client);
+		picker = new SendMailPicker(conf, this.client);
+		new SendMailBridge(conf, this.client, this.picker);
 
 		// skype
 		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);

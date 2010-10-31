@@ -423,10 +423,18 @@ public class ImodeNetClient implements Closeable{
 	 * @return
 	 * @throws IOException
 	 */
-	public synchronized void sendMail(SenderMail mail, boolean forcePlaintext) throws IOException{
-		if(this.logined==null || !this.logined){
+	public synchronized void sendMail(SenderMail mail, boolean forcePlaintext) throws IOException,LoginException{
+		if(this.logined==null){
 			log.warn("iモード.netにログインできていません。");
-			throw new IOException("imode.net nologin");
+			this.logined = Boolean.FALSE;
+			throw new LoginException("imode.net nologin");
+		}
+		if(this.logined!=null && this.logined==Boolean.FALSE){
+			try{
+				this.login();
+			}catch(LoginException e){
+				throw new IOException("Could not login to imode.net");
+			}
 		}
 		List<String> inlineFileIdList = new LinkedList<String>();
 		List<String> attachmentFileIdList = new LinkedList<String>();
@@ -547,11 +555,17 @@ public class ImodeNetClient implements Closeable{
 					log.warn("応答がJSON形式ではありません。");
 					if (res != null)
 						log.debug(toStringBody(res));
-					throw new IOException("Bad response. no json format.");
+					// JSON形式でないのは未ログイン時に送信しようとした場合のはず
+					this.logined = Boolean.FALSE;
+					throw new LoginException("Bad response. no json format.");
 				}
 				JSONObject json = JSONObject.fromObject(toStringBody(res));
 				String result = json.getJSONObject("common").getString("result");
-				if(!result.equals("PW1000")){
+				if(result.equals("PW1409")){
+					// 不正なメール送信により強制切断時
+					this.logined = Boolean.FALSE;
+					throw new IOException("PW1409 - session terminated because of your bad mail.");
+				}else if(!result.equals("PW1000")){
 					log.debug(json.toString(2));
 					throw new IOException("Bad response "+result);
 				}

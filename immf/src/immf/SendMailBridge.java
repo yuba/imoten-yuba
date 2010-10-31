@@ -52,6 +52,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private static final Log log = LogFactory.getLog(SendMailBridge.class);
 
 	private ImodeNetClient client;
+	private SendMailPicker picker;
 
 	private String user;
 	private String passwd;
@@ -67,11 +68,12 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 	private Map<String, List<String>>receivedMessageTable;
 
-	public SendMailBridge(Config conf, ImodeNetClient client){
+	public SendMailBridge(Config conf, ImodeNetClient client, SendMailPicker picker){
 		if(conf.getSenderSmtpPort()<=0){
 			return;
 		}
 		this.client = client;
+		this.picker = picker;
 		this.user = conf.getSenderUser();
 		this.passwd = conf.getSenderPasswd();
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
@@ -227,7 +229,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("Content  "+mime.getContent());
 			log.info("====");
 
-			this.client.sendMail(senderMail, this.forcePlainText);
+			this.picker.add(senderMail);
 
 		}catch (IOException e) {
 			log.warn("Bad Mail Received.",e);
