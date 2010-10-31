@@ -548,16 +548,14 @@ public class Util {
 	public static void stripLastEmptyLines(SenderMail sendMail){
 		String plainText = sendMail.getPlainTextContent();
 		if(plainText!=null){
-			String term = "d51ded3800e80423";
-			sendMail.addPlainTextContent(term);
-			plainText = HtmlConvert.replaceAllCaseInsenstive(plainText, "(.*)[\r\n]*"+term,"$1");
+			plainText = HtmlConvert.replaceAllCaseInsenstive(plainText, "[\r\n]*\\z","");
 			sendMail.setPlainTextContent(plainText);
 			//log.info("Stripped text: " + sendMail.getPlainTextContent());
 		}
 		
 		String html = sendMail.getHtmlContent();
 		if(html!=null){
-			html = HtmlConvert.replaceAllCaseInsenstive(html, "(<br>|<div>(<br>)*</div>)*</body>", "</body>");
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<br>|<div>(?:<br>)*</div>)*</body>", "</body>");
 			sendMail.setHtmlContent(html);
 			//log.info("Stripped html: " + sendMail.getHtmlContent());
 		}
@@ -598,9 +596,9 @@ public class Util {
 		String html = sendMail.getHtmlContent();
 		if(html!=null){
 			// 厳密一致（仮）
-			html = HtmlConvert.replaceAllCaseInsenstive(html, "(<div><br></div>)*</div><div><br>On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]*<a href=[^<>]*>[^<>]*</a>[^<>]* wrote:(<br>)*(</?div>)+<blockquote type=.*</blockquote>", "</div>");
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<div><br></div>)*</div><div><br>On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]*<a href=[^<>]*>[^<>]*</a>[^<>]* wrote:(?:<br>)*(?:</?div>)+<blockquote type=.*</blockquote>", "</div>");
 			// htmlWorkingContent由来
-			html = HtmlConvert.replaceAllCaseInsenstive(html, "(<br>)*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]* wrote:(<br>)*&gt;.*</body>", "</body>");
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<br>)*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]* wrote:(?:<br>)*&gt;.*</body>", "</body>");
 			sendMail.setHtmlContent(html);
 			//log.info("Stripped html: " + sendMail.getHtmlContent());
 		}
