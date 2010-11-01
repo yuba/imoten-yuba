@@ -70,7 +70,7 @@ public class AddressBook {
 			}catch (Exception ex) {
 				try{
 					// メールアドレスなしのiモードセンターからのリターンメール
-					return new InternetAddress(null, mailAddress);
+					return new InternetAddress("", mailAddress);
 				}catch (Exception exc) {
 					return null;
 				}
