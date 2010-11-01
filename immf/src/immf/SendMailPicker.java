@@ -87,11 +87,7 @@ public class SendMailPicker implements Runnable{
 				
 			}catch (IOException e) {
 				log.warn("Bad Mail Received.",e);
-				String subject="";
-				if(mail!=null){
-					subject = mail.getSubject();
-				}
-				errorNotify("Bad Mail Received.\n" + e.getMessage(), subject);
+				errorNotify("Bad Mail Received.\n" + e.getMessage(), mail);
 			}
 		}
 	}
@@ -99,7 +95,7 @@ public class SendMailPicker implements Runnable{
 	/*
 	 * 送信失敗したメールをお知らせ
 	 */
-	private void errorNotify(String error, String subject){
+	private void errorNotify(String error, SenderMail errMail){
 		SimpleEmail mail = new SimpleEmail();
 
 		//mail.setCharset(this.conf.getMailEncode());
@@ -142,18 +138,36 @@ public class SendMailPicker implements Runnable{
 			mail.setSubject("メール送信エラー");
 
 			String body = "imotenが以下のメール送信に失敗しました\r\n\r\n";
-			body += "【タイトル】\r\n";
-			body += subject;
-			body += "\r\n";
 			body += "【エラーメッセージ】\r\n";
 			body += error;
+			body += "\r\n\r\n";
+
+			body += "【件名】\r\n";
+			String errSubject="";
+			if(errMail!=null){
+				errSubject = errMail.getSubject();
+			}
+			body += errSubject;
+			body += "\r\n";
+
+			body += "【本文】\r\n";
+			String errBody = "";
+			if(errMail!=null){
+				errBody = errMail.getPlainBody();
+			}
+			if(errBody.length() > 30){
+				body += errBody.substring(0,30);
+				body += "...";
+			}else{
+				body += errBody;
+			}
 			mail.setMsg(body);
 			
 			mail.send();
-			log.info("エラーメール送信");
+			log.info("エラーメール返信");
 
 		}catch(EmailException e){
-			log.warn("エラーメール送信失敗");
+			log.warn("エラーメール返信失敗");
 		}
 	}
 }
