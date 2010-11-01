@@ -38,7 +38,6 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.mail.internet.MimeUtility;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -65,6 +64,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private CharacterConverter googleCharConv;
 	private boolean useGoomojiSubject;
 	private int duplicationCheckTimeSec;
+	private boolean sendAsync;
 
 	private Map<String, List<String>>receivedMessageTable;
 
@@ -79,6 +79,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
 		this.forcePlainText = conf.isSenderMailForcePlainText();
 		this.stripAppleQuote = conf.isSenderStripiPhoneQuote();
+		this.sendAsync = conf.isSenderAsync();
 		this.charConv = new CharacterConverter();
 		if(conf.getSenderCharCovertFile()!=null){
 			try{
@@ -229,7 +230,14 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.info("Content  "+mime.getContent());
 			log.info("====");
 
-			this.picker.add(senderMail);
+			if(this.sendAsync){
+				// 別スレッドで送信
+				// すぐにメーラにOKを返す
+				this.picker.add(senderMail);
+			}else{
+				// 送信が完了するまでブロックする
+				this.client.sendMail(senderMail, this.forcePlainText);
+			}
 
 		}catch (IOException e) {
 			log.warn("Bad Mail Received.",e);
@@ -289,7 +297,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		}
 		return "";
 	}
-	
+
 	private static String getBasename(String filename){
 		try{
 			int dot = filename.lastIndexOf(".");
@@ -354,7 +362,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					SenderAttachment file = new SenderAttachment();
 					String fname = uniqId();
 					String fname2 = Util.getFileName(bp);
-					
+
 					// iPhoneはgifをpngとして報告してくることがあるのでContentType修正(本当にpngだったらgif変換)
 					if(getSubtype(contentType).equalsIgnoreCase("png")){
 						file.setContentType("image/gif");
@@ -366,7 +374,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 						fname = fname+"."+getSubtype(contentType);
 						file.setData(inputstream2bytes(bp.getInputStream()));
 					}
-					
+
 					file.setInline(true);
 					boolean inline = sendMail.checkAttachmentCapability(file);
 					if(!inline){
@@ -445,7 +453,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				content = this.charConv.convert(content, charset);
 				log.debug(" conv "+content);
 				sendMail.setPlainTextContent(content);
-				
+
 				// HTMLを作成。改行はとりあえず<br>を入れておいて、あとでHtmlConverterで整形。
 				// ここで作成したHTMLは、実際に何もHTMLパートがなかった時に使う。
 				if(sendMail.getHtmlWorkingContent()==null){
@@ -467,7 +475,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				content = HtmlConvert.replaceAllCaseInsenstive(content, "</body>.*","");
 				log.debug(" conv "+content);
 				sendMail.setHtmlContent(content);
-				
+
 			}else{
 				log.debug("attach");
 				// 本文ではない
@@ -479,7 +487,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					String uniqId = uniqId();
 					String fname = uniqId;
 					String fname2 = Util.getFileName(bp);
-					
+
 					// iPhoneはgifをpngとして報告してくることがあるのでgifに戻す(本当にpngだったらgif変換)
 					if(getSubtype(contentType).equalsIgnoreCase("png")){
 						file.setContentType("image/gif");
@@ -502,7 +510,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 							throw new Exception("Attachments: size limit or file count limit exceeds!");
 						}
 					}
-					
+
 					if(inline){
 						file.setFilename(fname);
 						if(bp.getHeader("Content-Id")==null){
@@ -526,7 +534,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 						log.info("Attachment "+file.loggingString());
 					}
 					sendMail.addAttachmentFileIdList(file);
-					
+
 				}else{
 					// 通常の添付ファイル
 					SenderAttachment file = new SenderAttachment();
@@ -577,7 +585,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 						}
 						sendMail.addAttachmentFileIdList(file);
 						log.info("Attachment "+file.loggingString());
-						
+
 					}
 				}
 			}

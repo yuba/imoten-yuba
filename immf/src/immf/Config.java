@@ -81,7 +81,7 @@ public class Config {
 	private String bodyEmojiSize = null;
 	private String bodyEmojiVAlignHtml = null;
 	private String bodyEmojiSizeHtml = null;
-	
+
 	// 転送後の題名の先頭に追加する文字列
 	private String subjectAppendPrefix="";
 
@@ -149,7 +149,7 @@ public class Config {
 
 	// メールのフォント
 	private String mailFontFamily = null;
-	
+
 	// 転送メールを multipart/alternative にするかどうか
 	private boolean mailAlternative = false;
 
@@ -168,6 +168,7 @@ public class Config {
 	private boolean senderConvertSoftbankSjis = false;
 	private int senderDuplicationCheckTimeSec = 0;
 	private boolean senderStripiPhoneQuote = false;
+	private boolean senderAsync = false;	// trueだと送信を別スレッドで行う。エラー時はエラーメールが転送アドレスに送信される。
 
 	// 送信用TLS
 	private String senderTlsKeystore;
@@ -265,6 +266,7 @@ public class Config {
 		this.senderConvertSoftbankSjis = getBoolean("sender.convertsoftbanksjis", this.senderConvertSoftbankSjis);
 		this.senderDuplicationCheckTimeSec = getInt("sender.duplicationchecktime", this.senderDuplicationCheckTimeSec);
 		this.senderStripiPhoneQuote = getBoolean("sender.stripiphonequote", this.senderStripiPhoneQuote);
+		this.senderAsync = getBoolean("sender.async", this.senderAsync);
 
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
@@ -549,7 +551,7 @@ public class Config {
 	public boolean isSenderConvertSoftbankSjis() {
 		return senderConvertSoftbankSjis;
 	}
-	
+
 	public boolean isSenderStripiPhoneQuote() {
 		return senderStripiPhoneQuote;
 	}
@@ -568,6 +570,10 @@ public class Config {
 
 	public String getForwardGoogleCharConvertFile() {
 		return forwardGoogleCharConvertFile;
+	}
+
+	public boolean isSenderAsync() {
+		return senderAsync;
 	}
 
 }
