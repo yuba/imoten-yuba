@@ -68,7 +68,12 @@ public class AddressBook {
 			try{
 				return new InternetAddress(mailAddress);
 			}catch (Exception ex) {
-				return null;
+				try{
+					// メールアドレスなしのiモードセンターからのリターンメール
+					return new InternetAddress(null, mailAddress);
+				}catch (Exception exc) {
+					return null;
+				}
 			}
 		}
 	}

@@ -565,12 +565,19 @@ public class ImodeNetClient implements Closeable{
 					// 不正なメール送信により強制切断時
 					this.logined = Boolean.FALSE;
 					throw new IOException("PW1409 - session terminated because of your bad mail.");
+				}else if(result.equals("PW1430")){
+					// 宛先不明の場合
+					throw new IOException("PW1430 - User Unknown.");
+				}else if(result.equals("PW1436")){
+					// 宛先の一部が不明の場合
+					throw new IOException("PW1436 - Some of Users Unknown.");
 				}else if(!result.equals("PW1000")){
 					log.debug(json.toString(2));
 					throw new IOException("Bad response "+result);
 				}
 			}finally{
 				post.abort();
+				log.info("メール送信処理終了");
 			}
 		}catch (UnsupportedEncodingException e) {
 			log.fatal(e);
