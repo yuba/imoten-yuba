@@ -553,11 +553,14 @@ public class ImodeNetClient implements Closeable{
 				HttpResponse res = this.executeHttp(post);
 				if(!isJson(res)){
 					log.warn("応答がJSON形式ではありません。");
-					if (res != null)
+					if (res != null) {
+						// JSON形式でないのは未ログイン時に送信しようとした場合のはず
 						log.debug(toStringBody(res));
-					// JSON形式でないのは未ログイン時に送信しようとした場合のはず
-					this.logined = Boolean.FALSE;
-					throw new LoginException("Bad response. no json format.");
+						this.logined = Boolean.FALSE;
+						throw new LoginException("Bad response. no json format.");
+					}else{
+						throw new IOException("imode.net not responding. Try later.");
+					}
 				}
 				JSONObject json = JSONObject.fromObject(toStringBody(res));
 				String result = json.getJSONObject("common").getString("result");
