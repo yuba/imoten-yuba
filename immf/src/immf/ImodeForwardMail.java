@@ -84,7 +84,13 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			}
 		}
 
-		String subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+		String subject = null;
+		if(imm.getFolderId()==ImodeNetClient.FolderIdSent){
+			subject = conf.getSentSubjectAppendPrefix()+imm.getSubject();
+		}else{
+			subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+		}
+
 		if(conf.isSubjectEmojiReplace()){
 			this.setSubject(EmojiUtil.replaceToLabel(subject));
 		}else{
@@ -333,7 +339,9 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				msg.removeHeader("Bcc");
 
 				List<InternetAddress> list = new ArrayList<InternetAddress>();
-				list.add(this.imm.getMyInternetAddress());
+				if(this.imm.getFolderId()!=ImodeNetClient.FolderIdSent){
+					list.add(this.imm.getMyInternetAddress());
+				}
 				list.addAll(this.imm.getToAddrList());
 				msg.setHeader("To", InternetAddress.toString(list.toArray(new InternetAddress[0])));
 
@@ -344,7 +352,12 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				msg.setFrom(this.imm.getFromAddr());
 			}
 
-			String subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+			String subject = null;
+			if(imm.getFolderId()==ImodeNetClient.FolderIdSent){
+				subject = conf.getSentSubjectAppendPrefix()+imm.getSubject();
+			}else{
+				subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+			}
 			if(conf.isSubjectEmojiReplace()){
 				subject = EmojiUtil.replaceToLabel(subject);
 			}

@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 package immf;
 
@@ -81,26 +81,29 @@ public class ImodeNetClient implements Closeable{
 	private static final String PcAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/pcaddrlist";
 	private static final String DsAddrListUrl = 	"https://imode.net/imail/oexaf/acgi/dsaddrlist";
 
+	public static final int FolderIdSent = 1;
+	public static final int FolderIdDrafts = 2;
+
 	private String name;
 	private String pass;
-	
+
 	private DefaultHttpClient httpClient;
 	private Boolean logined;
-	
+
 	private AddressBook addressBook;
 	private String mailAddrCharset = "ISO-2022-jP";
 	private String csvAddressBook;
 	private String vcAddressBook;
-	
+
 	public ImodeNetClient(String name, String pass){
 		this.name = name;
 		this.pass = pass;
-		
+
 		this.httpClient = new DefaultHttpClient();
 		this.httpClient.getParams().setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
-	
+
 	}
-	
+
 	public void checkAddressBook(){
 		if(this.addressBook==null){
 			// 起動直後は必ず読み込む
@@ -156,8 +159,8 @@ public class ImodeNetClient implements Closeable{
 			}finally{
 				post.abort();
 			}
-			
-			
+
+
 			post = new HttpPost(JsonUrl+"login");
 			try{
 				HttpResponse res = this.requestPost(post, null);
@@ -173,15 +176,15 @@ public class ImodeNetClient implements Closeable{
 			}finally{
 				post.abort();
 			}
-			
+
 		}catch (Exception e) {
 			this.logined = Boolean.FALSE;
 			throw new LoginException("Docomo i mode.net Login Error.",e);
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param folderId 取得するメールIDの入っているメールボックスのフォルダIDを指定する(0:受信ボックス？)
 	 * @return フォルダIDをキーにしてそのフォルダの中のメールIDのリストを取得するMap
 	 * @throws IOException
@@ -195,8 +198,8 @@ public class ImodeNetClient implements Closeable{
 			// nullの場合は起動直後でcookieがあるので、ログインせずにトライする
 			if(this.logined!=null && this.logined==Boolean.FALSE){
 				this.login();
-			}			
-			
+			}
+
 			post = new HttpPost(JsonUrl+"mailidlist");
 			HttpResponse res = this.requestPost(post,null);
 			if(!isJson(res)){
@@ -219,14 +222,14 @@ public class ImodeNetClient implements Closeable{
 			this.logined = Boolean.TRUE;
 			//log.debug(json.toString(2));
 			JSONArray array = json.getJSONObject("data").getJSONArray("folderList");
-			
+
 			Map<Integer, List<String>> r = new TreeMap<Integer, List<String>>();
 			for(int i=0; i<array.size(); i++){
 				json = array.getJSONObject(i);
 				int folderId = json.getInt("folderId");
-				// 1:送信フォルダ, 2:下書きフォルダ
-				if(folderId==1 || folderId==2){
-					// スキップ
+				if(folderId==FolderIdDrafts){
+					// 下書きはスキップ
+					// 送信済みは処理する
 					continue;
 				}
 				log.debug("FolderId "+folderId);
@@ -248,20 +251,20 @@ public class ImodeNetClient implements Closeable{
 				post.abort();
 		}
 	}
-	
+
 	public synchronized ImodeMail getMail(int folderId, String mailId) throws IOException,LoginException{
 		log.info("# メール情報を取得 フォルダID:"+folderId+" / メールID:"+mailId);
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 		formparams.add(new BasicNameValuePair("folder.id",Integer.toString(folderId)));
 		formparams.add(new BasicNameValuePair("folder.mail.id",mailId));
-		
+
 		HttpPost post = null;
 		JSONObject json = null;
 		try{
 			post = new HttpPost(JsonUrl+"maildetail");
 			HttpResponse res = this.requestPost(post,formparams);
 			json = JSONObject.fromObject(toStringBody(res));
-			
+
 			String result = json.getJSONObject("common").getString("result");
 			if(!result.equals("PW1000")){
 				log.debug(json.toString(2));
@@ -273,7 +276,7 @@ public class ImodeNetClient implements Closeable{
 			post.abort();
 		}
 		//log.debug(json.toString(2));
-		
+
 		ImodeMail r = new ImodeMail();
 		String myAddr = json.getJSONObject("common").getString("myAddr");
 		r.setMyAddr(myAddr);
@@ -285,13 +288,17 @@ public class ImodeNetClient implements Closeable{
 		r.setDecomeFlg(json.getInt("decomeFlg")!=0);
 		r.setRecvType(json.getInt("recvType"));
 		r.setBody(json.getString("body"));
-		
+
+		if(folderId==FolderIdSent){
+			r.setFromAddr(r.getMyInternetAddress());
+		}
+
 		log.info("From     "+r.getFromAddr());
 		log.info("Subject  "+r.getSubject());
 		log.info("Time     "+r.getTime());
 		log.info("DecoFlag "+r.isDecomeFlg());
 		log.info("RcvType  "+r.getRecvType());
-		
+
 		// メールアドレス
 		JSONArray addrs = json.getJSONArray("previewInfo");
 		List<InternetAddress> tolist = new ArrayList<InternetAddress>();
@@ -313,7 +320,7 @@ public class ImodeNetClient implements Closeable{
 		}
 		r.setToAddrList(tolist);
 		r.setCcAddrList(cclist);
-		
+
 		// 添付ファイル
 		List<AttachedFile> attache = new ArrayList<AttachedFile>();
 		List<AttachedFile> inline = new ArrayList<AttachedFile>();
@@ -334,7 +341,7 @@ public class ImodeNetClient implements Closeable{
 				log.error("添付ファイルダウンロードエラー", e);
 			}
 		}
-		
+
 		attaches = json.getJSONArray("inlineInfo");
 		log.info("添付ファイル(インライン) "+attaches.size());
 		for(int i=0; i<attaches.size(); i++){
@@ -342,23 +349,23 @@ public class ImodeNetClient implements Closeable{
 			AttachedFile f = this.getAttachedFile(AttachType.Inline, folderId, mailId, inlineJson.getString("id"));
 			inline.add(f);
 		}
-		
+
 		r.setAttachFileList(attache);
 		r.setInlineFileList(inline);
 		return r;
 	}
-	
+
 	private enum AttachType {Attach,Inline};
 	/**
 	 * 添付ファイルをダウンロードする
-	 * 
+	 *
 	 * @param mailId
 	 * @param attacheId
 	 * @return
 	 */
 	private AttachedFile getAttachedFile(AttachType type, int folderId, String mailId, String fileId) throws IOException{
 		log.debug("# 添付ファイルのダウンロード "+type+"/"+mailId+"/"+fileId);
-		
+
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 		formparams.add(new BasicNameValuePair("folder.id",Integer.toString(folderId)));
 		formparams.add(new BasicNameValuePair("folder.mail.id",mailId));
@@ -368,9 +375,9 @@ public class ImodeNetClient implements Closeable{
 			formparams.add(new BasicNameValuePair("folder.mail.img.id", fileId));
 		}
 		formparams.add(new BasicNameValuePair("cdflg","1"));
-		
+
 		String pwsp = this.getPwspQuery();
-		
+
 		HttpPost post = null;
 		try{
 			if(type==AttachType.Attach){
@@ -404,7 +411,7 @@ public class ImodeNetClient implements Closeable{
 			post.abort();
 		}
 	}
-	
+
 	private String getPwspQuery(){
 		String pwsp = "";
 		for (Cookie c : this.httpClient.getCookieStore().getCookies()) {
@@ -415,10 +422,10 @@ public class ImodeNetClient implements Closeable{
 		}
 		return pwsp;
 	}
-	
+
 	/**
 	 * imode.netの送信フォールからメールを送信
-	 * 
+	 *
 	 * @param mail
 	 * @return
 	 * @throws IOException
@@ -442,10 +449,10 @@ public class ImodeNetClient implements Closeable{
 			// htmlメールの場合インライン画像を送信する
 			for (SenderAttachment file : mail.getInlineFile()) {
 				String docomoFileId = this.sendAttachFile(
-						inlineFileIdList, 
-						true, 
-						file.getContentTypeWithoutParameter(), 
-						file.getFilename(), 
+						inlineFileIdList,
+						true,
+						file.getContentTypeWithoutParameter(),
+						file.getFilename(),
 						file.getData());
 				file.setDocomoFileId(docomoFileId);
 			}
@@ -454,13 +461,13 @@ public class ImodeNetClient implements Closeable{
 		for (SenderAttachment file : attachFiles) {
 			// 添付ファイルを送信
 			this.sendAttachFile(
-					attachmentFileIdList, 
-					false, 
-					file.getContentTypeWithoutParameter(), 
-					file.getFilename(), 
+					attachmentFileIdList,
+					false,
+					file.getContentTypeWithoutParameter(),
+					file.getFilename(),
 					file.getData());
 		}
-		
+
 		// htmlメールかテキストメール決定する
 		boolean htmlMail =false;
 		String body = null;
@@ -476,7 +483,7 @@ public class ImodeNetClient implements Closeable{
 				htmlMail = true;
 			}
 		}
-		
+
 		// htmlメールにある参照先のないcidを削除する
 		if(htmlMail){
 			// (イメージ実体のある場合は <img src="40_... となる)
@@ -484,8 +491,8 @@ public class ImodeNetClient implements Closeable{
 		}
 		log.info("Html "+htmlMail);
 		log.info("body "+body);
-		
-		
+
+
 		MultipartEntity multi = new MultipartEntity();
 		try{
 			multi.addPart("folder.id", new StringBody("0",Charset.forName("UTF-8")));
@@ -496,7 +503,7 @@ public class ImodeNetClient implements Closeable{
 				mailType = "0";
 			}
 			multi.addPart("folder.mail.type", new StringBody(mailType,Charset.forName("UTF-8")));
-			
+
 			// 送信先
 			int recipient = 0;
 			for (InternetAddress ia : mail.getTo()) {
@@ -517,13 +524,13 @@ public class ImodeNetClient implements Closeable{
 			if(recipient>5){
 				throw new IOException("Too Much Recipient");
 			}
-			
+
 			// 題名
 			multi.addPart("folder.mail.subject", new StringBody(Util.reverseReplaceUnicodeMapping(mail.getSubject()),Charset.forName("UTF-8")));
-			
+
 			// 内容
 			body = Util.reverseReplaceUnicodeMapping(body);
-			
+
 			// imode.netの制限 本文は10000Bytes以内で
 			if(body.getBytes().length>10000){
 				// 文字数かbyte数かわからないのでとりあえずbyte数で制限
@@ -531,7 +538,7 @@ public class ImodeNetClient implements Closeable{
 				throw new IOException("Too Big Message Body. Max 10000 byte.");
 			}
 			multi.addPart("folder.mail.data", new StringBody(body,Charset.forName("UTF-8")));
-			
+
 			if(!attachmentFileIdList.isEmpty()){
 				// 添付ファイル
 				for(int i=0; i<attachmentFileIdList.size();i++){
@@ -542,7 +549,7 @@ public class ImodeNetClient implements Closeable{
 			// よくわかんない絵文字情報
 			multi.addPart("iemoji(0).id", new StringBody(Character.toString((char)0xe709),Charset.forName("UTF-8")));			// e709 = UTF-8でee89c9の値
 			multi.addPart("iemoji(1).id", new StringBody(Character.toString((char)0xe6f0),Charset.forName("UTF-8")));			// e6f0 = UTF-8でee9bb0の値
-			
+
 			multi.addPart("reqtype", new StringBody("0",Charset.forName("UTF-8")));
 
 			HttpPost post = new HttpPost(SendMailUrl);
@@ -586,10 +593,10 @@ public class ImodeNetClient implements Closeable{
 			log.fatal(e);
 		}
 	}
-	
+
 	/**
 	 * 送信するメールの添付ファイルを送信
-	 * 
+	 *
 	 * @param fileIdList
 	 * @param contentType
 	 * @param filename
@@ -608,14 +615,14 @@ public class ImodeNetClient implements Closeable{
 		}
 
 		multi.addPart("stmpfile.data", new ByteArrayBody(data,contentType,"C:\\"+filename));
-		
+
 		String url = null;
 		if(isInline){
 			url = ImgupUrl;
 		}else{
 			url = FileupUrl;
 		}
-			
+
 		HttpPost post = new HttpPost(url+"?pwsp="+this.getPwspQuery());
 		try{
 			addDumyHeader(post);
@@ -645,7 +652,7 @@ public class ImodeNetClient implements Closeable{
 			}else{
 				objName = "file";
 			}
-			
+
 			String fileId = json.getJSONObject("data").getJSONObject(objName).getString("id");
 			fileIdList.add(fileId);
 			return fileId;
@@ -653,8 +660,8 @@ public class ImodeNetClient implements Closeable{
 			post.abort();
 		}
 	}
-	
-	
+
+
 	/*
 	 * アドレス帳情報を読み込む
 	 */
@@ -697,7 +704,7 @@ public class ImodeNetClient implements Closeable{
 				throw new IOException("Login Error");
 			}
 			json = JSONObject.fromObject(toStringBody(res));
-			
+
 			String result = json.getJSONObject("common").getString("result");
 			if(!result.equals("PW1000")){
 				log.debug(json.toString(2));
@@ -706,7 +713,7 @@ public class ImodeNetClient implements Closeable{
 		}finally{
 			post.abort();
 		}
-		
+
 		JSONObject nameTbl = json.getJSONObject("data").getJSONObject("pcNameTbl");
 		@SuppressWarnings("unchecked")
 		Iterator<Object> ite = nameTbl.keys();
@@ -735,7 +742,7 @@ public class ImodeNetClient implements Closeable{
 			}
 		}
 	}
-	
+
 	/*
 	 * ケータイデータお預かりサービスで登録したアドレス帳情報を読み込む
 	 */
@@ -746,14 +753,14 @@ public class ImodeNetClient implements Closeable{
 		try{
 			List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 			formparams.add(new BasicNameValuePair("lastupdate",""));
-			
+
 			HttpResponse res = this.requestPost(post, formparams);
 			if(res==null){
 				this.logined = Boolean.FALSE;
 				throw new IOException("Login Error");
 			}
 			json = JSONObject.fromObject(toStringBody(res));
-			
+
 			String result = json.getJSONObject("common").getString("result");
 			if(!result.equals("PW1000")){
 				log.debug(json.toString(2));
@@ -762,7 +769,7 @@ public class ImodeNetClient implements Closeable{
 		}finally{
 			post.abort();
 		}
-		
+
 		JSONObject nameTbl = json.getJSONObject("data").getJSONObject("dsNameTbl");
 
 		@SuppressWarnings("unchecked")
@@ -833,7 +840,7 @@ public class ImodeNetClient implements Closeable{
 					ia.setId(String.valueOf(id));
 					ab.addCsvAddr(ia);
 					log.debug("ID:"+ia.getId()+" / Name:"+ia.getName()+" / Address:"+ia.getMailAddress());
-					
+
 				}catch (Exception e) {
 					log.warn("CSVファイル("+id+"行目)に問題があります["+line+"]");
 				}
@@ -841,7 +848,7 @@ public class ImodeNetClient implements Closeable{
 			br.close();
 		}catch (Exception e){
 			log.warn("loadCsvAddressBook "+this.csvAddressBook+" error.",e);
-			
+
 		}finally{
 			Util.safeclose(br);
 			Util.safeclose(fr);
@@ -939,7 +946,7 @@ public class ImodeNetClient implements Closeable{
 							}
 						}
 						vcName = new String(vcData, valueStart, curLineLength-(valueStart-curLineStart), option[1]).replace(";"," ").trim();
-					
+
 					}
 					// EMAIL
 					if(label[0].equalsIgnoreCase("EMAIL")){
@@ -971,11 +978,11 @@ public class ImodeNetClient implements Closeable{
 			return false;
 		}
 	}
-	
+
 	private static String toStringBody(HttpResponse res) throws IOException{
 		return EntityUtils.toString(res.getEntity(),"Shift_JIS");
 	}
-	
+
 	/**
 	 * POSTは自動でリダイレクトされないので手動でリダイレクト
 	 * @param req
@@ -989,9 +996,9 @@ public class ImodeNetClient implements Closeable{
 				int status = res.getStatusLine().getStatusCode();
 				if(300<=status && status<=399){
 					req.abort();
-					
+
 					URI location = httpClient.getRedirectHandler().getLocationURI(res, new BasicHttpContext());
-					
+
 					//System.out.println("Redirect "+location);
 					req = new HttpGet(location);
 					req.setHeader("User-Agent","Mozilla/4.0 (compatible;MSIE 7.0; Windows NT 6.0;)");
@@ -1020,7 +1027,7 @@ public class ImodeNetClient implements Closeable{
 	 */
 	private HttpResponse requestPost(HttpPost post,List<NameValuePair> formparams) throws IOException{
 		addDumyHeader(post);
-		
+
 		if(formparams!=null){
 			UrlEncodedFormEntity entity = null;
 			try{
@@ -1030,10 +1037,10 @@ public class ImodeNetClient implements Closeable{
 		}else{
 			post.setHeader("Content-Type","application/x-www-form-urlencoded");
 		}
-		
+
 		return this.executeHttp(post);
 	}
-	
+
 	private static void addDumyHeader(HttpEntityEnclosingRequestBase req){
 		req.setHeader("Accept", "*/*");
 		req.setHeader("Accept-Encoding","gzip, deflate");
@@ -1042,31 +1049,31 @@ public class ImodeNetClient implements Closeable{
 		req.setHeader("x-pw-service","PCMAIL/1.0");
 		req.setHeader("Referer","https://imode.net/imail/oexaf/ahtm/index_f.html");
 	}
-	
+
 	public void setSoTimeout(int millisec){
 		this.httpClient.getParams().setIntParameter("http.socket.timeout", millisec);
 	}
-	
+
 	public void setConnTimeout(int millisec){
 		this.httpClient.getParams().setIntParameter("http.connection.timeout", millisec);
 	}
-	
+
 	public void setMailAddrCharset(String str){
 		this.mailAddrCharset = str;
 	}
-	
+
 	public void setCsvAddressBook(String filename){
 		this.csvAddressBook = filename;
 	}
-	
+
 	public void setVcAddressBook(String filename){
 		this.vcAddressBook = filename;
 	}
-	
+
 	public void clearCookie(){
 		this.httpClient.getCookieStore().clear();
 	}
-	
+
 	/**
 	 * クッキーを取得
 	 * @return
@@ -1074,7 +1081,7 @@ public class ImodeNetClient implements Closeable{
 	public List<Cookie> getCookies(){
 		return this.httpClient.getCookieStore().getCookies();
 	}
-	
+
 	/**
 	 * クッキーを追加する。
 	 * 前のログインから時間が経過していなければ、以前使用したクッキーを再設定してログインが省略できる。
@@ -1083,7 +1090,7 @@ public class ImodeNetClient implements Closeable{
 	public void addCookie(Cookie cookie){
 		this.httpClient.getCookieStore().addCookie(cookie);
 	}
-	
+
 	public void close(){
 		try{
 			this.httpClient.getConnectionManager().shutdown();

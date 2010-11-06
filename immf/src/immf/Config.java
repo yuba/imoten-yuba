@@ -82,8 +82,14 @@ public class Config {
 	private String bodyEmojiVAlignHtml = null;
 	private String bodyEmojiSizeHtml = null;
 
-	// 転送後の題名の先頭に追加する文字列
+	// 受信メールの転送後の題名の先頭に追加する文字列
 	private String subjectAppendPrefix="";
+
+	// 送信メールの転送後の題名の先頭に追加する文字列
+	private String sentSubjectAppendPrefix="";
+
+	// 送信メールも受信メールと同じように転送する場合true
+	private boolean forwardSent = false;
 
 	// 転送先 TO
 	private List<String> forwardTo = new ArrayList<String>();
@@ -224,6 +230,8 @@ public class Config {
 		this.bodyEmojiVAlignHtml = getString("mail.emojiverticalalignhtml", this.bodyEmojiVAlign);
 		this.bodyEmojiSizeHtml = getString("mail.emojisizehtml", this.bodyEmojiSize);
 		this.subjectAppendPrefix = getString("forward.subject.prefix", this.subjectAppendPrefix);
+		this.sentSubjectAppendPrefix = getString("forward.sent.subject.prefix", this.sentSubjectAppendPrefix);
+		this.forwardSent = getBoolean("forward.sent", this.forwardSent);
 		this.forwardTo = splitComma(getString("forward.to", ""));
 		this.forwardCc = splitComma(getString("forward.cc", ""));
 		this.forwardBcc = splitComma(getString("forward.bcc", ""));
@@ -574,6 +582,14 @@ public class Config {
 
 	public boolean isSenderAsync() {
 		return senderAsync;
+	}
+
+	public String getSentSubjectAppendPrefix() {
+		return sentSubjectAppendPrefix;
+	}
+
+	public boolean isForwardSent() {
+		return forwardSent;
 	}
 
 }

@@ -71,7 +71,7 @@ emojireplace.body
 　デフォルト[inline]。
 
 forward.subject.prefix
-　転送時に題名の先頭に追加する文字列を指定します。
+　受信メールの転送時に題名の先頭に追加する文字列を指定します。
 　デフォルト空文字列。
 
 forward.subject.charconvfile
@@ -90,6 +90,14 @@ forward.subject.googlecharconvfile
   forward.subject.addgoomoji=trueの場合に、DoCoMoの絵文字からGmailの
   絵文字に変換するCSVファイルを指定します。通常は ../conv/genDocomo2google.csv
   を指定します。
+
+forward.sent.subject.prefix
+　forward.sent=trueを設定した場合の送信メールの転送時に題名の先頭に追加する文字列を指定します。
+　デフォルト空文字列。
+
+forward.sent
+　[true]の場合、iモード.net上の送信済みメールを受信メールと同じように転送します。
+　デフォルト false
 
 forward.to
 　転送時のTOのアドレスです。複数ある場合[,]区切りで指定します。

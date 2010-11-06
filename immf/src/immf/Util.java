@@ -415,9 +415,15 @@ public class Util {
 		StringBuilder header = new StringBuilder();
 
 		header.append(" From:    ").append(imm.getFromAddr().toUnicodeString()).append("\r\n");
-		header.append(" To:      ").append(imm.getMyMailAddr()).append("\r\n");
+
+		String label = " To:";
+		if(imm.getFolderId()!=ImodeNetClient.FolderIdSent){
+			header.append(label+"      ").append(imm.getMyMailAddr()).append("\r\n");
+			label="    ";
+		}
 		for(InternetAddress addr : imm.getToAddrList()){
-			header.append("          ").append(addr.toUnicodeString()).append("\r\n");
+			header.append(label + "      ").append(addr.toUnicodeString()).append("\r\n");
+			label="    ";
 		}
 		String prefix = " Cc:";
 		for(InternetAddress addr : imm.getCcAddrList()){
@@ -541,7 +547,7 @@ public class Util {
 			return pis;
 		}
 	}
-	
+
 	/*
 	 * メール末尾の空行を削除する
 	 */
@@ -552,7 +558,7 @@ public class Util {
 			sendMail.setPlainTextContent(plainText);
 			//log.info("Stripped text: " + sendMail.getPlainTextContent());
 		}
-		
+
 		String html = sendMail.getHtmlContent();
 		if(html!=null){
 			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<br>|<div>(?:<br>)*</div>)*</body>", "</body>");
@@ -560,14 +566,14 @@ public class Util {
 			//log.info("Stripped html: " + sendMail.getHtmlContent());
 		}
 	}
-	
+
 	/*
 	 * iPhoneのMobileMail.appで返信時に必ず引用返信されて付加される部分を削除する
 	 */
 	public static void stripAppleQuotedLines(SenderMail sendMail){
 		/*
 		 * TEXTパート - 以下の形式を削除
-		 * 
+		 *
 		 * | :
 		 * |
 		 * |On 年/月/日, at 時:分, メールアドレス wrote:
@@ -580,10 +586,10 @@ public class Util {
 			sendMail.setPlainTextContent(plainText);
 			//log.info("Stripped text: " + sendMail.getPlainTextContent());
 		}
-		
+
 		/*
 		 * HTMLパート - 以下の形式を削除
-		 * 
+		 *
 		 * | :
 		 * | <div><br></div>
 		 * |</div>

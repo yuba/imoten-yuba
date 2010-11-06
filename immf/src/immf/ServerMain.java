@@ -271,6 +271,11 @@ public class ServerMain {
 	 * メールをダウンロードして送信
 	 */
 	private void forward(int folderId, String mailId){
+		if(folderId==ImodeNetClient.FolderIdSent
+				&& !this.conf.isForwardSent()){
+			// 送信メールは転送しない
+			return;
+		}
 		ImodeMail mail = null;
 		try{
 			// download
