@@ -52,11 +52,13 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 	private ImodeNetClient client;
 	private SendMailPicker picker;
+	private StatusManager status;
 
 	private String user;
 	private String passwd;
 	private String alwaysBcc;
 	private boolean forcePlainText;
+	private boolean isForwardSent;
 	private boolean stripAppleQuote;
 
 	private MyWiser wiser;
@@ -68,16 +70,18 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 	private Map<String, List<String>>receivedMessageTable;
 
-	public SendMailBridge(Config conf, ImodeNetClient client, SendMailPicker picker){
+	public SendMailBridge(Config conf, ImodeNetClient client, SendMailPicker picker, StatusManager status){
 		if(conf.getSenderSmtpPort()<=0){
 			return;
 		}
 		this.client = client;
 		this.picker = picker;
+		this.status = status;
 		this.user = conf.getSenderUser();
 		this.passwd = conf.getSenderPasswd();
 		this.alwaysBcc = conf.getSenderAlwaysBcc();
 		this.forcePlainText = conf.isSenderMailForcePlainText();
+		this.isForwardSent = conf.isForwardSent();
 		this.stripAppleQuote = conf.isSenderStripiPhoneQuote();
 		this.sendAsync = conf.isSenderAsync();
 		this.charConv = new CharacterConverter();
@@ -237,6 +241,9 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			}else{
 				// 送信が完了するまでブロックする
 				this.client.sendMail(senderMail, this.forcePlainText);
+				if(isForwardSent){
+					status.setNeedConnect();
+				}
 			}
 
 		}catch (IOException e) {

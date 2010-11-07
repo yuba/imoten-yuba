@@ -95,6 +95,10 @@ public class StatusManager {
 		if(this.needConnect!=null)
 			this.needConnect = "0";
 	}
+	public void setNeedConnect(){
+		if(this.needConnect!=null)
+			this.needConnect = "1";
+	}
 	public List<Cookie> getCookies(){
 		return new ArrayList<Cookie>(this.cookies);
 	}

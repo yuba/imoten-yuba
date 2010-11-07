@@ -114,8 +114,8 @@ public class ServerMain {
 		}catch (Exception e) {}
 
 		// メール送信
-		picker = new SendMailPicker(conf, this.client);
-		new SendMailBridge(conf, this.client, this.picker);
+		picker = new SendMailPicker(conf, this.client, this.status);
+		new SendMailBridge(conf, this.client, this.picker, this.status);
 
 		// skype
 		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);
@@ -127,9 +127,11 @@ public class ServerMain {
 		while(true){
 			if(!first){
 				// 接続フラグを見るためにステータスファイルをチェック
-				try{
-					this.status.load();
-				}catch (Exception e) {}
+				if(!this.status.needConnect()){
+					try{
+						this.status.load();
+					}catch (Exception e) {}
+				}
 				if(!this.status.needConnect()){
 					//接続フラグが立っていなければ次のチェックまで待つ
 					try{

@@ -37,14 +37,18 @@ public class SendMailPicker implements Runnable{
 
 	private Config conf;
 	private ImodeNetClient client;
+	private StatusManager status;
 	private BlockingDeque<SenderMail> sendmailQueue = new LinkedBlockingDeque<SenderMail>();
 
 	private boolean forcePlainText;
+	private boolean isForwardSent;
 
-	public SendMailPicker(Config conf, ImodeNetClient client){
+	public SendMailPicker(Config conf, ImodeNetClient client, StatusManager status){
 		this.conf = conf;
 		this.client = client;
+		this.status = status;
 		this.forcePlainText = conf.isSenderMailForcePlainText();
+		this.isForwardSent = conf.isForwardSent();
 	
 		if(true){
 			Thread t = new Thread(this);
@@ -71,6 +75,9 @@ public class SendMailPicker implements Runnable{
 			log.info("Picked!");
 			try{
 				this.client.sendMail(mail, this.forcePlainText);
+				if(isForwardSent){
+					status.setNeedConnect();
+				}
 				
 			}catch(LoginException e){
 				//未ログイン時はメールをキューに入れなおしてリトライする。
