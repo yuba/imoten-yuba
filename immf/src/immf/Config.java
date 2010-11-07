@@ -37,6 +37,7 @@ public class Config {
 	public static final String StatusFile = "../status.ini";
 	public static final String CsvAddressFile = "../address.csv";
 	public static final String VcAddressFile = "../address.vcf";
+	public static final String IgnoreDomainFile = "../notforward.txt";
 
 	private static final Log log = LogFactory.getLog(Config.class);
 	private Properties prop = new Properties();
@@ -139,6 +140,9 @@ public class Config {
 
 	// vCard形式のアドレス帳ファイル
 	private String vcAddressFile = VcAddressFile;
+
+	// 転送を無視するドメインリスト
+	private String ignoreDomainFile = IgnoreDomainFile;
 
 	// httpクライアントの接続タイムアウト
 	private int httpConnectTimeoutSec = 10;
@@ -245,6 +249,7 @@ public class Config {
 		this.forwardSubjectCharConvertFile = getString("forward.subject.charconvfile", this.forwardSubjectCharConvertFile);
 		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
 		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
+		this.ignoreDomainFile = getString("forward.ignoredomainfile", this.ignoreDomainFile);
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
 		this.checkFileIntervalSec = getInt("imodenet.checkfileinterval", this.checkIntervalSec);
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
@@ -534,6 +539,10 @@ public class Config {
 
 	public String getForwardImKayacSecret() {
 		return forwardImKayacSecret;
+	}
+
+	public String getIgnoreDomainFile() {
+		return ignoreDomainFile;
 	}
 
 	public String getCsvAddressFile() {

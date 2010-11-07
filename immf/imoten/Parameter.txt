@@ -155,6 +155,11 @@ forward.headertobody
 　 その情報も付加されます。
 　デフォルト[true]。
 
+forward.ignoredomainfile
+　受信しても転送しない送信者のドメインまたはメールアドレスのリストを記述したファイルを指定できます。
+　このファイルには1行1ドメインで記述し、送信者のメールアドレスと後方一致した場合は転送を中止します。
+　デフォルト[../notforward.txt]
+
 imodenet.checkinterval
 　imode.netで新着メールをチェックする間隔(秒)を指定します。
 　デフォルト[60]。

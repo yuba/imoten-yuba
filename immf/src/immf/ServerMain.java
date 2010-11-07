@@ -21,9 +21,12 @@
 
 package immf;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,6 +47,8 @@ public class ServerMain {
 	private StatusManager status;
 	private SkypeForwarder skypeForwarder;
 	private ImKayacNotifier imKayacNotifier;
+
+	private List<String> ignoreDomains = new ArrayList<String>();
 
 	public ServerMain(File conffile){
 		System.out.println("StartUp ["+Version+"]");
@@ -103,6 +108,9 @@ public class ServerMain {
 			ImodeForwardMail.setGoomojiSubjectCharConv(goomojiSubjectCharConv);
 		}
 
+		// 転送抑止ドメインリスト読み込み
+		this.loadIgnoreDomainList();
+		
 		try{
 			// 前回のcookie
 			if(this.conf.isSaveCookie()){
@@ -291,6 +299,14 @@ public class ServerMain {
 			log.warn("i mode.net mailId["+mailId+"] download Error.",e);
 			return;
 		}
+		//  転送抑止ドメインリストと比較して送信可否判定
+		String from = mail.getFromAddr().getAddress();
+		for (String domain : this.ignoreDomains) {
+			if(from.endsWith(domain)){
+				log.info("送信者:"+from+" のメール転送中止");
+				return;
+			}
+		}
 		try{
 			// 送信
 			ImodeForwardMail forwardMail = new ImodeForwardMail(mail,this.conf);
@@ -319,6 +335,54 @@ public class ServerMain {
 			// 負荷をかけないように
 			Thread.sleep(1000);
 		}catch (Exception e) {}
+	}
+
+	/*
+	 * 転送抑止ドメインリスト作成
+	 */
+	private void loadIgnoreDomainList() {
+		String ignoreDomainTxt = conf.getIgnoreDomainFile();
+		File ignoreDomainFile = new File(ignoreDomainTxt);
+		if(!ignoreDomainFile.exists()){
+			log.info("# 転送抑止ドメインリスト("+ignoreDomainTxt+")は存在しません。");
+			return;
+		}
+		BufferedReader br = null;
+		FileReader fr = null;
+		try{
+			fr = new FileReader(ignoreDomainFile);
+			br = new BufferedReader(fr);
+			int id = 0;
+
+			String line = null;
+			while((line = br.readLine()) != null){
+				id++;
+				try{
+					if(line.startsWith("#")){
+						continue;
+					}
+					if(!line.contains(".")){
+						continue;
+					}
+					this.ignoreDomains.add(line);
+
+				}catch (Exception e) {
+					log.warn("loadIgnoreDomainList error.",e);
+				}
+			}
+			br.close();
+		}catch (Exception e){
+			log.warn("loadIgnoreDomainList "+ignoreDomainTxt+" error.",e);
+
+		}finally{
+			Util.safeclose(br);
+			Util.safeclose(fr);
+			String ignores = "";
+			for (String domain : this.ignoreDomains) {
+				ignores += domain + " ";
+			}
+			log.info("# 転送抑止ドメイン:"+ignores);
+		}
 	}
 
 	/*
