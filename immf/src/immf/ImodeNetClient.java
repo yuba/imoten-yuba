@@ -290,7 +290,7 @@ public class ImodeNetClient implements Closeable{
 		r.setBody(json.getString("body"));
 
 		if(folderId==FolderIdSent){
-			r.setFromAddr(r.getMyInternetAddress());
+			r.setFromAddr(this.addressBook.getInternetAddress(r.getMyMailAddr(),this.mailAddrCharset));
 		}
 
 		log.info("From     "+r.getFromAddr());
