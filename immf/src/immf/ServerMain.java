@@ -47,6 +47,7 @@ public class ServerMain {
 	private StatusManager status;
 	private SkypeForwarder skypeForwarder;
 	private ImKayacNotifier imKayacNotifier;
+	private AppNotifications appNotifications;
 
 	private List<String> ignoreDomains = new ArrayList<String>();
 
@@ -122,7 +123,7 @@ public class ServerMain {
 		}catch (Exception e) {}
 
 		// メール送信
-		picker = new SendMailPicker(conf, this.client, this.status);
+		picker = new SendMailPicker(conf, this, this.client, this.status);
 		new SendMailBridge(conf, this.client, this.picker, this.status);
 
 		// skype
@@ -131,15 +132,16 @@ public class ServerMain {
 		// im.kayac.com
 		this.imKayacNotifier = new ImKayacNotifier(conf.getForwardImKayacUsername(),conf.getForwardImKayacSecret());
 
+		// appnotifications
+		this.appNotifications = new AppNotifications(this.conf, this.status);
+
 		boolean first = true;
 		while(true){
 			if(!first){
 				// 接続フラグを見るためにステータスファイルをチェック
-				if(!this.status.needConnect()){
-					try{
-						this.status.load();
-					}catch (Exception e) {}
-				}
+				try{
+					this.status.load();
+				}catch (Exception e) {}
 				if(!this.status.needConnect()){
 					//接続フラグが立っていなければ次のチェックまで待つ
 					try{
@@ -252,6 +254,7 @@ public class ServerMain {
 				}
 			}
 			log.info("転送するメールIDの数 "+forwardIdList.size());
+			appNotifications.pushPrepare(fid, forwardIdList.size());
 			for (String id : forwardIdList) {
 				this.forward(fid,id);
 			}
@@ -304,6 +307,7 @@ public class ServerMain {
 		for (String domain : this.ignoreDomains) {
 			if(from.endsWith(domain)){
 				log.info("送信者:"+from+" のメール転送中止");
+				this.appNotifications.pushError(folderId);
 				return;
 			}
 		}
@@ -332,9 +336,26 @@ public class ServerMain {
 		}
 
 		try{
+			this.appNotifications.push(folderId, mail);
+		}catch (Exception e) {
+			this.appNotifications.pushError(folderId);
+			log.error("mail["+mailId+"] AppNotifications push Error.",e);
+			return;
+		}
+
+		try{
 			// 負荷をかけないように
 			Thread.sleep(1000);
 		}catch (Exception e) {}
+	}
+
+	/*
+	 * 任意のメッセージを直接通知する。
+	 */
+	public void notify(String message){
+		// XXX skypeForwarder?
+		// XXX imKayacNotifier?
+		this.appNotifications.push(message);
 	}
 
 	/*

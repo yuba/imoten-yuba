@@ -36,6 +36,7 @@ public class SendMailPicker implements Runnable{
 	private static final Log log = LogFactory.getLog(SendMailPicker.class);
 
 	private Config conf;
+	private ServerMain server;
 	private ImodeNetClient client;
 	private StatusManager status;
 	private BlockingDeque<SenderMail> sendmailQueue = new LinkedBlockingDeque<SenderMail>();
@@ -43,8 +44,9 @@ public class SendMailPicker implements Runnable{
 	private boolean forcePlainText;
 	private boolean isForwardSent;
 
-	public SendMailPicker(Config conf, ImodeNetClient client, StatusManager status){
+	public SendMailPicker(Config conf, ServerMain server, ImodeNetClient client, StatusManager status){
 		this.conf = conf;
+		this.server = server;
 		this.client = client;
 		this.status = status;
 		this.forcePlainText = conf.isSenderMailForcePlainText();
@@ -172,6 +174,8 @@ public class SendMailPicker implements Runnable{
 			
 			mail.send();
 			log.info("エラーメール返信");
+
+			server.notify("メール送信失敗\n"+error);
 
 		}catch(EmailException e){
 			log.warn("エラーメール返信失敗");

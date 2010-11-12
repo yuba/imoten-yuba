@@ -185,7 +185,7 @@ public class Config {
 	private String senderTlsKeyType;
 	private String senderTlsKeyPasswd;
 
-	// Skyeに転送
+	// Skypeに転送
 	private String forwardSkypeChat;
 	private String forwardSkypeSms;
 
@@ -193,6 +193,14 @@ public class Config {
 	private String forwardImKayacUsername;
 	private String forwardImKayacSecret;
 
+	// AppNotifications(iPhone/iPod/iPadアプリPush)
+	private String forwardPushEmail;
+	private String forwardPushPassword;
+	private String forwardPushMessage;
+	private String forwardPushSound;
+	private String forwardPushIconUrl;
+	private boolean forwardPushNotifyFrom = true;
+	
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -243,6 +251,12 @@ public class Config {
 		this.forwardSkypeSms = getString("forward.skype.sms", null);
 		this.forwardImKayacUsername = getString("forward.im.kayac.username", "");
 		this.forwardImKayacSecret = getString("forward.im.kayac.secret", "");
+		this.forwardPushEmail = getString("forward.push.email","");
+		this.forwardPushPassword = getString("forward.push.password","");
+		this.forwardPushMessage = getString("forward.push.message","");
+		this.forwardPushSound = getString("forward.push.sound","");
+		this.forwardPushIconUrl = getString("forward.push.iconurl","");
+		this.forwardPushNotifyFrom = getBoolean("forward.push.notifyfrom",this.forwardPushNotifyFrom);
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
@@ -539,6 +553,30 @@ public class Config {
 
 	public String getForwardImKayacSecret() {
 		return forwardImKayacSecret;
+	}
+
+	public String getForwardPushEmail() {
+		return forwardPushEmail;
+	}
+
+	public String getForwardPushPassword() {
+		return forwardPushPassword;
+	}
+
+	public String getForwardPushMessage() {
+		return forwardPushMessage;
+	}
+
+	public String getForwardPushSound() {
+		return forwardPushSound;
+	}
+
+	public String getForwardPushIconUrl() {
+		return forwardPushIconUrl;
+	}
+
+	public boolean getForwardPushNotifyFrom() {
+		return forwardPushNotifyFrom;
 	}
 
 	public String getIgnoreDomainFile() {

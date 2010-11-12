@@ -41,6 +41,7 @@ public class StatusManager {
 	
 	private List<Cookie> cookies;
 	private String lastMailId;
+	private String pushCredentials;
 	private String needConnect;
 	
 	public StatusManager(File f){
@@ -55,7 +56,14 @@ public class StatusManager {
 			fis = new FileInputStream(this.f);
 			prop.load(fis);
 			this.lastMailId = prop.getProperty("lastmailid");
-			this.needConnect = prop.getProperty("needconnect");
+			this.pushCredentials = prop.getProperty("push_credentials");
+			String nc = prop.getProperty("needconnect");
+			if(this.needConnect==null){
+				this.needConnect = nc;
+			}
+			if(this.needConnect!=null && !this.needConnect.equals("1")){
+				this.needConnect = nc;
+			}
 			Enumeration<Object> enu = prop.keys();
 			List<Cookie> list = new ArrayList<Cookie>();
 			while(enu.hasMoreElements()){
@@ -82,6 +90,12 @@ public class StatusManager {
 	public void setLastMailId(String s){
 		this.lastMailId = s;
 	}
+	public String getPushCredentials(){
+		return pushCredentials;
+	}
+	public void setPushCredentials(String s){
+		this.pushCredentials = s;
+	}
 	public boolean needConnect(){
 		if(this.needConnect==null)
 			return true;
@@ -106,13 +120,16 @@ public class StatusManager {
 		this.cookies = new ArrayList<Cookie>(cookies);
 	}
 	
-	public void save() throws IOException{
+	public synchronized void save() throws IOException{
 		Properties prop = new Properties();
 		for (Cookie cookie : this.cookies) {
 			prop.setProperty("cookie_"+cookie.getName(), cookie.getValue());
 		}
 		if(this.lastMailId!=null){
 			prop.setProperty("lastmailid", this.lastMailId);
+		}
+		if(this.pushCredentials!=null && this.pushCredentials.length()>0){
+			prop.setProperty("push_credentials", this.pushCredentials);
 		}
 		if(this.needConnect!=null){
 			prop.setProperty("needconnect", this.needConnect);

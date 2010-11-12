@@ -140,6 +140,35 @@ forward.im.kayac.secret
 　メールが来るとim.kayac.comにnotificationを送信する場合に、im.kayac.com の
 　秘密鍵を指定します。
 
+forward.push.email
+　iPhone/iPod/iPadアプリのPush(http://www.appnotifications.com/)を使用してメール着信を通知します。
+　登録時のメールアドレスとパスワードをそれぞれ[forward.push.email]と[forward.push.password]に
+　設定してください。
+
+forward.push.password
+　iPhone/iPod/iPadアプリのPush(http://www.appnotifications.com/)を使用してメール着信を通知します。
+　登録時のメールアドレスとパスワードをそれぞれ[forward.push.email]と[forward.push.password]に
+　設定してください。
+
+forward.push.message
+　メール着信通知で表示されるポップアップウィンドウのメッセージを変更できます。
+　デフォルト[新着iモードメールあり]
+
+forward.push.notifyfrom
+　メール着信通知で表示されるポップアップウィンドウにメール送信者名を表示するかどうか設定できます。
+　[false]を設定すると表示しません。
+　デフォルト[true]
+
+forward.push.sound
+　メール着信通知の際に使用する効果音を指定できます。無指定時はアプリのデフォルト設定音が使用されます。
+　Pushアプリの設定画面([＊]→[Application Settings]→[Global Sound])で設定可能な音名を指定できます。
+　大文字小文字スペースの違いは無視します。
+　　設定例：forward.push.sound=Bell One Tone
+
+forward.push.iconurl
+　メール着信通知内容をPushアプリを起動して確認した際に表示するアイコンを指定できます。
+　デフォルト[http://imode.net/cmn/images/favicon.ico]
+
 forward.replyto
 　転送時のReply-Toのアドレスです。複数ある場合[,]区切りで指定します。
 
