@@ -126,6 +126,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			t.setName("AppNotifications");
 			t.setDaemon(true);
 			t.start();
+		}else{
+			if(this.credentials.length()>0)
+				this.setCredentials("");
 		}
 	}
 
@@ -239,6 +242,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	}
 	
 	public void push(String message){
+		if(!isActive()){
+			return;
+		}
 		try{
 			this.send(message);
 		}catch(Exception e){
