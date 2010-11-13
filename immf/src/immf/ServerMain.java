@@ -38,7 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.20";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.21";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
@@ -111,7 +111,7 @@ public class ServerMain {
 
 		// 転送抑止ドメインリスト読み込み
 		this.loadIgnoreDomainList();
-		
+
 		try{
 			// 前回のcookie
 			if(this.conf.isSaveCookie()){
