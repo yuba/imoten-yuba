@@ -29,6 +29,7 @@ import java.util.List;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 
 import javax.mail.internet.InternetAddress;
 import javax.xml.parsers.SAXParser;
@@ -59,7 +60,8 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	private static final String Message = "新着iモードメールあり";
 	
 	private StatusManager status;
-	private Deque<ImodeMail> recieveMailStack = new LinkedList<ImodeMail>();
+	private Deque<ImodeMail> recieveMailQueue = new LinkedList<ImodeMail>();
+	private Deque<ImodeMail> sendMailQueue = new LinkedList<ImodeMail>();
 	
 	private DefaultHttpClient httpClient;
 	private boolean elemCr = false;
@@ -142,32 +144,37 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		}else{
 			log.info("push通知を開始します。");
 		}
+		int c = 0;
 		while(true){
 			try {
 				Thread.sleep(3000);
 			}catch (Exception e) {}
 
-			ImodeMail mail = null;
-			InternetAddress fromAddr = null;
-			String from = "";
-
-			if(newmails==0 || recieveMailStack.size()<newmails){
+			// 今のところリトライ間隔は5分固定
+			if(this.sendMailQueue.size()>0 && c++>100){
+				log.info("push通知リトライ。");
+				
+			}else if(newmails==0 || this.recieveMailQueue.size()<newmails){
 				// メールが溜まりきるまで待つ
 				continue;
 			}
+			c = 0;
 
-			int count;
-			synchronized(this.recieveMailStack){
-				count = this.recieveMailStack.size();
-				newmails = count;
-				for(int i=0; i<count; i++){
-					mail = this.recieveMailStack.removeFirst();
+			synchronized(this.recieveMailQueue){
+				for(int i = this.recieveMailQueue.size(); i>0; i--){
+					this.sendMailQueue.add(this.recieveMailQueue.remove());
 				}
+				newmails = 0;
 			}
+
+			// push通知実施
+			int count = this.sendMailQueue.size();
+			ImodeMail mail = this.sendMailQueue.peek();
 			String pushMessage = this.message;
+
 			if(mail!=null && this.notifyFrom){
-				fromAddr = mail.getFromAddr();
-				from = fromAddr.getPersonal();
+				InternetAddress fromAddr = mail.getFromAddr();
+				String from = fromAddr.getPersonal();
 				if(from==null||from.isEmpty()){
 					from = fromAddr.getAddress();
 				}
@@ -182,15 +189,20 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			try{
 				log.info("push通知:"+pushMessage.replace("\n","/"));
 				this.send(pushMessage);
+				this.sendMailQueue.clear();
 
 			}catch(SocketException se){
-				// XXX 通信異常。エラー無視。
-				log.warn("socket error",se);
+				// 通信異常。リトライ。
+				log.warn("通信エラーによりpush通知失敗。後でリトライします。",se);
 				
 			}catch(ClientProtocolException cpe){
-				// XXX 通信異常。エラー無視。
-				log.warn("http client protocol error",cpe);
+				// 通信異常。リトライ。
+				log.warn("通信エラーによりpush通知失敗。後でリトライします。",cpe);
 				
+			}catch(UnknownHostException uhe){
+				// DNSエラー。リトライ。
+				log.warn("DNSエラーによりpush通知失敗。後でリトライします。",uhe);
+
 			}catch(Exception e){
 				log.warn("push失敗。リトライします。",e);
 				this.credentials = "";
@@ -201,22 +213,21 @@ class AppNotifications extends DefaultHandler implements Runnable{
 					try{
 						log.info("push通知:"+pushMessage.replace("\n","/"));
 						this.send(pushMessage);
+						this.sendMailQueue.clear();
 
 					}catch(Exception ex){
 						log.warn("push失敗。push通知を停止します。",e);
 						this.setCredentials("");
-						this.recieveMailStack.clear();
+						this.sendMailQueue.clear();
 						return;
 					}
 				}else{
 					log.warn("再認証失敗。push通知を停止します。");
 					this.setCredentials("");
-					this.recieveMailStack.clear();
+					this.sendMailQueue.clear();
 					return;
 				}
 			}
-
-			newmails -= count;
 		}
 	}
 	
@@ -238,7 +249,7 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		if(folderId==ImodeNetClient.FolderIdSent){
 			return;
 		}
-		this.recieveMailStack.addFirst(mail);
+		this.recieveMailQueue.add(mail);
 	}
 	
 	public void push(String message){
