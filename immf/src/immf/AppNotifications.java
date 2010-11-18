@@ -154,8 +154,18 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			if(this.sendMailQueue.size()>0 && c++>100){
 				log.info("push通知リトライ。");
 				
-			}else if(newmails==0 || this.recieveMailQueue.size()<newmails){
+			}else if(this.recieveMailQueue.size()>newmails){
+				log.warn("キュー矛盾発生。");
+
+			}else if(newmails==0){
+				continue;
+				
+			}else if(this.recieveMailQueue.size()<newmails){
 				// メールが溜まりきるまで待つ
+				if(c++>100){
+					log.warn("通知メール待ちタイムアウト発生。");
+					newmails = this.recieveMailQueue.size();
+				}
 				continue;
 			}
 			c = 0;
