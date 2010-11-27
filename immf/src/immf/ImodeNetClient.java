@@ -580,7 +580,15 @@ public class ImodeNetClient implements Closeable{
 					throw new IOException("PW1430 - User Unknown.");
 				}else if(result.equals("PW1436")){
 					// 宛先の一部が不明の場合
-					throw new IOException("PW1436 - Some of Users Unknown.");
+					JSONArray jsonaddrs = json.getJSONObject("data").getJSONArray("seaddr");
+					String addrs = "";
+					for(int i=0; i<jsonaddrs.size(); i++){
+						if(i>0){
+							addrs+=", ";
+						}
+						addrs += jsonaddrs.getString(i);
+					}
+					throw new IOException("PW1436 - User Unknown.: "+addrs);
 				}else if(!result.equals("PW1000")){
 					log.debug(json.toString(2));
 					throw new IOException("Bad response "+result);
