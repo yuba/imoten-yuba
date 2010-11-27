@@ -22,9 +22,14 @@
 package immf;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
+
+import javax.mail.Session;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 
 import org.apache.commons.mail.SimpleEmail;
 import org.apache.commons.mail.EmailException;
@@ -105,10 +110,9 @@ public class SendMailPicker implements Runnable{
 	 * 送信失敗したメールをお知らせ
 	 */
 	private void errorNotify(String error, SenderMail errMail){
-		SimpleEmail mail = new SimpleEmail();
+		ForwardEmail mail = new ForwardEmail(conf);
 
-		//mail.setCharset(this.conf.getMailEncode());
-		mail.setCharset("UTF-8");
+		mail.setCharset(this.conf.getMailEncode());
 
 		// SMTP Server
 		mail.setHostName(conf.getSmtpServer());
@@ -128,48 +132,82 @@ public class SendMailPicker implements Runnable{
 		}
 
 		try{
-			mail.setFrom(conf.getSmtpMailAddress());
-		
-			// 転送先のアドレス全部にエラーメールを送る
-			List<String> list = conf.getForwardTo();
-			for (String addr : list) {
-				mail.addTo(addr);
+			mail.setFrom(this.conf.getSmtpMailAddress(),"imoten");
+			mail.addTo(this.conf.getSmtpMailAddress());
+			
+			if(!this.conf.getForwardTo().isEmpty()){
+				mail.addHeader("Resent-To", StringUtils.join(this.conf.getForwardTo(), ","));
 			}
-			list = conf.getForwardCc();
-			for (String addr : list) {
-				mail.addCc(addr);
+			if(!this.conf.getForwardCc().isEmpty()){
+				mail.addHeader("Resent-Cc", StringUtils.join(this.conf.getForwardCc(), ","));
 			}
-			list = conf.getForwardBcc();
-			for (String addr : list) {
-				mail.addBcc(addr);
+			if(!this.conf.getForwardBcc().isEmpty()){
+				mail.addHeader("Resent-Bcc", StringUtils.join(this.conf.getForwardBcc(), ","));
 			}
 
 			mail.setSubject("メール送信エラー");
 
-			String body = "imotenが以下のメール送信に失敗しました\r\n\r\n";
+			String body = "imotenがメール送信に失敗しました\r\n\r\n";
 			body += "【エラーメッセージ】\r\n";
 			body += error;
 			body += "\r\n\r\n";
 
-			body += "【件名】\r\n";
-			String errSubject="";
-			if(errMail!=null){
-				errSubject = errMail.getSubject();
-			}
-			body += errSubject;
-			body += "\r\n";
+			body += "【エラーメール】\r\n";
 
-			body += "【本文】\r\n";
-			String errBody = "";
-			if(errMail!=null){
-				errBody = errMail.getPlainBody();
-			}
-			if(errBody.length() > 30){
-				body += errBody.substring(0,30);
-				body += "...";
+			if(errMail==null){
+				body += "null";
+
 			}else{
-				body += errBody;
+				// To
+				List<InternetAddress> list = errMail.getTo();
+				List<String> addrList = new ArrayList<String>();
+				for(InternetAddress addr : list) {
+					addrList.add(addr.getAddress());
+				}
+				String errTo = StringUtils.join(addrList, ",");
+				if(!errTo.isEmpty()){
+					body += "To: " + errTo + "\r\n";
+				}
+
+				// Cc
+				list = errMail.getCc();
+				addrList = new ArrayList<String>();
+				for(InternetAddress addr : list) {
+					addrList.add(addr.getAddress());
+				}
+				String errCc = StringUtils.join(addrList, ",");
+				if(!errCc.isEmpty()){
+					body += "Cc: " + errCc + "\r\n";
+				}
+
+				// Bcc
+				list = errMail.getBcc();
+				addrList = new ArrayList<String>();
+				for(InternetAddress addr : list) {
+					addrList.add(addr.getAddress());
+				}
+				String errBcc = StringUtils.join(addrList, ",");
+				if(!errBcc.isEmpty()){
+					body += "Bcc: " + errBcc + "\r\n";
+				}
+
+				// Subject
+				String errSubject="";
+				errSubject = errMail.getSubject();
+				body += "Subject: " + errSubject + "\r\n";
+				body += "\r\n";
+
+				// Body
+				String errBody = "";
+				errBody = errMail.getPlainBody();
+				if(errBody.length() > 100){
+					body += errBody.substring(0,100);
+					body += "...";
+				}else{
+					body += errBody;
+				}
 			}
+
 			mail.setMsg(body);
 			
 			mail.send();
@@ -178,7 +216,62 @@ public class SendMailPicker implements Runnable{
 			server.notify("メール送信失敗\n"+error);
 
 		}catch(EmailException e){
-			log.warn("エラーメール返信失敗");
+			log.warn("エラーメール返信失敗",e);
+		}
+	}
+
+	// 転送先のアドレス全部にメールを送る
+	private class ForwardEmail extends SimpleEmail{
+		private Config conf;
+		public ForwardEmail(Config conf){
+			this.conf = conf;
+		}
+		
+		@Override
+		public void buildMimeMessage() throws EmailException {
+			super.buildMimeMessage();
+			MimeMessage msg = this.getMimeMessage();
+			try{
+				msg.removeHeader("To");
+			}catch (Exception e) {
+				log.warn(e);
+			}
+		}
+		
+		@Override
+		protected MimeMessage createMimeMessage(Session aSession) {
+			List<InternetAddress> recipients = new ArrayList<InternetAddress>();
+			List<String> list = conf.getForwardTo();
+			for (String addr : list) {
+				try{
+					recipients.add(new InternetAddress(addr));
+				}catch (Exception e) {
+					log.warn("ForwardTo error "+addr,e);
+				}
+			}
+			list = conf.getForwardCc();
+			for (String addr : list) {
+				try{
+					recipients.add(new InternetAddress(addr));
+				}catch (Exception e) {
+					log.warn("ForwardCc error "+addr,e);
+				}
+			}
+			list = conf.getForwardBcc();
+			for (String addr : list) {
+				try{
+					recipients.add(new InternetAddress(addr));
+				}catch (Exception e) {
+					log.warn("ForwardBcc error "+addr,e);
+				}
+			}
+			String from = this.conf.getSmtpMailAddress();
+			try{
+				return new MyMimeMessage(aSession, new InternetAddress(from), recipients);
+			}catch (Exception e) {
+				log.warn("From error "+from,e);
+				return null;
+			}
 		}
 	}
 }
