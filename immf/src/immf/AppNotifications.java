@@ -213,6 +213,10 @@ class AppNotifications extends DefaultHandler implements Runnable{
 				// DNSエラー。リトライ。
 				log.warn("DNSエラーによりpush通知失敗。後でリトライします。",uhe);
 
+			}catch(MyHttpException mhe){
+				// 通信異常。リトライ。
+				log.warn("サーバエラーによりpush通知失敗。後でリトライします。",mhe);
+
 			}catch(Exception e){
 				log.warn("push失敗。リトライします。",e);
 				this.credentials = "";
@@ -359,7 +363,11 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			HttpResponse res = this.httpClient.execute(post);
 			int status = res.getStatusLine().getStatusCode();
 			if(status != 200){
-				throw new Exception("http server error");
+				if(status >= 500){
+					throw new MyHttpException("http server error. status="+status);
+				}else{
+					throw new Exception("http server error. status="+status);
+				}
 			}
 			JSONObject json = JSONObject.fromObject(EntityUtils.toString(res.getEntity()));
 			int id = json.getInt("id");
@@ -431,6 +439,13 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		}
 		if(this.elemOk){
 			this.ok = new String(ch, offset, length);
+		}
+	}
+	
+	class MyHttpException extends Exception {
+		private static final long serialVersionUID = -5836602194926641698L;
+		public MyHttpException(String s) {
+			super(s);
 		}
 	}
 }
