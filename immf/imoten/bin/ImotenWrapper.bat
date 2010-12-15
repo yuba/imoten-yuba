@@ -57,7 +57,7 @@ rem
 rem Start the Wrapper
 rem
 :startup
-"%_WRAPPER_EXE%" -c %_WRAPPER_CONF% wrapper.app.parameter.1=%1
+"%_WRAPPER_EXE%" -c %_WRAPPER_CONF%
 if not errorlevel 1 goto :eof
 pause
 
