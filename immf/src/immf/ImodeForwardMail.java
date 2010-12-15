@@ -86,9 +86,9 @@ public class ImodeForwardMail extends MyHtmlEmail {
 
 		String subject = null;
 		if(imm.getFolderId()==ImodeNetClient.FolderIdSent){
-			subject = conf.getSentSubjectAppendPrefix()+imm.getSubject();
+			subject = conf.getSentSubjectAppendPrefix()+imm.getSubject()+conf.getSentSubjectAppendSuffix();
 		}else{
-			subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+			subject = conf.getSubjectAppendPrefix()+imm.getSubject()+conf.getSubjectAppendSuffix();
 		}
 
 		if(conf.isSubjectEmojiReplace()){
@@ -354,9 +354,9 @@ public class ImodeForwardMail extends MyHtmlEmail {
 
 			String subject = null;
 			if(imm.getFolderId()==ImodeNetClient.FolderIdSent){
-				subject = conf.getSentSubjectAppendPrefix()+imm.getSubject();
+				subject = conf.getSentSubjectAppendPrefix()+imm.getSubject()+conf.getSentSubjectAppendSuffix();
 			}else{
-				subject = conf.getSubjectAppendPrefix()+imm.getSubject();
+				subject = conf.getSubjectAppendPrefix()+imm.getSubject()+conf.getSubjectAppendSuffix();
 			}
 			if(conf.isSubjectEmojiReplace()){
 				subject = EmojiUtil.replaceToLabel(subject);

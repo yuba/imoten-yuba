@@ -86,8 +86,14 @@ public class Config {
 	// 受信メールの転送後の題名の先頭に追加する文字列
 	private String subjectAppendPrefix="";
 
+	// 受信メールの転送後の題名の最後に追加する文字列
+	private String subjectAppendSuffix="";
+
 	// 送信メールの転送後の題名の先頭に追加する文字列
 	private String sentSubjectAppendPrefix="";
+
+	// 送信メールの転送後の題名の最後に追加する文字列
+	private String sentSubjectAppendSuffix="";
 
 	// 送信メールも受信メールと同じように転送する場合true
 	private boolean forwardSent = false;
@@ -200,7 +206,7 @@ public class Config {
 	private String forwardPushSound;
 	private String forwardPushIconUrl;
 	private boolean forwardPushNotifyFrom = true;
-	
+
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
 		try{
@@ -242,7 +248,9 @@ public class Config {
 		this.bodyEmojiVAlignHtml = getString("mail.emojiverticalalignhtml", this.bodyEmojiVAlign);
 		this.bodyEmojiSizeHtml = getString("mail.emojisizehtml", this.bodyEmojiSize);
 		this.subjectAppendPrefix = getString("forward.subject.prefix", this.subjectAppendPrefix);
+		this.subjectAppendSuffix = getString("forward.subject.suffix", this.subjectAppendSuffix);
 		this.sentSubjectAppendPrefix = getString("forward.sent.subject.prefix", this.sentSubjectAppendPrefix);
+		this.sentSubjectAppendSuffix = getString("forward.sent.subject.suffix", this.sentSubjectAppendSuffix);
 		this.forwardSent = getBoolean("forward.sent", this.forwardSent);
 		this.forwardTo = splitComma(getString("forward.to", ""));
 		this.forwardCc = splitComma(getString("forward.cc", ""));
@@ -639,5 +647,12 @@ public class Config {
 		return forwardSent;
 	}
 
+	public String getSubjectAppendSuffix() {
+		return subjectAppendSuffix;
+	}
+
+	public String getSentSubjectAppendSuffix() {
+		return sentSubjectAppendSuffix;
+	}
 }
 

@@ -74,6 +74,10 @@ forward.subject.prefix
 　受信メールの転送時に題名の先頭に追加する文字列を指定します。
 　デフォルト空文字列。
 
+forward.subject.suffix
+　受信メールの転送時に題名の後ろに追加する文字列を指定します。
+　デフォルト空文字列。
+
 forward.subject.charconvfile
   転送時に題名の特定の文字を置き換えるための対応表のCSVファイルを指定します。
   絵文字を置き換えるのが主な目的ですが、絵文字以外の文字も置き換え可能です。
@@ -93,6 +97,10 @@ forward.subject.googlecharconvfile
 
 forward.sent.subject.prefix
 　forward.sent=trueを設定した場合の送信メールの転送時に題名の先頭に追加する文字列を指定します。
+　デフォルト空文字列。
+
+forward.sent.subject.suffix
+　forward.sent=trueを設定した場合の送信メールの転送時に題名の後ろに追加する文字列を指定します。
 　デフォルト空文字列。
 
 forward.sent
