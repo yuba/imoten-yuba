@@ -42,13 +42,15 @@ public class ServerMain {
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
-	private SendMailPicker picker;
+	private SendMailPicker spicker;
+	private ForwardMailPicker fpicker;
 	private Config conf;
 	private StatusManager status;
 	private SkypeForwarder skypeForwarder;
 	private ImKayacNotifier imKayacNotifier;
 	private AppNotifications appNotifications;
 
+	private boolean forwardAsync;
 	private List<String> ignoreDomains = new ArrayList<String>();
 
 	public ServerMain(File conffile){
@@ -109,6 +111,8 @@ public class ServerMain {
 			ImodeForwardMail.setGoomojiSubjectCharConv(goomojiSubjectCharConv);
 		}
 
+		this.forwardAsync = conf.isForwardAsync();
+
 		// 転送抑止ドメインリスト読み込み
 		this.loadIgnoreDomainList();
 
@@ -123,9 +127,12 @@ public class ServerMain {
 		}catch (Exception e) {}
 
 		// メール送信
-		picker = new SendMailPicker(conf, this, this.client, this.status);
-		new SendMailBridge(conf, this.client, this.picker, this.status);
+		spicker = new SendMailPicker(conf, this, this.client, this.status);
+		new SendMailBridge(conf, this.client, this.spicker, this.status);
 
+		// メール転送
+		fpicker = new ForwardMailPicker(this.conf, this);
+		
 		// skype
 		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);
 
@@ -313,8 +320,13 @@ public class ServerMain {
 		}
 		try{
 			// 送信
-			ImodeForwardMail forwardMail = new ImodeForwardMail(mail,this.conf);
-			forwardMail.send();
+			if(this.forwardAsync){
+				// 別スレッドで送信。送信失敗時はリトライあり。
+				this.fpicker.add(mail);
+			}else{
+				ImodeForwardMail forwardMail = new ImodeForwardMail(mail,this.conf);
+				forwardMail.send();
+			}
 
 		}catch (Exception e) {
 			log.error("mail["+mailId+"] forward Error.",e);

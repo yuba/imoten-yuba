@@ -124,6 +124,9 @@ public class Config {
 	private boolean forwardAddGoomojiSubject = false;
 	private String forwardGoogleCharConvertFile = null;
 
+	// 転送時に非同期にリトライ処理を行うかどうか(trueだと転送を別スレッドで行う)
+	private boolean forwardAsync = false;
+
 	// 定期的に新着をチェックする場合のチェック間隔(秒)
 	private int checkIntervalSec = 60;
 	private int checkFileIntervalSec = checkIntervalSec;
@@ -131,6 +134,11 @@ public class Config {
 	// ログインエラー時のリトライ間隔(秒)
 	// 失敗時はimode.netのメンテナンスの可能性があるので長めで
 	private int loginRetryIntervalSec = 60 * 10;
+
+	// 転送エラー時のリトライ間隔(秒)
+	// 失敗時はメールサーバのメンテナンスの可能性があるので長めで
+	// forwardAsync = true の場合のみ有効
+	private int forwardRetryIntervalSec = 60 * 10;
 
 	// trueの場合はcookieの情報をファイルに保存する。
 	// 再起動など短時間プログラムを停止してもログイン状態が保持されるので
@@ -271,10 +279,12 @@ public class Config {
 		this.forwardSubjectCharConvertFile = getString("forward.subject.charconvfile", this.forwardSubjectCharConvertFile);
 		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
 		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
+		this.forwardAsync = getBoolean("forward.async", this.forwardAsync);
 		this.ignoreDomainFile = getString("forward.ignoredomainfile", this.ignoreDomainFile);
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
 		this.checkFileIntervalSec = getInt("imodenet.checkfileinterval", this.checkIntervalSec);
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
+		this.forwardRetryIntervalSec = getInt("forward.retryinterval", this.forwardRetryIntervalSec);
 		this.saveCookie = getBoolean("save.cookie", this.saveCookie);
 		this.statusFile = getString("save.filename", this.statusFile);
 		this.csvAddressFile = getString("addressbook.csv", this.csvAddressFile);
@@ -309,6 +319,7 @@ public class Config {
 		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 3);
 		this.smtpTimeoutSec = Math.max(this.smtpTimeoutSec, 3);
 		this.loginRetryIntervalSec = Math.max(this.loginRetryIntervalSec, 3);
+		this.forwardRetryIntervalSec = Math.max(this.forwardRetryIntervalSec, 3);
 		this.httpConnectTimeoutSec = Math.max(this.httpConnectTimeoutSec, 3);
 		this.httpSoTimeoutSec = Math.max(this.httpSoTimeoutSec, 3);
 
@@ -457,6 +468,10 @@ public class Config {
 
 	public int getLoginRetryIntervalSec() {
 		return loginRetryIntervalSec;
+	}
+
+	public int getForwardRetryIntervalSec() {
+		return forwardRetryIntervalSec;
 	}
 
 	public boolean isSaveCookie() {
@@ -633,6 +648,10 @@ public class Config {
 
 	public String getForwardGoogleCharConvertFile() {
 		return forwardGoogleCharConvertFile;
+	}
+
+	public boolean isForwardAsync() {
+		return forwardAsync;
 	}
 
 	public boolean isSenderAsync() {
