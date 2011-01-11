@@ -38,7 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.24";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.25";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
@@ -132,7 +132,7 @@ public class ServerMain {
 
 		// メール転送
 		fpicker = new ForwardMailPicker(this.conf, this);
-		
+
 		// skype
 		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);
 
