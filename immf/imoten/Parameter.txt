@@ -274,6 +274,14 @@ addressbook.vcard
 　相対パスを指定した場合、binディレクトリからの相対パスになります。
 　デフォルト[../address.vcf]
 
+gmail.id
+　gmailのログインID。Google Contacts Data Data API対応追加機能を使って
+　メールアドレスにディスプレイネームを表示する場合は必要
+
+gmail.passwd
+　gmailのログインパスワード。Google Contacts Data API対応追加機能を使って
+　メールアドレスにディスプレイネームを表示する場合は必要
+
 http.conntimeout
 　httpでの接続タイムアウト時間(秒)を指定します。
 　デフォルト[10]。

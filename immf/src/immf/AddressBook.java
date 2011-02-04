@@ -9,37 +9,47 @@ import javax.mail.internet.InternetAddress;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import immf.google.contact.GoogleContactsAccessor;
+
 public class AddressBook {
 	private static final Log log = LogFactory.getLog(AddressBook.class);
-	
+
 	// メールアドレスからimodeAddressを検索
-	private Map<String, ImodeAddress> pcAddrMap;	// iモード.net 上で登録したアドレス帳
-	private Map<String, ImodeAddress> dsAddrMap;	// ケータイデータお預かりサービスの携帯電話帳
-	private Map<String, ImodeAddress> csvAddrMap;	// CSVの電話帳
-	private Map<String, ImodeAddress> vcAddrMap;	// vCardの電話帳
+	private Map<String, ImodeAddress> pcAddrMap;		// iモード.net 上で登録したアドレス帳
+	private Map<String, ImodeAddress> dsAddrMap;		// ケータイデータお預かりサービスの携帯電話帳
+	private Map<String, ImodeAddress> csvAddrMap;		// CSVの電話帳
+	private Map<String, ImodeAddress> vcAddrMap;		// vCardの電話帳
 
 	private Date created;
-	
+
 	public AddressBook(){
 		this.created = new Date();
 		this.pcAddrMap = new HashMap<String, ImodeAddress>();
 		this.dsAddrMap = new HashMap<String, ImodeAddress>();
 		this.csvAddrMap = new HashMap<String, ImodeAddress>();
 		this.vcAddrMap = new HashMap<String, ImodeAddress>();
-
 	}
-	
+
 	/*
 	 * メールアドレスから名前の入ったImodeAddressを取得
 	 * 以下の順で優先される
-	 * 
-	 * 1. vCardファイル
-	 * 2. CSVファイル
-	 * 3. iモード.netの簡易アドレス帳
-	 * 4. ケータイデータお預かりサービスの携帯電話帳
+	 *
+	 * 1. Google Contacts APIから取得できた情報
+	 * 2. vCardファイル
+	 * 3. CSVファイル
+	 * 4. iモード.netの簡易アドレス帳
+	 * 5. ケータイデータお預かりサービスの携帯電話帳
 	 */
 	public ImodeAddress getImodeAddress(String mailAddress){
-		ImodeAddress r = this.vcAddrMap.get(mailAddress);
+		ImodeAddress r = null;
+		if(GoogleContactsAccessor.isInitialized())
+		{
+			r = GoogleContactsAccessor.getInstance().getGoogleContact(mailAddress);
+		}
+		if(r!=null){
+			return r;
+		}
+		r = this.vcAddrMap.get(mailAddress);
 		if(r!=null){
 			return r;
 		}
@@ -54,7 +64,7 @@ public class AddressBook {
 		return this.dsAddrMap.get(mailAddress);
 
 	}
-	
+
 	public InternetAddress getInternetAddress(String mailAddress, String charset){
 		ImodeAddress ia = this.getImodeAddress(mailAddress);
 		try{
@@ -77,15 +87,15 @@ public class AddressBook {
 			}
 		}
 	}
-	
+
 	public void addPcAddr(ImodeAddress ia){
 		this.pcAddrMap.put(ia.getMailAddress(), ia);
 	}
-	
+
 	public void addDsAddr(ImodeAddress ia){
 		this.dsAddrMap.put(ia.getMailAddress(), ia);
 	}
-	
+
 	public void addCsvAddr(ImodeAddress ia){
 		this.csvAddrMap.put(ia.getMailAddress(), ia);
 	}

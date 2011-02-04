@@ -20,6 +20,8 @@
  */
 package immf;
 
+import immf.google.contact.GoogleContact;
+
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
@@ -308,8 +310,26 @@ public class ImodeNetClient implements Closeable{
 			int type = addrJson.getInt("type");
 			String addr = addrJson.getString("mladdr");
 			if(type==0){
-				r.setFromAddr(this.addressBook.getInternetAddress(addr,this.mailAddrCharset));
+				// Fromの設定
+				InternetAddress ina = this.addressBook.getInternetAddress(addr,this.mailAddrCharset);
+				r.setFromAddr(ina);
 				log.info("From "+addr);
+
+				// グループの設定
+				ImodeAddress ima = this.addressBook.getImodeAddress(addr);
+				if ( ima != null && ima instanceof GoogleContact)
+				{
+					List<String> groupNameList = ((GoogleContact)ima).getGroupNameList();
+					for(Iterator<String> iterator = groupNameList.iterator(); iterator.hasNext();)
+					{
+						r.addGroupList(iterator.next());
+					}
+				}
+				else
+				{
+					log.info("Addresss: " + addr + " was not found in Address book.");
+				}
+
 			}else if(type==1){
 				tolist.add(this.addressBook.getInternetAddress(addr,this.mailAddrCharset));
 				log.info("To   "+addr);

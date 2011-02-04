@@ -21,6 +21,8 @@
 
 package immf;
 
+import immf.google.contact.GoogleContactsAccessor;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -87,6 +89,8 @@ public class ServerMain {
 		this.client.setSoTimeout(this.conf.getHttpSoTimeoutSec()*1000);
 		this.client.setMailAddrCharset(this.conf.getMailEncode());
 		this.client.setCsvAddressBook(this.conf.getCsvAddressFile());
+		//GoogleContactsAccesorの初期化
+		GoogleContactsAccessor.initialize(this.conf.getGmailId(), this.conf.getGmailPasswd());
 		this.client.setVcAddressBook(this.conf.getVcAddressFile());
 
 		CharacterConverter subjectCharConv = new CharacterConverter();

@@ -155,6 +155,10 @@ public class Config {
 	// vCard形式のアドレス帳ファイル
 	private String vcAddressFile = VcAddressFile;
 
+	// Google Contacts APIで利用するGmailアカウントの情報
+	private String gmailId;
+	private String gmailPasswd;
+
 	// 転送を無視するドメインリスト
 	private String ignoreDomainFile = IgnoreDomainFile;
 
@@ -289,6 +293,8 @@ public class Config {
 		this.statusFile = getString("save.filename", this.statusFile);
 		this.csvAddressFile = getString("addressbook.csv", this.csvAddressFile);
 		this.vcAddressFile = getString("addressbook.vcard", this.vcAddressFile);
+		this.gmailId = getString("gmail.id", null);
+		this.gmailPasswd = getString("gmail.passwd", null);
 		this.httpConnectTimeoutSec = getInt("http.conntimeout", this.httpConnectTimeoutSec);
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
@@ -361,6 +367,14 @@ public class Config {
 
 	public String getDocomoPasswd() {
 		return docomoPasswd;
+	}
+
+	public String getGmailId() {
+		return gmailId;
+	}
+
+	public String getGmailPasswd() {
+		return gmailPasswd;
 	}
 
 	public String getSmtpServer() {

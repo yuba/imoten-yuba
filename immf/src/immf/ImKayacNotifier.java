@@ -136,9 +136,17 @@ public class ImKayacNotifier implements Runnable{
 	private static String imKayacHeader(ImodeMail mail){
 		StringBuilder buf = new StringBuilder();
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		buf.append("From:").append(mail.getFromAddr()).append("\r\n");
+		if ( mail.getFromAddr().getPersonal() != null)
+		{
+			buf.append("From:").append(mail.getFromAddr().getPersonal()).append(" <").append(mail.getFromAddr().getAddress()).append(">\r\n");
+		}
+		else
+		{
+			buf.append("From:").append(mail.getFromAddr().getAddress()).append("\r\n");
+		}
 		buf.append("Date:").append(df.format(mail.getTimeDate())).append("\r\n");
 		buf.append("Subject:").append(EmojiUtil.replaceToLabel(mail.getSubject())).append("\r\n");
+		if(mail.getGroupList().size()!=0) buf.append("Group:").append(mail.getGroupList().get(0));
 		buf.append("\r\n");
 		return buf.toString();
 	}
