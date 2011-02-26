@@ -350,7 +350,7 @@ public class ImodeNetClient implements Closeable{
 			try{
 				JSONObject attacheJson = attaches.getJSONArray(i).getJSONObject(0);
 				if(attacheJson.getInt("drmFlg")==0){
-					AttachedFile f = this.getAttachedFile(AttachType.Attach, folderId, mailId, attacheJson.getString("id"));
+					AttachedFile f = this.getAttachedFile(AttachType.Attach, folderId, mailId, attacheJson.getString("id"), attacheJson.getString("name"));
 					attache.add(f);
 				}else{
 					String fname = attacheJson.getString("name");
@@ -366,7 +366,7 @@ public class ImodeNetClient implements Closeable{
 		log.info("添付ファイル(インライン) "+attaches.size());
 		for(int i=0; i<attaches.size(); i++){
 			JSONObject inlineJson = attaches.getJSONObject(i);
-			AttachedFile f = this.getAttachedFile(AttachType.Inline, folderId, mailId, inlineJson.getString("id"));
+			AttachedFile f = this.getAttachedFile(AttachType.Inline, folderId, mailId, inlineJson.getString("id"), inlineJson.getString("fileName"));
 			inline.add(f);
 		}
 
@@ -383,42 +383,35 @@ public class ImodeNetClient implements Closeable{
 	 * @param attacheId
 	 * @return
 	 */
-	private AttachedFile getAttachedFile(AttachType type, int folderId, String mailId, String fileId) throws IOException{
+	private AttachedFile getAttachedFile(AttachType type, int folderId, String mailId, String fileId, String fileName) throws IOException{
 		log.debug("# 添付ファイルのダウンロード "+type+"/"+mailId+"/"+fileId);
 
+		StringBuilder query = new StringBuilder();
+
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
-		formparams.add(new BasicNameValuePair("folder.id",Integer.toString(folderId)));
-		formparams.add(new BasicNameValuePair("folder.mail.id",mailId));
+		query.append("folder.id="+Integer.toString(folderId));
+		query.append("&folder.mail.id="+mailId);
 		if(type==AttachType.Attach){
-			formparams.add(new BasicNameValuePair("folder.attach.id", fileId));
+			query.append("&folder.attach.id="+fileId);
 		}else{
-			formparams.add(new BasicNameValuePair("folder.mail.img.id", fileId));
+			query.append("&folder.mail.img.id="+fileId);
 		}
-		formparams.add(new BasicNameValuePair("cdflg","1"));
+		query.append("&cdflg=0");
 
-		String pwsp = this.getPwspQuery();
-
-		HttpPost post = null;
+		HttpGet get = null;
 		try{
 			if(type==AttachType.Attach){
-				post = new HttpPost(AttachedFileUrl+"?pwsp="+pwsp);
+				get = new HttpGet(AttachedFileUrl+"?"+query.toString());
 			}else{
-				post = new HttpPost(InlineFileUrl+"?pwsp="+pwsp);
+				get = new HttpGet(InlineFileUrl+"?"+query.toString());
 			}
-			HttpResponse res = this.requestPost(post, formparams);
-
+			addDumyHeader(get);
+			HttpResponse res = this.executeHttp(get);
 			AttachedFile file = new AttachedFile();
 			file.setFolderId(folderId);
 			file.setMailId(mailId);
 			file.setId(fileId);
-			Header h = res.getFirstHeader("Content-Disposition");
-			HeaderElement[] hes = h.getElements();
-			for (HeaderElement he : hes) {
-				NameValuePair nvp = he.getParameterByName("filename");
-				if(nvp!=null){
-					file.setFilename(URLDecoder.decode(nvp.getValue(),"UTF-8"));
-				}
-			}
+			file.setFilename(fileName);
 
 			HttpEntity entity = res.getEntity();
 			file.setContentType(entity.getContentType().getValue());
@@ -428,14 +421,14 @@ public class ImodeNetClient implements Closeable{
 			log.info("サイズ       "+file.getData().length);
 			return file;
 		}finally{
-			post.abort();
+			get.abort();
 		}
 	}
 
 	private String getPwspQuery(){
 		String pwsp = "";
 		for (Cookie c : this.httpClient.getCookieStore().getCookies()) {
-			if(c.getName().equalsIgnoreCase("pwsp")){
+			if(c.getName().equalsIgnoreCase("pwsp2")){
 				String val = c.getValue();
 				pwsp = val.substring(val.length()-32);
 			}
@@ -642,7 +635,7 @@ public class ImodeNetClient implements Closeable{
 			}
 		}
 
-		multi.addPart("stmpfile.data", new ByteArrayBody(data,contentType,"C:\\"+filename));
+		multi.addPart("stmpfile.data", new ByteArrayBody(data,contentType,filename));
 
 		String url = null;
 		if(isInline){
@@ -1069,7 +1062,7 @@ public class ImodeNetClient implements Closeable{
 		return this.executeHttp(post);
 	}
 
-	private static void addDumyHeader(HttpEntityEnclosingRequestBase req){
+	private static void addDumyHeader(HttpRequestBase req){
 		req.setHeader("Accept", "*/*");
 		req.setHeader("Accept-Encoding","gzip, deflate");
 		req.setHeader("Cache-Control", "no-cache");
