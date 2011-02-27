@@ -1,13 +1,13 @@
 /*
  * imoten - i mode.net mail tensou(forward)
- * 
+ *
  * Copyright (C) 2010 shoozhoo (http://code.google.com/p/imoten/)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -15,8 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * 
- * 
+ *
+ *
  */
 
 package immf;
@@ -38,17 +38,17 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 public class StatusManager {
 	private static final Log log = LogFactory.getLog(StatusManager.class);
 	private File f;
-	
+
 	private List<Cookie> cookies;
 	private String lastMailId;
 	private String pushCredentials;
 	private String needConnect;
-	
+
 	public StatusManager(File f){
 		this.f = f;
 		this.cookies = new ArrayList<Cookie>();
 	}
-	
+
 	public void load() throws IOException{
 		Properties prop = new Properties();
 		FileInputStream fis = null;
@@ -68,12 +68,20 @@ public class StatusManager {
 			List<Cookie> list = new ArrayList<Cookie>();
 			while(enu.hasMoreElements()){
 				String key = (String)enu.nextElement();
-				
+
 				if(key.startsWith("cookie_")){
 					String cookieName = key.substring(7);
-					BasicClientCookie c = new BasicClientCookie(cookieName,prop.getProperty(key));
-					c.setDomain("imode.net");
-					c.setPath("/imail/");
+					String val = prop.getProperty(key);
+					String[] params = val.split(";");
+					BasicClientCookie c = new BasicClientCookie(cookieName, params[0]);
+					for(int i=1; i<params.length; i++){
+						String[] nameval = params[i].split("=");
+						if(nameval[0].equalsIgnoreCase("path")){
+							c.setPath(nameval[1]);
+						}else if(nameval[0].equalsIgnoreCase("domain")){
+							c.setDomain(nameval[1]);
+						}
+					}
 					c.setSecure(true);
 					log.debug("Load Cookie ["+c.getName()+"]=["+c.getValue()+"]");
 					list.add(c);
@@ -119,11 +127,11 @@ public class StatusManager {
 	public void setCookies(List<Cookie> cookies){
 		this.cookies = new ArrayList<Cookie>(cookies);
 	}
-	
+
 	public synchronized void save() throws IOException{
 		Properties prop = new Properties();
 		for (Cookie cookie : this.cookies) {
-			prop.setProperty("cookie_"+cookie.getName(), cookie.getValue());
+			prop.setProperty("cookie_"+cookie.getName(), cookie.getValue()+";path="+cookie.getPath()+";domain="+cookie.getDomain());
 		}
 		if(this.lastMailId!=null){
 			prop.setProperty("lastmailid", this.lastMailId);
