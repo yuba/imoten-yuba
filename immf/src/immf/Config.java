@@ -117,6 +117,9 @@ public class Config {
 	// trueにするとiモードメールのFrom,To,CCなどの情報をBodyの先頭に付加します
 	private boolean headerToBody = true;
 
+	// trueにするとiモードメールのToに自分のアドレスを付加しない
+	private boolean hideMyaddr = false;
+
 	// 転送メールの題名の文字変換ファイル
 	private String forwardSubjectCharConvertFile = null;
 
@@ -287,6 +290,7 @@ public class Config {
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
+		this.hideMyaddr = getBoolean("forward.hidemyaddr", this.hideMyaddr);
 		this.forwardSubjectCharConvertFile = getString("forward.subject.charconvfile", this.forwardSubjectCharConvertFile);
 		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
 		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
@@ -479,6 +483,10 @@ public class Config {
 
 	public boolean isHeaderToBody() {
 		return headerToBody;
+	}
+
+	public boolean isHideMyaddr() {
+		return hideMyaddr;
 	}
 
 	public int getCheckIntervalSec() {

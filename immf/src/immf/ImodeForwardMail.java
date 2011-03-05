@@ -346,7 +346,13 @@ public class ImodeForwardMail extends MyHtmlEmail {
 
 				List<InternetAddress> list = new ArrayList<InternetAddress>();
 				if(this.imm.getFolderId()!=ImodeNetClient.FolderIdSent){
-					list.add(this.imm.getMyInternetAddress());
+					if(this.conf.isHideMyaddr()){
+						if(this.imm.getToAddrList().size()==0){
+							list.add(this.imm.getMyInternetAddress());
+						}
+					}else{
+						list.add(this.imm.getMyInternetAddress());
+					}
 				}
 				list.addAll(this.imm.getToAddrList());
 				msg.setHeader("To", InternetAddress.toString(list.toArray(new InternetAddress[0])));
