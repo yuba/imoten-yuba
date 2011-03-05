@@ -218,6 +218,8 @@ public class Config {
 	private String forwardPushSound;
 	private String forwardPushIconUrl;
 	private boolean forwardPushNotifyFrom = true;
+	private boolean forwardPushNotifySubject = false;
+	private boolean forwardPushReplyButton = false;
 
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
@@ -273,10 +275,12 @@ public class Config {
 		this.forwardImKayacSecret = getString("forward.im.kayac.secret", "");
 		this.forwardPushEmail = getString("forward.push.email","");
 		this.forwardPushPassword = getString("forward.push.password","");
-		this.forwardPushMessage = getString("forward.push.message","");
+		this.forwardPushMessage = getString("forward.push.message",null);
 		this.forwardPushSound = getString("forward.push.sound","");
 		this.forwardPushIconUrl = getString("forward.push.iconurl","");
 		this.forwardPushNotifyFrom = getBoolean("forward.push.notifyfrom",this.forwardPushNotifyFrom);
+		this.forwardPushNotifySubject = getBoolean("forward.push.notifysubject",this.forwardPushNotifySubject);
+		this.forwardPushReplyButton = getBoolean("forward.push.replybutton",this.forwardPushReplyButton);
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
@@ -612,8 +616,16 @@ public class Config {
 		return forwardPushIconUrl;
 	}
 
-	public boolean getForwardPushNotifyFrom() {
+	public boolean isForwardPushFrom() {
 		return forwardPushNotifyFrom;
+	}
+
+	public boolean isForwardPushSubject() {
+		return forwardPushNotifySubject;
+	}
+
+	public boolean isForwardPushReplyButton() {
+		return forwardPushReplyButton;
 	}
 
 	public String getIgnoreDomainFile() {

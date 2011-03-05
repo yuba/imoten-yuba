@@ -72,7 +72,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	private String message;
 	private String sound;
 	private String iconUrl;
-	private boolean notifyFrom;
+	private boolean pushFromInfo;
+	private boolean pushSubjectInfo;
+	private boolean pushReplyButton;
 
 	private String credentials;
 	private String ok = "";
@@ -112,13 +114,15 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		this.email = conf.getForwardPushEmail();
 		this.password = conf.getForwardPushPassword();
 		this.message = conf.getForwardPushMessage();
-		if(this.message.isEmpty())
+		if(this.message==null)
 			this.message = Message;
 		this.sound = soundFile(conf.getForwardPushSound());
 		this.iconUrl = conf.getForwardPushIconUrl();
 		if(this.iconUrl.isEmpty())
 			this.iconUrl = IconUrl;
-		this.notifyFrom = conf.getForwardPushNotifyFrom();
+		this.pushFromInfo = conf.isForwardPushFrom();
+		this.pushSubjectInfo = conf.isForwardPushSubject();
+		this.pushReplyButton = conf.isForwardPushReplyButton();
 		this.credentials = status.getPushCredentials();
 		if(this.credentials==null)
 			this.credentials = "";
@@ -181,24 +185,68 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			int count = this.sendMailQueue.size();
 			ImodeMail mail = this.sendMailQueue.peek();
 			String pushMessage = this.message;
+			String pushCommand = "";
 
-			if(mail!=null && this.notifyFrom){
+			if(!this.pushFromInfo){
+				pushMessage += "("+Integer.toString(count)+"通)";
+			}
+			String delimiter = "";
+			if(!pushMessage.isEmpty()){
+				delimiter = "\n";
+			}
+			if(mail!=null && this.pushSubjectInfo){
+				String subject = mail.getSubject();
+				pushMessage += delimiter + subject;
+				delimiter = " ";
+			}
+			if(mail!=null && this.pushFromInfo){
 				InternetAddress fromAddr = mail.getFromAddr();
 				String from = fromAddr.getPersonal();
 				if(from==null||from.isEmpty()){
 					from = fromAddr.getAddress();
 				}
 				if(count==1){
-					pushMessage += "\n("+from+")";
+					pushMessage += delimiter + "("+from+")";
 				}else{
-					pushMessage += "\n("+from+",他"+Integer.toString(count-1)+"通)";
+					pushMessage += delimiter + "("+from+",他"+Integer.toString(count-1)+"通)";
 				}
-			}else{
-				pushMessage += "("+Integer.toString(count)+"通)";
+			}
+			if(mail!=null && this.pushReplyButton){
+				// スペース(%20)は使用禁止。+に置換されてしまう。
+				InternetAddress fromAddr = mail.getFromAddr();
+				pushCommand = "mailto:" + fromAddr.getAddress();
+				for (InternetAddress to : mail.getToAddrList()) {
+					pushCommand += "%2C" + to.getAddress();
+				}
+				String ccList = "";
+				for (InternetAddress cc : mail.getCcAddrList()) {
+					if(ccList.isEmpty()){
+						ccList = "?cc=" + cc.getAddress();
+					}else{
+						ccList += "%2C" + cc.getAddress();
+					}
+				}
+				if(!ccList.isEmpty()){
+					pushCommand += ccList;
+					//pushCommand += "&subject=";
+				//}else{
+					//pushCommand += "?subject=";
+				}
+				/* 
+				 * XXX
+				 * Apple URL Scheme Referenceでは RFC2368 に従うとあるが、これに従い
+				 * 8bit文字を使用した subject のエンコードとして RFC2047 に従ってもデコードされない。
+				 * また、エンコードをせずに生8bit文字を送信すると Push が悲鳴をあげる。
+				 * Push のバージョンアップで解消するかなぁ。
+				 */
 			}
 			try{
 				log.info("push通知:"+pushMessage.replace("\n","/"));
-				this.send(pushMessage);
+				if(this.pushReplyButton){
+					this.send(pushMessage, pushCommand);
+				}else{
+					this.send(pushMessage);
+				}
 				this.sendMailQueue.clear();
 
 			}catch(SocketException se){
@@ -226,7 +274,11 @@ class AppNotifications extends DefaultHandler implements Runnable{
 					log.info("credentials再取得成功。");
 					try{
 						log.info("push通知:"+pushMessage.replace("\n","/"));
-						this.send(pushMessage);
+						if(this.pushReplyButton){
+							this.send(pushMessage, pushCommand);
+						}else{
+							this.send(pushMessage);
+						}
 						this.sendMailQueue.clear();
 
 					}catch(Exception ex){
@@ -342,7 +394,25 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		this.setCredentials();
 	}
 	
-	private void send(String message) throws Exception {
+	/*
+	 * Pushウィンドウ 表示可能文字数覚え書き
+	 * 
+	 * [通常]
+	 *  半角文字140字、全角文字30字
+	 *  
+	 * [action_loc_keyに""設定時]
+	 *  全角文字27字(3文字減る)
+	 * [action_loc_keyに"Reply"設定時]
+	 *  全角文字26字(4文字減る)
+	 * [action_loc_keyに"返信"設定時]
+	 *  全角文字25字(5文字減る)
+	 *  
+	 * [run_commandに50byte設定時]
+	 *  全角文字21字(9文字減る)
+	 * [run_commandに80byte設定時]
+	 *  全角文字17字(13文字減る)
+	 */
+	private void send(String message, String command) throws Exception {
 		this.httpClient = new DefaultHttpClient();
 		HttpPost post = new HttpPost(PushUrl);
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
@@ -354,6 +424,13 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		formparams.add(new BasicNameValuePair("notification[icon_url]",this.iconUrl));
 		formparams.add(new BasicNameValuePair("notification[message_level]","2"));
 		formparams.add(new BasicNameValuePair("notification[silent]","0"));
+		if(command!=null && !command.isEmpty()){
+			// 表示文字数をかせぐためaction_loc_keyは半角で・・・
+			formparams.add(new BasicNameValuePair("notification[action_loc_key]","Reply"));
+			formparams.add(new BasicNameValuePair("notification[run_command]",command));
+		}else{
+			formparams.add(new BasicNameValuePair("notification[action_loc_key]",""));
+		}
 		UrlEncodedFormEntity entity = null;
 		try{
 			entity = new UrlEncodedFormEntity(formparams,"UTF-8");
@@ -369,7 +446,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 					throw new Exception("http server error. status="+status);
 				}
 			}
-			JSONObject json = JSONObject.fromObject(EntityUtils.toString(res.getEntity()));
+			String resString = EntityUtils.toString(res.getEntity());
+			log.info("サーバ応答:" + resString);
+			JSONObject json = JSONObject.fromObject(resString);
 			int id = json.getInt("id");
 			if(id<1){
 				throw new Exception("illegal id returned");
@@ -384,6 +463,10 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		}finally{
 			post.abort();
 		}
+	}
+
+	private void send(String message) throws Exception {
+		this.send(message, null);
 	}
 
 	private String soundFile(String key){
