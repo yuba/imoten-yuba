@@ -115,6 +115,16 @@ public class ServerMain {
 			ImodeForwardMail.setGoomojiSubjectCharConv(goomojiSubjectCharConv);
 		}
 
+		StringConverter strConv = new StringConverter();
+		if(conf.getForwardStringConvertFile()!=null) {
+			try {
+				strConv.load(new File(conf.getForwardStringConvertFile()));
+			} catch (Exception e) {
+				log.error("文字列変換表("+conf.getForwardStringConvertFile()+")が読み込めませんでした。",e);
+			}
+		}
+		ImodeForwardMail.setStrConv(strConv);
+		
 		this.forwardAsync = conf.isForwardAsync();
 
 		// 転送抑止ドメインリスト読み込み

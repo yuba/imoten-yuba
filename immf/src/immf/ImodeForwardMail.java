@@ -50,6 +50,7 @@ public class ImodeForwardMail extends MyHtmlEmail {
 	private Config conf;
 	private static CharacterConverter subjectCharConv = null;
 	private static CharacterConverter goomojiSubjectCharConv = null;
+	private static StringConverter strConv = null;
 
 	public ImodeForwardMail(ImodeMail imm, Config conf) throws EmailException{
 		this.imm = imm;
@@ -110,6 +111,11 @@ public class ImodeForwardMail extends MyHtmlEmail {
 		list = conf.getForwardBcc();
 		for (String addr : list) {
 			this.addBcc(addr);
+		}
+
+		// 文字列置換
+		if(this.imm.getFolderId()!=ImodeNetClient.FolderIdSent&&true){
+			this.imm.setBody(ImodeForwardMail.strConv.convert(this.imm.getBody()));
 		}
 
 		Config.BodyEmojiReplace emojiReplace = conf.getBodyEmojiReplace();
@@ -439,5 +445,9 @@ public class ImodeForwardMail extends MyHtmlEmail {
 
 	public static void setGoomojiSubjectCharConv(CharacterConverter goomojiSubjectCharConv) {
 		ImodeForwardMail.goomojiSubjectCharConv = goomojiSubjectCharConv;
+	}
+
+	public static void setStrConv(StringConverter strConv) {
+		ImodeForwardMail.strConv = strConv;
 	}
 }

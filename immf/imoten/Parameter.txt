@@ -95,6 +95,19 @@ forward.subject.googlecharconvfile
   絵文字に変換するCSVファイルを指定します。通常は ../conv/genDocomo2google.csv
   を指定します。
 
+forward.body.urlconvfile
+　転送時にここで指定した文字列変換ファイルを使用して、メール文中のURL置換などを行うことができます。
+　相対パスを指定した場合、binディレクトリからの相対パスになります。
+　例えば、convディレクトリに urlconv.txt という名称で文字列変換ファイルを作成した場合は、このパラメータ
+　には ../conv/urlconv.txt を指定します。
+　文字列変換ファイルの書式は
+　「変換元文字列の正規表現(タブまたはスペース)変換後文字列」
+　の形式で複数行記述できます。また正規表現は Java のルール(java.util.regex.Pattern)で記述します。
+　例えばメール文中の「http://m.example.com/m/aaa/bbb.html」を「http://www.example.com/aaa/bbb.html」に
+　置換したい場合は、以下のようなファイルを作成し、そのファイルパスをこのパラメータに設定することで
+　実現することができます。
+　「http://m\.example\.com/m/([\w/]+\.html)	http://www.example.com/$1」
+
 forward.sent.subject.prefix
 　forward.sent=trueを設定した場合の送信メールの転送時に題名の先頭に追加する文字列を指定します。
 　デフォルト空文字列。

@@ -124,6 +124,9 @@ public class Config {
 	private boolean forwardAddGoomojiSubject = false;
 	private String forwardGoogleCharConvertFile = null;
 
+	// 転送メールの本文の文字列変換ファイル
+	private String forwardStringConvertFile = null;
+
 	// 転送時に非同期にリトライ処理を行うかどうか(trueだと転送を別スレッドで行う)
 	private boolean forwardAsync = false;
 
@@ -287,6 +290,8 @@ public class Config {
 		this.forwardSubjectCharConvertFile = getString("forward.subject.charconvfile", this.forwardSubjectCharConvertFile);
 		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
 		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
+		// パラメータ名は用途がわかりやすいように urlconv にしておく
+		this.forwardStringConvertFile = getString("forward.body.urlconvfile", this.forwardStringConvertFile);
 		this.forwardAsync = getBoolean("forward.async", this.forwardAsync);
 		this.ignoreDomainFile = getString("forward.ignoredomainfile", this.ignoreDomainFile);
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
@@ -674,6 +679,10 @@ public class Config {
 
 	public String getForwardGoogleCharConvertFile() {
 		return forwardGoogleCharConvertFile;
+	}
+
+	public String getForwardStringConvertFile() {
+		return forwardStringConvertFile;
 	}
 
 	public boolean isForwardAsync() {
