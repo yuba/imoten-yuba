@@ -601,8 +601,8 @@ public class Util {
 		 */
 		String html = sendMail.getHtmlContent();
 		if(html!=null){
-			// 厳密一致（仮）
-			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<div><br></div>)*</div><div><br>On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]*<a href=[^<>]*>[^<>]*</a>[^<>]* wrote:(?:<br>)*(?:</?div>)+<blockquote type=.*</blockquote>", "</div>");
+			// 厳密一致
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<div><br></div>)*</div><div><br>On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]*(?:(?:<a href=[^<>]*>)+[^<>]*(?:</a>)+)+[^<>]* wrote:(?:<br>)*(?:</?[^<>]+>)+<blockquote type=.*</blockquote>", "</div>");
 			// htmlWorkingContent由来
 			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<br>)*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]* wrote:(?:<br>)*&gt;.*</body>", "</body>");
 			sendMail.setHtmlContent(html);
