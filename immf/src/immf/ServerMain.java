@@ -40,7 +40,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.28";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.29";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
@@ -124,7 +124,7 @@ public class ServerMain {
 			}
 		}
 		ImodeForwardMail.setStrConv(strConv);
-		
+
 		this.forwardAsync = conf.isForwardAsync();
 
 		// 転送抑止ドメインリスト読み込み
