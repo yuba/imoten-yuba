@@ -32,6 +32,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import javax.mail.internet.InternetAddress;
+import javax.net.ssl.SSLException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -58,6 +59,8 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	private static final String PushUrl = "https://www.appnotifications.com/account/notifications.json";
 	private static final String IconUrl = "http://imode.net/cmn/images/favicon.ico";
 	private static final String Message = "新着iモードメールあり";
+	private static final int ReconnectInterval = 3000;
+	private static final int ReconnectCount = 100;
 	
 	private StatusManager status;
 	private Deque<ImodeMail> recieveMailQueue = new LinkedList<ImodeMail>();
@@ -139,11 +142,13 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	}
 
 	public void run(){
+		boolean authOk = false;
 		if(this.credentials.isEmpty()){
 			if(!this.auth()){
 				log.warn("認証失敗。登録したメールアドレスとパスワードを使用してください。");
 				return;
 			}
+			authOk = true;
 			log.info("credentials取得成功。push通知を開始します。");
 		}else{
 			log.info("push通知を開始します。");
@@ -151,11 +156,11 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		int c = 0;
 		while(true){
 			try {
-				Thread.sleep(3000);
+				Thread.sleep(ReconnectInterval);
 			}catch (Exception e) {}
 
 			// 今のところリトライ間隔は5分固定
-			if(this.sendMailQueue.size()>0 && c++>100){
+			if(this.sendMailQueue.size()>0 && c++>ReconnectCount){
 				log.info("push通知リトライ。");
 				
 			}else if(this.recieveMailQueue.size()>newmails){
@@ -247,6 +252,7 @@ class AppNotifications extends DefaultHandler implements Runnable{
 				}else{
 					this.send(pushMessage);
 				}
+				authOk = true;
 				this.sendMailQueue.clear();
 
 			}catch(SocketException se){
@@ -261,16 +267,26 @@ class AppNotifications extends DefaultHandler implements Runnable{
 				// DNSエラー。リトライ。
 				log.warn("DNSエラーによりpush通知失敗。後でリトライします。",uhe);
 
+			}catch(SSLException ssle){
+				// SSLエラー。リトライ。
+				log.warn("SSLエラーによりpush通知失敗。後でリトライします。",ssle);
+
 			}catch(MyHttpException mhe){
 				// 通信異常。リトライ。
 				log.warn("サーバエラーによりpush通知失敗。後でリトライします。",mhe);
 
 			}catch(Exception e){
 				log.warn("push失敗。リトライします。",e);
+				if(authOk){
+					continue;
+				}
+				
+				// 未認証あるいは通知が一度も成功していない場合に再認証を試みる
 				this.credentials = "";
 				
 				// status.iniに直接記述したcredentials誤りの場合があるため再認証してリトライする。
 				if(this.auth()){
+					authOk = true;
 					log.info("credentials再取得成功。");
 					try{
 						log.info("push通知:"+pushMessage.replace("\n","/"));
@@ -340,13 +356,22 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	
 	
 	private boolean auth(){
-		try{
-			SAXParserFactory spfactory = SAXParserFactory.newInstance();
-			SAXParser parser = spfactory.newSAXParser();
-			byte[] xml = this.getCredentials();
-			InputStream is = new ByteArrayInputStream(xml);
-			parser.parse(is, this);
-		}catch(Exception e){}
+		boolean httpOk = false;
+		while(!httpOk){
+			try{
+				SAXParserFactory spfactory = SAXParserFactory.newInstance();
+				SAXParser parser = spfactory.newSAXParser();
+				byte[] xml = this.getCredentials();
+				InputStream is = new ByteArrayInputStream(xml);
+				parser.parse(is, this);
+				httpOk = true;
+			}catch(Exception e){
+				log.warn("通信エラー。5分後にリトライします。",e);
+				try {
+					Thread.sleep(ReconnectInterval*ReconnectCount);
+				}catch (Exception ee) {}
+			}
+		}
 		if(!ok.equals("OK")){
 			ok = "";
 			return false;
