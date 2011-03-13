@@ -33,6 +33,10 @@ import org.apache.commons.logging.LogFactory;
 
 public class ImodeMail {
 	private static final Log log = LogFactory.getLog(ImodeMail.class);
+	public static final int RECV_TYPE_TO = 1;
+	public static final int RECV_TYPE_CC = 2;
+	public static final int RECV_TYPE_BCC = 3;
+
 
 	private String mailId;
 	private int folderId;

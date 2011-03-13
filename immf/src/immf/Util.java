@@ -417,7 +417,7 @@ public class Util {
 		header.append(" From:    ").append(imm.getFromAddr().toUnicodeString()).append("\r\n");
 
 		String label = " To:";
-		if(imm.getFolderId()!=ImodeNetClient.FolderIdSent){
+		if(imm.getRecvType()==ImodeMail.RECV_TYPE_TO && imm.getFolderId()!=ImodeNetClient.FolderIdSent){
 			header.append(label+"      ").append(imm.getMyMailAddr()).append("\r\n");
 			label="    ";
 		}
@@ -426,10 +426,19 @@ public class Util {
 			label="    ";
 		}
 		String prefix = " Cc:";
+		if(imm.getRecvType()==ImodeMail.RECV_TYPE_CC && imm.getFolderId()!=ImodeNetClient.FolderIdSent){
+			header.append(prefix+"      ").append(imm.getMyMailAddr()).append("\r\n");
+			label="    ";
+		}
 		for(InternetAddress addr : imm.getCcAddrList()){
 			header.append(prefix+"      ").append(addr.toUnicodeString()).append("\r\n");
 			prefix = "    ";
 		}
+		prefix = " Bcc:";
+		if(imm.getRecvType()==ImodeMail.RECV_TYPE_BCC && imm.getFolderId()!=ImodeNetClient.FolderIdSent){
+			header.append(" Bcc:     ").append(imm.getMyMailAddr()).append("\r\n");
+		}
+
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd (EEE) HH:mm:ss");
 		header.append(" Date:    ").append(df.format(imm.getTimeDate())).append("\r\n");
 		String subject = imm.getSubject();

@@ -344,21 +344,38 @@ public class ImodeForwardMail extends MyHtmlEmail {
 				msg.removeHeader("Cc");
 				msg.removeHeader("Bcc");
 
-				List<InternetAddress> list = new ArrayList<InternetAddress>();
+				List<InternetAddress> tolist = new ArrayList<InternetAddress>();
+				List<InternetAddress> cclist = new ArrayList<InternetAddress>();
+
+				boolean useMyAddress=false;
 				if(this.imm.getFolderId()!=ImodeNetClient.FolderIdSent){
 					if(this.conf.isHideMyaddr()){
 						if(this.imm.getToAddrList().size()==0){
-							list.add(this.imm.getMyInternetAddress());
+							useMyAddress=true;
 						}
 					}else{
-						list.add(this.imm.getMyInternetAddress());
+						useMyAddress=true;
 					}
 				}
-				list.addAll(this.imm.getToAddrList());
-				msg.setHeader("To", InternetAddress.toString(list.toArray(new InternetAddress[0])));
+				if(useMyAddress){
+					switch(this.imm.getRecvType()){
+					case ImodeMail.RECV_TYPE_TO:
+						tolist.add(this.imm.getMyInternetAddress());
+						break;
+					case ImodeMail.RECV_TYPE_CC:
+						cclist.add(this.imm.getMyInternetAddress());
+						break;
+					case ImodeMail.RECV_TYPE_BCC:
+						break;
+					}
+				}
+				tolist.addAll(this.imm.getToAddrList());
+				cclist.addAll(this.imm.getCcAddrList());
+
+				msg.setHeader("To", InternetAddress.toString(tolist.toArray(new InternetAddress[0])));
 
 				if(this.imm.getCcAddrList().size()>0){
-					msg.setHeader("Cc", InternetAddress.toString(this.imm.getCcAddrList().toArray(new InternetAddress[0])));
+					msg.setHeader("Cc", InternetAddress.toString(cclist.toArray(new InternetAddress[0])));
 				}
 
 				msg.setFrom(this.imm.getFromAddr());
