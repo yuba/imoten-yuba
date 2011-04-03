@@ -221,12 +221,10 @@ forward.headertobody
 　デフォルト[true]。
 
 forward.hidemyaddr
-　[true]の場合、転送時のTOヘッダに自分のimodeアドレスを設定せず、通常のimodeメールと
+　[true]の場合、転送時のTO,CCヘッダに自分のimodeアドレスを設定せず、通常のimodeメールと
 　同様の宛先表示となります。但し、TOが自分一人となるメールの場合はTOに自分のimodeアドレスが
 　設定されます。
-　[false]の場合は常にTOヘッダに自分のimodeアドレスが設定されます。(実際には自分のメールアドレスが
-　CCに設定されていても、TOに設定されることになります。これは、iモードの仕様上、自分がTOなのかCC
-　なのかを判別する手段がないためです。)
+　[false]の場合はメールのTO,CC,BCCに合わせてメールヘッダが設定されます。
 　なお[forward.rewriteaddress]がtrueに設定されている場合は本パラメータは無視されます。
 　デフォルト[false]。
 
