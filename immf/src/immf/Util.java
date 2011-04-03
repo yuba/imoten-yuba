@@ -525,6 +525,7 @@ public class Util {
 		BufferedInputStream pis = new BufferedInputStream(is);
 
 		try{
+			// iPhone iOSのバグ対応コード。iOS 4.3ではすでに解消された模様。
 			pis.mark(0);
 			ImageInputStream iis = ImageIO.createImageInputStream(pis);
 			Iterator i = ImageIO.getImageReaders(iis);
@@ -547,12 +548,11 @@ public class Util {
 			if(ImageIO.write(png, "gif", converted)){
 				gis = new ByteArrayInputStream(converted.toByteArray());
 			}
-		}catch(Exception e){}finally{
-			pis.reset();
-		}
+		}catch(Exception e){}
 		if(gis!=null){
 			return gis;
 		}else{
+			pis.reset();
 			return pis;
 		}
 	}
