@@ -228,6 +228,9 @@ public class Config {
 	private boolean forwardPushNotifyFrom = true;
 	private boolean forwardPushNotifySubject = false;
 	private boolean forwardPushReplyButton = false;
+	
+	// 識別用
+	private int configId;
 
 	public Config(InputStream is) throws Exception{
 		Reader reader = null;
@@ -238,6 +241,26 @@ public class Config {
 			Util.safeclose(reader);
 		}
 
+		getProperties();
+		getForwardProperties(1);
+		configId = 1;
+	}
+	
+	public Config(InputStream is, int index) throws Exception{
+		Reader reader = null;
+		try{
+			reader = new InputStreamReader(is,"UTF-8");
+			this.prop.load(reader);
+		}finally{
+			Util.safeclose(reader);
+		}
+
+		getProperties();
+		getForwardProperties(index);
+		configId = index;
+	}
+
+	private void getProperties(){
 
 		this.docomoId = 		getString("docomo.id", null);
 		this.docomoPasswd = 	getString("docomo.passwd", null);
@@ -254,6 +277,7 @@ public class Config {
 		this.popUser = 			getString("popbeforesmtp.user", null);
 		this.popPasswd =		getString("popbeforesmtp.passwd", null);
 		//this.popSsl = 			getBoolean("popbeforesmtp.ssl", this.popSsl);
+		/*
 		this.subjectEmojiReplace = getBoolean("emojireplace.subject", this.subjectEmojiReplace);
 		String s = getString("emojireplace.body", "inline");
 		if(s.equalsIgnoreCase("inline")){
@@ -277,6 +301,7 @@ public class Config {
 		this.forwardTo = splitComma(getString("forward.to", ""));
 		this.forwardCc = splitComma(getString("forward.cc", ""));
 		this.forwardBcc = splitComma(getString("forward.bcc", ""));
+		*/
 		this.forwardSkypeChat = getString("forward.skype.chat", null);
 		this.forwardSkypeSms = getString("forward.skype.sms", null);
 		this.forwardImKayacUsername = getString("forward.im.kayac.username", "");
@@ -289,6 +314,7 @@ public class Config {
 		this.forwardPushNotifyFrom = getBoolean("forward.push.notifyfrom",this.forwardPushNotifyFrom);
 		this.forwardPushNotifySubject = getBoolean("forward.push.notifysubject",this.forwardPushNotifySubject);
 		this.forwardPushReplyButton = getBoolean("forward.push.replybutton",this.forwardPushReplyButton);
+		/*
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
@@ -300,6 +326,7 @@ public class Config {
 		this.forwardStringConvertFile = getString("forward.body.urlconvfile", this.forwardStringConvertFile);
 		this.forwardAsync = getBoolean("forward.async", this.forwardAsync);
 		this.ignoreDomainFile = getString("forward.ignoredomainfile", this.ignoreDomainFile);
+		*/
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
 		this.forceCheckIntervalSec = getInt("imodenet.forcecheckinterval", this.forceCheckIntervalSec);
 		this.checkFileIntervalSec = getInt("imodenet.checkfileinterval", this.checkIntervalSec);
@@ -315,9 +342,11 @@ public class Config {
 		this.httpSoTimeoutSec = getInt("http.sotimeout", this.httpSoTimeoutSec);
 		this.mailDebugEnable = getBoolean("mail.debug", this.mailDebugEnable);
 		this.mailEncode = getString("mail.encode", this.mailEncode);
+		/*
 		this.contentTransferEncoding = getString("mail.contenttransferencoding", null);
 		this.mailFontFamily = getString("mail.fontfamily", null);
 		this.mailAlternative = getBoolean("mail.alternative", this.mailAlternative);
+		*/
 		this.senderSmtpPort = getInt("sender.smtp.port", this.senderSmtpPort);
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
@@ -355,6 +384,66 @@ public class Config {
 		}
 	}
 
+	private void getForwardProperties(int index){
+
+		String n = "";
+		if(index > 1){
+			n = "." + index;
+		}
+		this.subjectEmojiReplace = getBoolean("emojireplace"+n+".subject", this.subjectEmojiReplace);
+		String s = getString("emojireplace"+n+".body", "inline");
+		if(s.equalsIgnoreCase("inline")){
+			this.bodyEmojiReplace = BodyEmojiReplace.ToInlineImage;
+		}else if(s.equalsIgnoreCase("label")){
+			this.bodyEmojiReplace = BodyEmojiReplace.ToLabel;
+		}else if(s.equalsIgnoreCase("link")){
+			this.bodyEmojiReplace = BodyEmojiReplace.ToWebLink;
+		}else{
+			this.bodyEmojiReplace = BodyEmojiReplace.DontReplace;
+		}
+		this.bodyEmojiVAlign = getString("mail"+n+".emojiverticalalign", this.bodyEmojiVAlign);
+		this.bodyEmojiSize = getString("mail"+n+".emojisize", null);
+		this.bodyEmojiVAlignHtml = getString("mail"+n+".emojiverticalalignhtml", this.bodyEmojiVAlign);
+		this.bodyEmojiSizeHtml = getString("mail"+n+".emojisizehtml", this.bodyEmojiSize);
+		this.subjectAppendPrefix = getString("forward"+n+".subject.prefix", this.subjectAppendPrefix);
+		this.subjectAppendSuffix = getString("forward"+n+".subject.suffix", this.subjectAppendSuffix);
+		this.sentSubjectAppendPrefix = getString("forward"+n+".sent.subject.prefix", this.sentSubjectAppendPrefix);
+		this.sentSubjectAppendSuffix = getString("forward"+n+".sent.subject.suffix", this.sentSubjectAppendSuffix);
+		this.forwardSent = getBoolean("forward"+n+".sent", this.forwardSent);
+		this.forwardTo = splitComma(getString("forward"+n+".to", ""));
+		this.forwardCc = splitComma(getString("forward"+n+".cc", ""));
+		this.forwardBcc = splitComma(getString("forward"+n+".bcc", ""));
+		/*
+		this.forwardSkypeChat = getString("forward"+n+".skype.chat", null);
+		this.forwardSkypeSms = getString("forward"+n+".skype.sms", null);
+		this.forwardImKayacUsername = getString("forward"+n+".im.kayac.username", "");
+		this.forwardImKayacSecret = getString("forward"+n+".im.kayac.secret", "");
+		this.forwardPushEmail = getString("forward"+n+".push.email","");
+		this.forwardPushPassword = getString("forward"+n+".push.password","");
+		this.forwardPushMessage = getString("forward"+n+".push.message",null);
+		this.forwardPushSound = getString("forward"+n+".push.sound","");
+		this.forwardPushIconUrl = getString("forward"+n+".push.iconurl","");
+		this.forwardPushNotifyFrom = getBoolean("forward"+n+".push.notifyfrom",this.forwardPushNotifyFrom);
+		this.forwardPushNotifySubject = getBoolean("forward"+n+".push.notifysubject",this.forwardPushNotifySubject);
+		this.forwardPushReplyButton = getBoolean("forward"+n+".push.replybutton",this.forwardPushReplyButton);
+		*/
+		this.forwardReplyTo = splitComma(getString("forward"+n+".replyto", ""));
+		this.rewriteAddress = getBoolean("forward"+n+".rewriteaddress", this.rewriteAddress);
+		this.headerToBody = getBoolean("forward"+n+".headertobody", this.headerToBody);
+		this.hideMyaddr = getBoolean("forward"+n+".hidemyaddr", this.hideMyaddr);
+		this.forwardSubjectCharConvertFile = splitComma(getString("forward"+n+".subject.charconvfile", ""));
+		this.forwardAddGoomojiSubject = getBoolean("forward"+n+".subject.addgoomoji", this.forwardAddGoomojiSubject);
+		this.forwardGoogleCharConvertFile = getString("forward"+n+".subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
+		// パラメータ名は用途がわかりやすいように urlconv にしておく
+		this.forwardStringConvertFile = getString("forward"+n+".body.urlconvfile", this.forwardStringConvertFile);
+		this.forwardAsync = getBoolean("forward"+n+".async", this.forwardAsync);
+		this.ignoreDomainFile = getString("forward"+n+".ignoredomainfile", this.ignoreDomainFile);
+
+		this.contentTransferEncoding = getString("mail"+n+".contenttransferencoding", null);
+		this.mailFontFamily = getString("mail"+n+".fontfamily", null);
+		this.mailAlternative = getBoolean("mail"+n+".alternative", this.mailAlternative);
+	}
+
 	private static List<String> splitComma(String str){
 		List<String> r = new ArrayList<String>();
 		for(String s : str.split(",")){
@@ -377,6 +466,23 @@ public class Config {
 	}
 	private boolean getBoolean(String key, boolean def){
 		return this.prop.getProperty(key, Boolean.toString(def)).equalsIgnoreCase("true");
+	}
+
+	public int countForwardSite(){
+		int i = 0;
+		for(i=2;;i++){
+			int to = splitComma(getString("forward." + i + ".to", "")).size()
+				+ splitComma(getString("forward." + i + ".cc", "")).size()
+				+ splitComma(getString("forward." + i + ".bcc", "")).size();
+			if(to == 0){
+				break;
+			}
+		}
+		return i - 1;
+	}
+	
+	public int getConfigId(){
+		return configId;
 	}
 
 	public String getDocomoId() {

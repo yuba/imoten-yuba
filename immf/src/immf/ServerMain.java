@@ -30,6 +30,7 @@ import java.io.FileReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,15 +47,14 @@ public class ServerMain {
 
 	private ImodeNetClient client;
 	private SendMailPicker spicker;
-	private ForwardMailPicker fpicker;
 	private Config conf;
 	private StatusManager status;
 	private SkypeForwarder skypeForwarder;
 	private ImKayacNotifier imKayacNotifier;
 	private AppNotifications appNotifications;
-
-	private boolean forwardAsync;
-	private List<String> ignoreDomains = new ArrayList<String>();
+	private int numForwardSite;
+	private Map<Config, ForwardMailPicker> forwarders = new HashMap<Config, ForwardMailPicker>();
+	private Map<Config, List<String>> ignoreDomainsMap = new HashMap<Config, List<String>>();
 
 	public ServerMain(File conffile){
 		System.out.println("StartUp ["+Version+"]");
@@ -65,6 +65,10 @@ public class ServerMain {
 			log.info("Load Config file "+conffile.getAbsolutePath());
 			FileInputStream is = new FileInputStream(conffile);
 			this.conf = new Config(is);
+			this.numForwardSite = conf.countForwardSite();
+			if(numForwardSite>1){
+				log.info("複数の転送設定があります:"+numForwardSite);
+			}
 
 		}catch (Exception e) {
 			log.fatal("Config Error. 設定ファイルに問題があります。",e);
@@ -126,10 +130,8 @@ public class ServerMain {
 		}
 		ImodeForwardMail.setStrConv(strConv);
 
-		this.forwardAsync = conf.isForwardAsync();
-
 		// 転送抑止ドメインリスト読み込み
-		this.loadIgnoreDomainList();
+		this.loadIgnoreDomainList(this.conf, 1);
 
 		try{
 			// 前回のcookie
@@ -146,7 +148,28 @@ public class ServerMain {
 		new SendMailBridge(conf, this.client, this.spicker, this.status);
 
 		// メール転送
-		fpicker = new ForwardMailPicker(this.conf, this);
+		Config forwardConf = this.conf;
+		ForwardMailPicker fpicker = new ForwardMailPicker(forwardConf, this);
+		forwarders.put(forwardConf, fpicker);
+		
+		for(int i=2; i<=numForwardSite; i++){
+			try{
+				log.info("Load Config file["+i+"] "+conffile.getAbsolutePath());
+				FileInputStream is = new FileInputStream(conffile);
+				is = new FileInputStream(conffile);
+				forwardConf = new Config(is, i);
+				fpicker = new ForwardMailPicker(forwardConf, this);
+				forwarders.put(forwardConf, fpicker);
+
+				// 転送抑止ドメインリスト読み込み
+				this.loadIgnoreDomainList(forwardConf, i);
+
+			}catch (Exception e) {
+				log.fatal("Config Error. 設定ファイルに問題があります。",e);
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
 
 		// skype
 		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);
@@ -307,6 +330,7 @@ public class ServerMain {
 	 */
 	private void forward(int folderId, String mailId){
 		if(folderId==ImodeNetClient.FolderIdSent
+				&& numForwardSite == 1
 				&& !this.conf.isForwardSent()){
 			// 送信メールは転送しない
 			return;
@@ -324,28 +348,59 @@ public class ServerMain {
 			log.warn("i mode.net mailId["+mailId+"] download Error.",e);
 			return;
 		}
-		//  転送抑止ドメインリストと比較して送信可否判定
+
 		String from = mail.getFromAddr().getAddress();
-		for (String domain : this.ignoreDomains) {
-			if(from.endsWith(domain)){
-				log.info("送信者:"+from+" のメール転送中止");
-				this.appNotifications.pushError(folderId);
-				return;
-			}
-		}
+		List<String> ignoreDomains = new ArrayList<String>();
 		try{
 			// 送信
-			if(this.forwardAsync){
-				// 別スレッドで送信。送信失敗時はリトライあり。
-				this.fpicker.add(mail);
-			}else{
-				ImodeForwardMail forwardMail = new ImodeForwardMail(mail,this.conf);
-				forwardMail.send();
+			for (Map.Entry<Config, ForwardMailPicker> f : forwarders.entrySet()) {
+				Config forwardConf = f.getKey();
+				int id = forwardConf.getConfigId();
+
+				if(folderId==ImodeNetClient.FolderIdSent
+						&& !forwardConf.isForwardSent()){
+					// 送信メールは転送しない
+					continue;
+				}
+				
+				//  転送抑止ドメインリストと比較して送信可否判定
+				boolean notForward = false;
+				ignoreDomains = ignoreDomainsMap.get(forwardConf);
+				for (String domain : ignoreDomains) {
+					if(from.endsWith(domain)){
+						log.info("送信者:"+from+" のメール転送中止["+id+"]");
+						notForward = true;
+					}
+				}
+				if(notForward){
+					continue;
+				}
+				
+				ForwardMailPicker fpicker = f.getValue();
+				if(forwardConf.isForwardAsync()){
+					// 別スレッド(ForwardMailPicker)で送信。送信失敗時はリトライあり。
+					fpicker.add(mail);
+				}else{
+					ImodeForwardMail forwardMail = new ImodeForwardMail(mail,forwardConf);
+					forwardMail.send();
+					if(numForwardSite>1){
+						log.info("転送処理完了["+id+"]");
+					}
+				}
 			}
 
 		}catch (Exception e) {
 			log.error("mail["+mailId+"] forward Error.",e);
 			return;
+		}
+
+		//  転送抑止ドメインリストと比較してPush送信可否判定
+		ignoreDomains = ignoreDomainsMap.get(this.conf);
+		for (String domain : ignoreDomains) {
+			if(from.endsWith(domain)){
+				this.appNotifications.pushError(folderId);
+				return;
+			}
 		}
 
 		try{
@@ -388,11 +443,12 @@ public class ServerMain {
 	/*
 	 * 転送抑止ドメインリスト作成
 	 */
-	private void loadIgnoreDomainList() {
+	private void loadIgnoreDomainList(Config conf, int index) {
+		List<String> ignoreDomains = new ArrayList<String>();
 		String ignoreDomainTxt = conf.getIgnoreDomainFile();
 		File ignoreDomainFile = new File(ignoreDomainTxt);
 		if(!ignoreDomainFile.exists()){
-			log.info("# 転送抑止ドメインリスト("+ignoreDomainTxt+")は存在しません。");
+			log.info("# 転送抑止ドメインリスト["+index+"]("+ignoreDomainTxt+")は存在しません。");
 			return;
 		}
 		BufferedReader br = null;
@@ -412,7 +468,7 @@ public class ServerMain {
 					if(!line.contains(".")){
 						continue;
 					}
-					this.ignoreDomains.add(line);
+					ignoreDomains.add(line);
 
 				}catch (Exception e) {
 					log.warn("loadIgnoreDomainList error.",e);
@@ -426,10 +482,11 @@ public class ServerMain {
 			Util.safeclose(br);
 			Util.safeclose(fr);
 			String ignores = "";
-			for (String domain : this.ignoreDomains) {
+			for (String domain : ignoreDomains) {
 				ignores += domain + " ";
 			}
-			log.info("# 転送抑止ドメイン:"+ignores);
+			log.info("# 転送抑止ドメイン["+index+"]:"+ignores);
+			this.ignoreDomainsMap.put(conf, ignoreDomains);
 		}
 	}
 

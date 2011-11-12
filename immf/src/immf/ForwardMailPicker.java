@@ -37,10 +37,11 @@ public class ForwardMailPicker implements Runnable{
 	public ForwardMailPicker(Config conf, ServerMain server){
 		this.conf = conf;
 		this.server = server;
+		int id = conf.getConfigId();
 	
 		if(true){
 			Thread t = new Thread(this);
-			t.setName("ForwardMailPicker");
+			t.setName("ForwardMailPicker["+id+"]");
 			t.setDaemon(true);
 			t.start();
 		}
