@@ -121,7 +121,7 @@ public class Config {
 	private boolean hideMyaddr = false;
 
 	// 転送メールの題名の文字変換ファイル
-	private String forwardSubjectCharConvertFile = null;
+	private List<String> forwardSubjectCharConvertFile = new ArrayList<String>();
 
 	// X-Goomoji-Subject関連
 	private boolean forwardAddGoomojiSubject = false;
@@ -196,12 +196,13 @@ public class Config {
 	private String senderPasswd = "<87a!Oa#3gpoYz0'->L";
 	private String senderAlwaysBcc = null;
 	private boolean senderMailForcePlainText = true;
-	private String senderCharCovertFile = null;
+	private List<String> senderCharCovertFile = new ArrayList<String>();
 	private boolean senderUseGoomojiSubject = false;
 	private String senderGoogleCharConvertFile = null;
 	private boolean senderConvertSoftbankSjis = false;
 	private int senderDuplicationCheckTimeSec = 0;
 	private boolean senderStripiPhoneQuote = false;
+	private boolean senderDocomoStyleSubject = false;
 	private boolean senderAsync = false;	// trueだと送信を別スレッドで行う。エラー時はエラーメールが転送アドレスに送信される。
 
 	// 送信用TLS
@@ -291,7 +292,7 @@ public class Config {
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
 		this.headerToBody = getBoolean("forward.headertobody", this.headerToBody);
 		this.hideMyaddr = getBoolean("forward.hidemyaddr", this.hideMyaddr);
-		this.forwardSubjectCharConvertFile = getString("forward.subject.charconvfile", this.forwardSubjectCharConvertFile);
+		this.forwardSubjectCharConvertFile = splitComma(getString("forward.subject.charconvfile", ""));
 		this.forwardAddGoomojiSubject = getBoolean("forward.subject.addgoomoji", this.forwardAddGoomojiSubject);
 		this.forwardGoogleCharConvertFile = getString("forward.subject.googlecharconvfile", this.forwardGoogleCharConvertFile);
 		// パラメータ名は用途がわかりやすいように urlconv にしておく
@@ -319,7 +320,7 @@ public class Config {
 		this.senderUser = getString("sender.smtp.user", this.senderUser);
 		this.senderPasswd = getString("sender.smtp.passwd", this.senderPasswd);
 		this.senderAlwaysBcc = getString("sender.alwaysbcc", this.senderAlwaysBcc);
-		this.senderCharCovertFile = getString("sender.charconvfile", null);
+		this.senderCharCovertFile = splitComma(getString("sender.charconvfile", ""));
 		// imode.netでhtmlをチェックしてるようで、PCで作成したhtmlメールはエラーになるのでテキストのみ許可
 		this.senderMailForcePlainText = getBoolean("sender.forceplaintext", this.senderMailForcePlainText);
 		this.senderTlsKeystore = getString("sender.smtp.tls.keystore", null);
@@ -330,6 +331,7 @@ public class Config {
 		this.senderConvertSoftbankSjis = getBoolean("sender.convertsoftbanksjis", this.senderConvertSoftbankSjis);
 		this.senderDuplicationCheckTimeSec = getInt("sender.duplicationchecktime", this.senderDuplicationCheckTimeSec);
 		this.senderStripiPhoneQuote = getBoolean("sender.stripiphonequote", this.senderStripiPhoneQuote);
+		this.senderDocomoStyleSubject = getBoolean("sender.docomostylesubject", this.senderDocomoStyleSubject);
 		this.senderAsync = getBoolean("sender.async", this.senderAsync);
 
 		// 最小値
@@ -653,7 +655,7 @@ public class Config {
 		return vcAddressFile;
 	}
 
-	public String getSenderCharCovertFile() {
+	public List<String> getSenderCharCovertFile() {
 		return senderCharCovertFile;
 	}
 
@@ -673,11 +675,15 @@ public class Config {
 		return senderStripiPhoneQuote;
 	}
 
+	public boolean isSenderDocomoStyleSubject() {
+		return senderDocomoStyleSubject;
+	}
+
 	public int getSenderDuplicationCheckTimeSec() {
 		return senderDuplicationCheckTimeSec;
 	}
 
-	public String getForwardSubjectCharConvertFile() {
+	public List<String> getForwardSubjectCharConvertFile() {
 		return forwardSubjectCharConvertFile;
 	}
 

@@ -94,11 +94,11 @@ public class ServerMain {
 		this.client.setVcAddressBook(this.conf.getVcAddressFile());
 
 		CharacterConverter subjectCharConv = new CharacterConverter();
-		if(conf.getForwardSubjectCharConvertFile()!=null){
+		for (String file : conf.getForwardSubjectCharConvertFile()){
 			try {
-				subjectCharConv.load(new File(conf.getForwardSubjectCharConvertFile()));
+				subjectCharConv.load(new File(file));
 			} catch (Exception e) {
-				log.error("文字変換表("+conf.getForwardSubjectCharConvertFile()+")が読み込めませんでした。",e);
+				log.error("文字変換表("+file+")が読み込めませんでした。",e);
 			}
 		}
 		ImodeForwardMail.setSubjectCharConv(subjectCharConv);

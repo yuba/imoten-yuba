@@ -60,6 +60,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 	private boolean forcePlainText;
 	private boolean isForwardSent;
 	private boolean stripAppleQuote;
+	private boolean editDocomoSubjectPrefix;
 
 	private MyWiser wiser;
 	private CharacterConverter charConv;
@@ -83,13 +84,14 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 		this.forcePlainText = conf.isSenderMailForcePlainText();
 		this.isForwardSent = conf.isForwardSent();
 		this.stripAppleQuote = conf.isSenderStripiPhoneQuote();
+		this.editDocomoSubjectPrefix = conf.isSenderDocomoStyleSubject();
 		this.sendAsync = conf.isSenderAsync();
 		this.charConv = new CharacterConverter();
-		if(conf.getSenderCharCovertFile()!=null){
+		for (String file : conf.getSenderCharCovertFile()){
 			try{
-				this.charConv.load(new File(conf.getSenderCharCovertFile()));
+				this.charConv.load(new File(file));
 			}catch (Exception e) {
-				log.error("文字変換表("+conf.getSenderCharCovertFile()+")が読み込めませんでした。",e);
+				log.error("文字変換表("+file+")が読み込めませんでした。",e);
 			}
 		}
 		this.charConv.setConvertSoftbankSjis(conf.isSenderConvertSoftbankSjis());
@@ -195,6 +197,29 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				String goomojiSubject = mime.getHeader("X-Goomoji-Subject", null);
 				if (goomojiSubject != null)
 					subject = this.googleCharConv.convertSubject(goomojiSubject);
+			}
+
+			boolean editRe = false;
+			if(this.editDocomoSubjectPrefix){
+				for (InternetAddress addr : to){
+					String[] toString = addr.getAddress().split("@",2);
+					if(subject != null && toString[1].equals("docomo.ne.jp")){
+						editRe = true;
+					}
+				}
+			}
+			if(editRe){
+				if(subject.startsWith("Re: Re")){
+					log.info("編集前subject: "+subject);
+					String reCounterStr = subject.replaceAll("^Re: Re(\\d*):.*$","$1");
+					int reCounter = 2;
+					if(!reCounterStr.isEmpty()){
+						reCounter = Integer.parseInt(reCounterStr);
+						reCounter++;
+					}
+					subject = subject.replaceAll("^Re: Re\\d*:", "Re" + Integer.toString(reCounter) + ":");
+					log.info("編集後subject: "+subject);
+				}
 			}
 
 			senderMail.setSubject(subject);
