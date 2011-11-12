@@ -201,6 +201,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			}
 			if(mail!=null && this.pushSubjectInfo){
 				String subject = mail.getSubject();
+				if(subject.isEmpty()){
+					subject = "(件名なし)";
+				}
 				pushMessage += delimiter + subject;
 				delimiter = " ";
 			}
