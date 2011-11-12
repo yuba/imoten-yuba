@@ -408,7 +408,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					}
 
 					file.setInline(true);
-					boolean inline = sendMail.checkAttachmentCapability(file);
+					boolean inline = !this.forcePlainText & sendMail.checkAttachmentCapability(file);
 					if(!inline){
 						file.setInline(false);
 						if(!sendMail.checkAttachmentCapability(file)){
@@ -533,7 +533,7 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					}
 
 					file.setInline(true);
-					boolean inline = sendMail.checkAttachmentCapability(file);
+					boolean inline = !this.forcePlainText & sendMail.checkAttachmentCapability(file);
 					if(!inline){
 						file.setInline(false);
 						if(!sendMail.checkAttachmentCapability(file)){
