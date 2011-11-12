@@ -135,6 +135,7 @@ public class Config {
 
 	// 定期的に新着をチェックする場合のチェック間隔(秒)
 	private int checkIntervalSec = 60;
+	private int forceCheckIntervalSec = 60 * 60;
 	private int checkFileIntervalSec = checkIntervalSec;
 
 	// ログインエラー時のリトライ間隔(秒)
@@ -300,6 +301,7 @@ public class Config {
 		this.forwardAsync = getBoolean("forward.async", this.forwardAsync);
 		this.ignoreDomainFile = getString("forward.ignoredomainfile", this.ignoreDomainFile);
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
+		this.forceCheckIntervalSec = getInt("imodenet.forcecheckinterval", this.forceCheckIntervalSec);
 		this.checkFileIntervalSec = getInt("imodenet.checkfileinterval", this.checkIntervalSec);
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
 		this.forwardRetryIntervalSec = getInt("forward.retryinterval", this.forwardRetryIntervalSec);
@@ -336,6 +338,7 @@ public class Config {
 
 		// 最小値
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
+		this.forceCheckIntervalSec = Math.max(this.forceCheckIntervalSec, 3);
 		this.checkFileIntervalSec = Math.max(this.checkFileIntervalSec, 3);
 		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 3);
 		this.smtpTimeoutSec = Math.max(this.smtpTimeoutSec, 3);
@@ -493,6 +496,10 @@ public class Config {
 
 	public int getCheckIntervalSec() {
 		return checkIntervalSec;
+	}
+
+	public int getForceCheckIntervalSec() {
+		return forceCheckIntervalSec;
 	}
 
 	public int getCheckFileIntervalSec() {

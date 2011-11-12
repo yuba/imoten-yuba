@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -156,14 +157,15 @@ public class ServerMain {
 		// appnotifications
 		this.appNotifications = new AppNotifications(this.conf, this.status);
 
-		boolean first = true;
+		Date lastUpdate = null;
 		while(true){
-			if(!first){
+			if(lastUpdate != null){
 				// 接続フラグを見るためにステータスファイルをチェック
 				try{
 					this.status.load();
 				}catch (Exception e) {}
-				if(!this.status.needConnect()){
+				long diff = System.currentTimeMillis() - lastUpdate.getTime();
+				if(diff < conf.getForceCheckIntervalSec()*1000 && !this.status.needConnect()){
 					//接続フラグが立っていなければ次のチェックまで待つ
 					try{
 						Thread.sleep(conf.getCheckFileIntervalSec()*1000);
@@ -180,7 +182,7 @@ public class ServerMain {
 
 			}catch (LoginException e) {
 				log.error("ログインエラー",e);
-				if(first){
+				if(lastUpdate == null){
 					// 起動直後はcookieが切れている可能性があるのでクッキーを破棄してリトライ
 					log.info("起動直後はすぐにログイン処理を行います。");
 					continue;
@@ -197,8 +199,6 @@ public class ServerMain {
 					Thread.sleep(this.conf.getLoginRetryIntervalSec()*1000);
 				}catch (Exception ex) {}
 				continue;
-			}finally{
-				first = false;
 			}
 
 			String newestId="0";	// 次のlastIdを求める
@@ -240,6 +240,7 @@ public class ServerMain {
 			}catch (Exception e) {
 				log.error("Status File save Error.",e);
 			}
+			lastUpdate = new Date();
 
 			// 次のチェックまで待つ
 			try{
