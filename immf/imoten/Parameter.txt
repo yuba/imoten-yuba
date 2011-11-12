@@ -82,6 +82,8 @@ forward.subject.charconvfile
   転送時に題名の特定の文字を置き換えるための対応表のCSVファイルを指定します。
   絵文字を置き換えるのが主な目的ですが、絵文字以外の文字も置き換え可能です。
   ソフトバンクiPhoneに転送する場合は ../conv/genDocomo2sb.csv を指定します。
+　このファイルはカンマ区切りで複数ファイルを指定することができます。複数ファイルを指定した
+　場合は指定された順番にファイルの中身を読み込みます。
 
 forward.subject.addgoomoji
   [true] 転送時にGmail用のX-Goomoji-Subjectヘッダを付与します。
@@ -262,6 +264,11 @@ imodenet.checkfileinterval
 　外部プログラムでチェックタイミングを指定したい場合だけ、status.iniに[needconnect]を
 　指定してください。
 　[imodenet.checkfileinterval]を未設定の場合は[imodenet.checkinterval]と同じ時間で動作します。
+　[needconnect=0]の状態であっても[imodenet.forcecheckinterval]間隔でメールチェックを行います。
+
+imodenet.forcecheckinterval
+　status.iniが[needconnect=0]の状態の時に定期的に新着メールをチェックする間隔(秒)を指定します。
+　デフォルト[1800]。
 
 imodenet.logininterval
 　imode.netへのログインが失敗した場合、再度ログインを行うまでの時間(秒)を
@@ -394,6 +401,8 @@ sender.charconvfile
 　文字も置き換え可能です。
 　CSVファイルは文字コードUTF-8で保存してください。
 　相対パスを指定した場合、binディレクトリからの相対パスになります。
+　このファイルはカンマ区切りで複数ファイルを指定することができます。複数ファイルを指定した
+　場合は指定された順番にファイルの中身を読み込みます。
 
 　CSVフォーマット:
 　　置換元の文字のUnicode,置換先の文字のUnicodeもしくは置換先の文字列
@@ -443,6 +452,14 @@ sender.forceplaintext
 sender.stripiphonequote
 　iPhoneでメール返信を行うと元メールが必ず引用されます。このパラメータがtrueの場合、
 　メールの引用部分(引用開始部からメール末尾まで)を自動的に削除してから送信します。
+　デフォルト[false]
+
+sender.docomostylesubject
+　iモードメールでは返信を繰り返すと「Re3:」のように件名の数字が増えていきます。
+　通常のメーラーからこのメールに返信すると「Re: Re3:」のようになってしまいますが、
+　このパラメータをtrueに設定すると「Re4:」と受け取ったメールに1加算した件名に
+　に変換してから送信します。
+　trueにした場合でも、メールの宛先(To)にdocomo.ne.jpが含まれていない場合は動作しません。
 　デフォルト[false]
 
 sender.smtp.tls.keystore
@@ -533,3 +550,36 @@ wrapper.java.additional.2=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windo
 　conf/wrapper.conf で以下のパラメータをコメントアウト
 　　wrapper.java.additional.2=-Dsun.nio.cs.map=x-windows-iso2022jp/ISO-2022-JP,Windows-31J/Shift_JIS
 
+
+
+■複数の転送先に別の設定で転送設定を行う
+forward、emojireplace、mail から始まる各パラメータは最初の「.」の後ろに数字(インデックス)を
+指定することで別の転送セットを設定することができます。この転送セットを指定する数字(インデックス)
+は2から順にいくつも設定することが可能で、インデックスが別の設定はそれぞれ別の転送セットとみなされます。
+ただし、以下のパラメータについては数字指定することはできず、全体で一つだけの設定となります。
+・mail.encode
+・forward.skype.*
+・forward.im.*
+・forward.push.*
+
+[設定例]
+以下のような設定を行うと、
+・１つ目の転送先ではToなどのヘッダを書き換え、メール文中の絵文字は画像に置き換えて転送
+・２つ目の転送先ではToなどのヘッダは元のメールのまま、メール文中の絵文字の置き換えなしとし、
+　かつ notforward2.txt で除外したメールだけを転送
+という動作となります。
+
+▼１つ目の転送設定
+forward.to=example1@example.com
+forward.rewriteaddress=true
+emojireplace.body=inline
+
+▼２つ目の転送設定
+forward.2.to=example2@example.com
+forward.2.ignoredomainfile=../notforward2.txt
+forward.2.rewriteaddress=false
+emojireplace.2.body=none
+
+なお、forward.sent をインデックス2以上に設定した場合には、send.async=true設定がされており、かつ
+status.iniに[needconnect]フラグがある場合に即座に送信済みメールを転送することができません。
+即座にインデックス2以上の転送先に送信済みメールを転送したい場合はsend.asyncをfalseに設定してください。
