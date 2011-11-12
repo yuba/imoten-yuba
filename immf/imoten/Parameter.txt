@@ -580,6 +580,5 @@ forward.2.ignoredomainfile=../notforward2.txt
 forward.2.rewriteaddress=false
 emojireplace.2.body=none
 
-なお、forward.sent をインデックス2以上に設定した場合には、send.async=true設定がされており、かつ
-status.iniに[needconnect]フラグがある場合に即座に送信済みメールを転送することができません。
-即座にインデックス2以上の転送先に送信済みメールを転送したい場合はsend.asyncをfalseに設定してください。
+なお、forward.sent をインデックス2以上に設定した場合で、status.iniに[needconnect]フラグがある場合には
+即座に送信済みメールを転送することができません。このメールは次回メールチェックタイミングで送信されます。
