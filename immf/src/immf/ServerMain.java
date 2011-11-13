@@ -449,6 +449,7 @@ public class ServerMain {
 		File ignoreDomainFile = new File(ignoreDomainTxt);
 		if(!ignoreDomainFile.exists()){
 			log.info("# 転送抑止ドメインリスト["+index+"]("+ignoreDomainTxt+")は存在しません。");
+			this.ignoreDomainsMap.put(conf, ignoreDomains);
 			return;
 		}
 		BufferedReader br = null;
