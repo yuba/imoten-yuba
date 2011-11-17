@@ -28,6 +28,7 @@ import java.util.List;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
@@ -46,6 +47,8 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -56,7 +59,9 @@ import org.xml.sax.helpers.DefaultHandler;
 class AppNotifications extends DefaultHandler implements Runnable{
 	private static final Log log = LogFactory.getLog(AppNotifications.class);
 	private static final String CredUrl = "https://www.appnotifications.com/user_session.xml";
-	private static final String PushUrl = "https://www.appnotifications.com/account/notifications.json";
+	private static final String PushHost = "www.appnotifications.com";
+	private static final String PushPath = "/account/notifications.json";
+	private static final String PushUrl = "https://" + PushHost + PushPath;
 	private static final String IconUrl = "http://imode.net/cmn/images/favicon.ico";
 	private static final String Message = "新着iモードメールあり";
 	private static final int ReconnectInterval = 3000;
@@ -66,7 +71,6 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	private Deque<ImodeMail> recieveMailQueue = new LinkedList<ImodeMail>();
 	private Deque<ImodeMail> sendMailQueue = new LinkedList<ImodeMail>();
 	
-	private DefaultHttpClient httpClient;
 	private boolean elemCr = false;
 	private boolean elemOk = false;
 
@@ -82,6 +86,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	private String credentials;
 	private String ok = "";
 	private int newmails = 0;
+	
+	private boolean dnsCache; 
+	private InetAddress pushaddr;
 
 	enum sounds {
 		beep1("5.caf"),
@@ -126,6 +133,7 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		this.pushFromInfo = conf.isForwardPushFrom();
 		this.pushSubjectInfo = conf.isForwardPushSubject();
 		this.pushReplyButton = conf.isForwardPushReplyButton();
+		this.dnsCache = conf.isForwardPushUseDnsCache();
 		this.credentials = status.getPushCredentials();
 		if(this.credentials==null)
 			this.credentials = "";
@@ -152,6 +160,9 @@ class AppNotifications extends DefaultHandler implements Runnable{
 			log.info("credentials取得成功。push通知を開始します。");
 		}else{
 			log.info("push通知を開始します。");
+		}
+		if(dnsCache){
+			log.info("DNSキャッシュ有効です(SSL接続時にホスト名の検証を省略するためセキュリティは低下します)");
 		}
 		int c = 0;
 		while(true){
@@ -384,7 +395,7 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	}
 	
 	private byte[] getCredentials() throws Exception {
-		this.httpClient = new DefaultHttpClient();
+		DefaultHttpClient httpClient = new DefaultHttpClient();
 		HttpPost post = new HttpPost(CredUrl);
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 		formparams.add(new BasicNameValuePair("user_session[email]",this.email));
@@ -396,7 +407,7 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		post.setEntity(entity);
 		byte[] xml = null;
 		try{
-			HttpResponse res = this.httpClient.execute(post);
+			HttpResponse res = httpClient.execute(post);
 			int status = res.getStatusLine().getStatusCode();
 			if(status == 200){
 				xml = EntityUtils.toByteArray(res.getEntity());
@@ -441,8 +452,34 @@ class AppNotifications extends DefaultHandler implements Runnable{
 	 *  全角文字17字(13文字減る)
 	 */
 	private void send(String message, String command) throws Exception {
-		this.httpClient = new DefaultHttpClient();
-		HttpPost post = new HttpPost(PushUrl);
+		String url = PushUrl;
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+
+		// appnotificationsのDNS接続がエラーの時に接続先IPアドレスをキャッシュする仕組み。
+		// 但し、SSLの検証でホスト名を見なくなるためセキュリティは低下
+		if(dnsCache){
+			InetAddress ipaddr;
+			try{
+				ipaddr = InetAddress.getByName(PushHost);
+				this.pushaddr = ipaddr;
+			}catch(UnknownHostException e){
+				if(pushaddr!=null){
+					log.warn("DNS lookup error, using cache...");
+					ipaddr = this.pushaddr;
+				}else{
+					throw(e);
+				}
+			}
+
+			SSLSocketFactory sf = SSLSocketFactory.getSocketFactory();
+			sf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+			Scheme sc = new Scheme("https", sf, 443);
+			httpClient.getConnectionManager().getSchemeRegistry().register(sc);
+			url = "https://" + ipaddr.getHostAddress() + PushPath;
+		}
+		
+		HttpPost post = new HttpPost(url);
+		post.setHeader("Host", PushHost); // dnsCache用
 		List<NameValuePair> formparams = new ArrayList<NameValuePair>();
 		formparams.add(new BasicNameValuePair("user_credentials",this.credentials));
 		if(!this.sound.isEmpty()){
@@ -465,7 +502,7 @@ class AppNotifications extends DefaultHandler implements Runnable{
 		}catch (Exception e) {}
 		post.setEntity(entity);
 		try{
-			HttpResponse res = this.httpClient.execute(post);
+			HttpResponse res = httpClient.execute(post);
 			int status = res.getStatusLine().getStatusCode();
 			if(status != 200){
 				if(status >= 500){

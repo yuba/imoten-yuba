@@ -228,6 +228,7 @@ public class Config {
 	private boolean forwardPushNotifyFrom = true;
 	private boolean forwardPushNotifySubject = false;
 	private boolean forwardPushReplyButton = false;
+	private boolean forwardPushUseDnsCache = false;
 	
 	// 識別用
 	private int configId;
@@ -314,6 +315,7 @@ public class Config {
 		this.forwardPushNotifyFrom = getBoolean("forward.push.notifyfrom",this.forwardPushNotifyFrom);
 		this.forwardPushNotifySubject = getBoolean("forward.push.notifysubject",this.forwardPushNotifySubject);
 		this.forwardPushReplyButton = getBoolean("forward.push.replybutton",this.forwardPushReplyButton);
+		this.forwardPushUseDnsCache = getBoolean("forward.push.usednscache",this.forwardPushUseDnsCache);
 		/*
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
@@ -426,6 +428,7 @@ public class Config {
 		this.forwardPushNotifyFrom = getBoolean("forward"+n+".push.notifyfrom",this.forwardPushNotifyFrom);
 		this.forwardPushNotifySubject = getBoolean("forward"+n+".push.notifysubject",this.forwardPushNotifySubject);
 		this.forwardPushReplyButton = getBoolean("forward"+n+".push.replybutton",this.forwardPushReplyButton);
+		this.forwardPushUseDnsCache = getBoolean("forward.push.usednscache",this.forwardPushUseDnsCache);
 		*/
 		this.forwardReplyTo = splitComma(getString("forward"+n+".replyto", ""));
 		this.rewriteAddress = getBoolean("forward"+n+".rewriteaddress", this.rewriteAddress);
@@ -754,6 +757,10 @@ public class Config {
 
 	public boolean isForwardPushReplyButton() {
 		return forwardPushReplyButton;
+	}
+
+	public boolean isForwardPushUseDnsCache() {
+		return forwardPushUseDnsCache;
 	}
 
 	public String getIgnoreDomainFile() {
