@@ -4,7 +4,7 @@
 	<property name="bin" value="./bin" />
 	<property name="release-dir" value="./imoten" />
 	<property name="onejar" value="${release-dir}/imoten.jar" />
-	<property name="release-name" value="imoten-1.1.33.zip" />
+	<property name="release-name" value="imoten-1.1.34.zip" />
 
 	<!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
