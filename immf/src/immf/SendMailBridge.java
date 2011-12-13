@@ -380,10 +380,20 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				sendMail.setHtmlContent(content);
 
 			}else if(contentType.startsWith("text/html")){
-				// 内容は text/plain と同じはずなので捨ててしまう。
-				// (HtmlConvertが少し動くようになったら拾うようにするかも)
+				// subtypeがmixedの場合
 				String content = (String)bp.getContent();
-				log.info("Discarding duplicate content ["+content+"]");
+
+				if(sendMail.getHtmlContent()==null){
+					// text/plainが含まれてなくて text/htmlだけが入っている場合がある
+					log.info("set Content html ["+content+"]");
+					String charset = (new ContentType(contentType)).getParameter("charset");
+					content = this.charConv.convert(content, charset);
+					log.debug(" conv "+content);
+					// 本文 htmlはテキスト形式に変換
+					sendMail.setHtmlContent(content);
+				}else{
+					log.info("Discarding duplicate content ["+content+"]");
+				}
 
 			}else{
 				log.debug("attach");
