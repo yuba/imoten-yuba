@@ -53,6 +53,8 @@ public class ForwardMailPicker implements Runnable{
 
 	public void run() {
 		boolean errNotify = true;
+		int retryLimit = this.conf.getForwardRetryMaxCount();
+		int retryCount = 0;
 		while(true){
 			ImodeMail mail = null;
 			try{
@@ -69,23 +71,31 @@ public class ForwardMailPicker implements Runnable{
 				if(!errNotify){
 					server.notify("iモードメール転送エラーはリトライで解消しました。");
 					errNotify = true;
+					retryCount = 0;
 				}
 				
 			}catch(Exception e){
+				if(retryLimit>0 && ++retryCount>retryLimit){
+					log.error("Mail forward error, give up forwarding...",e);
+					server.notify("iモードメール転送エラー、リトライで回復せずメール転送中止。");
+					errNotify = true;
+					retryCount = 0;
+					continue;
+				}
+				
 				//送信エラー時はメールをキューに入れなおしてリトライする。
 				try{
 					this.forwardmailQueue.putFirst(mail);
 				}catch(InterruptedException ie){}
 				log.warn("Mail forward error, retrying...",e);
 				if(errNotify){
-					server.notify("iモードメール転送エラー、メールサーバに問題がある可能性があります。リトライします。");
+					server.notify("iモードメール転送エラー、後でメール転送リトライします。");
 					errNotify = false;
 				}
 
 				try {
 					Thread.sleep(this.conf.getForwardRetryIntervalSec()*1000);
 				}catch (Exception te) {}
-				
 			}
 		}
 	}

@@ -147,6 +147,10 @@ public class Config {
 	// forwardAsync = true の場合のみ有効
 	private int forwardRetryIntervalSec = 60 * 10;
 
+	// 転送エラー時のリトライ最大回数
+	// forwardAsync = true の場合のみ有効
+	private int forwardRetryMaxCount = 0;
+
 	// trueの場合はcookieの情報をファイルに保存する。
 	// 再起動など短時間プログラムを停止してもログイン状態が保持されるので
 	// ログインメールが飛ばなくてすむ
@@ -327,13 +331,14 @@ public class Config {
 		// パラメータ名は用途がわかりやすいように urlconv にしておく
 		this.forwardStringConvertFile = getString("forward.body.urlconvfile", this.forwardStringConvertFile);
 		this.forwardAsync = getBoolean("forward.async", this.forwardAsync);
+		this.forwardRetryIntervalSec = getInt("forward.retryinterval", this.forwardRetryIntervalSec);
+		this.forwardRetryMaxCount = getInt("forward.retrymaxcount", this.forwardRetryMaxCount);
 		this.ignoreDomainFile = getString("forward.ignoredomainfile", this.ignoreDomainFile);
 		*/
 		this.checkIntervalSec = getInt("imodenet.checkinterval", this.checkIntervalSec);
 		this.forceCheckIntervalSec = getInt("imodenet.forcecheckinterval", this.forceCheckIntervalSec);
 		this.checkFileIntervalSec = getInt("imodenet.checkfileinterval", this.checkIntervalSec);
 		this.loginRetryIntervalSec = getInt("imodenet.logininterval", this.loginRetryIntervalSec);
-		this.forwardRetryIntervalSec = getInt("forward.retryinterval", this.forwardRetryIntervalSec);
 		this.saveCookie = getBoolean("save.cookie", this.saveCookie);
 		this.statusFile = getString("save.filename", this.statusFile);
 		this.csvAddressFile = getString("addressbook.csv", this.csvAddressFile);
@@ -374,7 +379,6 @@ public class Config {
 		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 3);
 		this.smtpTimeoutSec = Math.max(this.smtpTimeoutSec, 3);
 		this.loginRetryIntervalSec = Math.max(this.loginRetryIntervalSec, 3);
-		this.forwardRetryIntervalSec = Math.max(this.forwardRetryIntervalSec, 3);
 		this.httpConnectTimeoutSec = Math.max(this.httpConnectTimeoutSec, 3);
 		this.httpSoTimeoutSec = Math.max(this.httpSoTimeoutSec, 3);
 
@@ -440,11 +444,16 @@ public class Config {
 		// パラメータ名は用途がわかりやすいように urlconv にしておく
 		this.forwardStringConvertFile = getString("forward"+n+".body.urlconvfile", this.forwardStringConvertFile);
 		this.forwardAsync = getBoolean("forward"+n+".async", this.forwardAsync);
+		this.forwardRetryIntervalSec = getInt("forward.retryinterval", this.forwardRetryIntervalSec);
+		this.forwardRetryMaxCount = getInt("forward.retrymaxcount", this.forwardRetryMaxCount);
 		this.ignoreDomainFile = getString("forward"+n+".ignoredomainfile", this.ignoreDomainFile);
 
 		this.contentTransferEncoding = getString("mail"+n+".contenttransferencoding", null);
 		this.mailFontFamily = getString("mail"+n+".fontfamily", null);
 		this.mailAlternative = getBoolean("mail"+n+".alternative", this.mailAlternative);
+
+		// 最小値
+		this.forwardRetryIntervalSec = Math.max(this.forwardRetryIntervalSec, 3);
 	}
 
 	private static List<String> splitComma(String str){
@@ -621,6 +630,10 @@ public class Config {
 
 	public int getForwardRetryIntervalSec() {
 		return forwardRetryIntervalSec;
+	}
+
+	public int getForwardRetryMaxCount() {
+		return forwardRetryMaxCount;
 	}
 
 	public boolean isSaveCookie() {
