@@ -581,6 +581,13 @@ public class Util {
 	 */
 	public static void stripAppleQuotedLines(SenderMail sendMail){
 		/*
+		 * <Region Format>
+		 * Japan
+		 *  On yyyy/mm/dd, at HH:MM, メールアドレス wrote:
+		 * U.S.
+		 *  On (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) dd, yyyy, at HH:MM (PM|AM), address wrote:
+		 */
+		/*
 		 * TEXTパート - 以下の形式を削除
 		 *
 		 * | :
@@ -592,6 +599,7 @@ public class Util {
 		String plainText = sendMail.getPlainTextContent();
 		if(plainText!=null){
 			plainText = HtmlConvert.replaceAllCaseInsenstive(plainText, "[\r\n]*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^\n]* wrote:.*","");
+			plainText = HtmlConvert.replaceAllCaseInsenstive(plainText, "[\r\n]*On \\w\\w\\w \\d+, \\d+, at \\d+:\\d+ \\wM, [^\n]* wrote:.*","");
 			sendMail.setPlainTextContent(plainText);
 			//log.info("Stripped text: " + sendMail.getPlainTextContent());
 		}
@@ -612,8 +620,10 @@ public class Util {
 		if(html!=null){
 			// 厳密一致
 			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<div><br></div>)*</div><div><br>On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]*(?:(?:<a href=[^<>]*>)+[^<>]*(?:</a>)+)+[^<>]* wrote:(?:<br>)*(?:</?[^<>]+>)+<blockquote type=.*</blockquote>", "</div>");
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<div><br></div>)*</div><div><br>On \\w\\w\\w \\d+, \\d+, at \\d+:\\d+ \\wM, [^<>]*(?:(?:<a href=[^<>]*>)+[^<>]*(?:</a>)+)+[^<>]* wrote:(?:<br>)*(?:</?[^<>]+>)+<blockquote type=.*</blockquote>", "</div>");
 			// htmlWorkingContent由来
 			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<br>)*On \\d+/\\d+/\\d+, at \\d+:\\d+, [^<>]* wrote:(?:<br>)*&gt;.*</body>", "</body>");
+			html = HtmlConvert.replaceAllCaseInsenstive(html, "(?:<br>)*On \\w\\w\\w \\d+, \\d+, at \\d+:\\d+ \\wM, [^<>]* wrote:(?:<br>)*&gt;.*</body>", "</body>");
 			sendMail.setHtmlContent(html);
 			//log.info("Stripped html: " + sendMail.getHtmlContent());
 		}
