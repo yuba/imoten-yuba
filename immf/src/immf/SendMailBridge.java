@@ -209,15 +209,15 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 				}
 			}
 			if(editRe){
-				if(subject.startsWith("Re: Re")){
+				if(subject.matches("^R[eE]: ?R[eE].*$")){
 					log.info("編集前subject: "+subject);
-					String reCounterStr = subject.replaceAll("^Re: Re(\\d*):.*$","$1");
+					String reCounterStr = subject.replaceAll("^R[eE]: ?R[eE](\\d*):.*$","$1");
 					int reCounter = 2;
 					if(!reCounterStr.isEmpty()){
 						reCounter = Integer.parseInt(reCounterStr);
 						reCounter++;
 					}
-					subject = subject.replaceAll("^Re: Re\\d*:", "Re" + Integer.toString(reCounter) + ":");
+					subject = subject.replaceAll("^R[eE]: ?R[eE]\\d*:", "Re" + Integer.toString(reCounter) + ":");
 					log.info("編集後subject: "+subject);
 				}
 			}
@@ -444,6 +444,9 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					file.setInline(false);
 					file.setContentType(contentType);
 					String fname = Util.getFileName(bp);
+					if(fname == null){
+						fname = bp.getFileName();
+					}
 					if(getSubtype(contentType).equalsIgnoreCase("png")){
 						file.setContentType("image/gif");
 						file.setFilename(getBasename(fname)+".gif");
@@ -612,6 +615,9 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 					}else{
 						// 添付ファイルとしての通常の処理
+						if(fname==null){
+							fname = bp.getFileName();
+						}
 						if(getSubtype(contentType).equalsIgnoreCase("png")){
 							file.setContentType("image/gif");
 							file.setFilename(getBasename(fname)+".gif");
