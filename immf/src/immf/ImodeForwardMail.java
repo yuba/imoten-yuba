@@ -127,6 +127,9 @@ public class ImodeForwardMail extends MyHtmlEmail {
 			this.setBodyToWebLink();
 		}else if(emojiReplace==Config.BodyEmojiReplace.ToLabel){
 			this.setBodyToLabel();
+		}else if(emojiReplace==Config.BodyEmojiReplace.ToSubjectTable){
+			this.imm.setBody(ImodeForwardMail.subjectCharConv.convert(this.imm.getBody()));
+			this.setBodyDontReplace();
 		}
 		// 添付ファイル
 		this.attacheFile();

@@ -72,7 +72,8 @@ public class Config {
 	// ToString:      [晴れ]のような文字列に置き換え
 	// ToInlineImage: Gmailの画像をダウンロードしてメールに添付(HTMLメールになる)
 	// ToWebLink:     imgタグでGmailの画像へリンクする(HTMLメールになる)
-	public enum BodyEmojiReplace {DontReplace,ToLabel,ToInlineImage,ToWebLink};
+	// ToSubjectTable: forward.subject.charconvfileで指定した変換テーブルを使用して本文も置換する
+	public enum BodyEmojiReplace {DontReplace,ToLabel,ToInlineImage,ToWebLink,ToSubjectTable};
 
 	// メールのボディの絵文字置き換え方法
 	private BodyEmojiReplace bodyEmojiReplace=BodyEmojiReplace.ToInlineImage;
@@ -291,6 +292,8 @@ public class Config {
 			this.bodyEmojiReplace = BodyEmojiReplace.ToLabel;
 		}else if(s.equalsIgnoreCase("link")){
 			this.bodyEmojiReplace = BodyEmojiReplace.ToWebLink;
+		}else if(s.equalsIgnoreCase("table")){
+			this.bodyEmojiReplace = BodyEmojiReplace.ToSubjectTable;
 		}else{
 			this.bodyEmojiReplace = BodyEmojiReplace.DontReplace;
 		}
@@ -404,6 +407,8 @@ public class Config {
 			this.bodyEmojiReplace = BodyEmojiReplace.ToLabel;
 		}else if(s.equalsIgnoreCase("link")){
 			this.bodyEmojiReplace = BodyEmojiReplace.ToWebLink;
+		}else if(s.equalsIgnoreCase("table")){
+			this.bodyEmojiReplace = BodyEmojiReplace.ToSubjectTable;
 		}else{
 			this.bodyEmojiReplace = BodyEmojiReplace.DontReplace;
 		}
