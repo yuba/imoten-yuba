@@ -444,9 +444,6 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 					file.setInline(false);
 					file.setContentType(contentType);
 					String fname = Util.getFileName(bp);
-					if(fname == null){
-						fname = bp.getFileName();
-					}
 					if(getSubtype(contentType).equalsIgnoreCase("png")){
 						file.setContentType("image/gif");
 						file.setFilename(getBasename(fname)+".gif");
@@ -468,7 +465,9 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 			log.error("parse bodypart error.",e);
 			if(limiterr){
 				sendMail.addPlainTextContent("\n[添付ﾌｧｲﾙ削除("+badfile+")]");
-				sendMail.addHtmlContent("[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+				if(sendMail.getHtmlContent()!=null){
+					sendMail.addHtmlContent("[添付ﾌｧｲﾙ削除("+badfile+")]<br>");
+				}
 			}else{
 				throw new IOException("BodyPart error."+e.getMessage(),e);
 			}
@@ -615,9 +614,6 @@ public class SendMailBridge implements UsernamePasswordValidator, MyWiserMailLis
 
 					}else{
 						// 添付ファイルとしての通常の処理
-						if(fname==null){
-							fname = bp.getFileName();
-						}
 						if(getSubtype(contentType).equalsIgnoreCase("png")){
 							file.setContentType("image/gif");
 							file.setFilename(getBasename(fname)+".gif");

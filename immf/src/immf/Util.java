@@ -263,7 +263,7 @@ public class Util {
     public static String getFileName(Part part) throws MessagingException {
         String[] disposition = part.getHeader("Content-Disposition");
         if (disposition == null || disposition.length < 1) {
-            return null;
+            return part.getFileName();
         }
         // 本来そのまま返すところだが日本固有のデコード処理を挟む。
         return decodeParameterSpciallyJapanese(
