@@ -379,7 +379,7 @@ public class Config {
 		this.checkIntervalSec = Math.max(this.checkIntervalSec, 3);
 		this.forceCheckIntervalSec = Math.max(this.forceCheckIntervalSec, 3);
 		this.checkFileIntervalSec = Math.max(this.checkFileIntervalSec, 3);
-		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 3);
+		this.smtpConnectTimeoutSec = Math.max(this.smtpConnectTimeoutSec, 10);
 		this.smtpTimeoutSec = Math.max(this.smtpTimeoutSec, 3);
 		this.loginRetryIntervalSec = Math.max(this.loginRetryIntervalSec, 3);
 		this.httpConnectTimeoutSec = Math.max(this.httpConnectTimeoutSec, 3);

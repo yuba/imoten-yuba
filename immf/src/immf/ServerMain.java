@@ -42,7 +42,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.cookie.Cookie;
 
 public class ServerMain {
-	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.35";
+	public static final String Version = "imoten (imode.net mail tenson) ver. 1.1.36";
 	private static final Log log = LogFactory.getLog(ServerMain.class);
 
 	private ImodeNetClient client;
@@ -207,12 +207,17 @@ public class ServerMain {
 				log.error("ログインエラー",e);
 				if(lastUpdate == null){
 					// 起動直後はcookieが切れている可能性があるのでクッキーを破棄してリトライ
-					log.info("起動直後はすぐにログイン処理を行います。");
+					log.info("起動直後は5秒後にログイン処理を行います。");
+					try{
+						Thread.sleep(1000*5);
+					}catch (Exception ex) {
+					}
+					lastUpdate = new Date();
 					continue;
 				}
 				try{
 					// 別の場所でログインされた
-					log.info("Logout Wait "+this.conf.getLoginRetryIntervalSec()+" sec.");
+					log.info("Wait "+this.conf.getLoginRetryIntervalSec()+" sec.");
 					Thread.sleep(this.conf.getLoginRetryIntervalSec()*1000);
 				}catch (Exception ex) {}
 				continue;
