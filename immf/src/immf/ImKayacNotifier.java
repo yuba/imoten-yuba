@@ -21,21 +21,19 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 public class ImKayacNotifier implements Runnable{
-  private static final String ImKayacUrl = "http://im.kayac.com/api/post/";
+	private static final String ImKayacUrl = "http://im.kayac.com/api/post/";
 	private static final Log log = LogFactory.getLog(ImKayacNotifier.class);
 	private static final int MaxQueueLength = 10;
-	private String username;
-	private String secret;
+	private Config config = null;
 	private DefaultHttpClient httpClient;
 
 	private List<ImodeMail> queue = new LinkedList<ImodeMail>();
 
-	public ImKayacNotifier(String username,String secret){
-		this.username = username;
-		this.secret = secret;
+	public ImKayacNotifier(Config config){
+		this.config = config;
 		this.httpClient = new DefaultHttpClient();
 
-		if(this.username!="" && this.secret!=""){
+		if(this.config!=null){
 			Thread t = new Thread(this);
 			t.setName("ImKayacNotifier");
 			t.setDaemon(true);
@@ -44,7 +42,8 @@ public class ImKayacNotifier implements Runnable{
 	}
 
 	public void forward(ImodeMail mail){
-		if(this.username=="" || this.secret==""){
+		if(this.config.getForwardImKayacUsername().length()==0 ||
+				this.config.getForwardImKayacSecret().length()==0 ){
 			return;
 		}
 		synchronized (this.queue) {
@@ -75,7 +74,8 @@ public class ImKayacNotifier implements Runnable{
 				}
 				mail = this.queue.remove(0);
 			}
-			if(this.username!="" && this.secret!=""){
+			if(this.config.getForwardImKayacUsername().length()!=0 &&
+					this.config.getForwardImKayacSecret().length()!=0 ){
 				this.sendToImKayac(mail);
 			}
 		}
@@ -86,16 +86,20 @@ public class ImKayacNotifier implements Runnable{
 		if(mail.isDecomeFlg()){
 			text = Util.html2text(text);
 		}
-		text = imKayacHeader(mail) + text;
+		if(this.config.isForwordPushNotifyBody()) {
+			text = imKayacHeader(mail) + text;
+		} else {
+			text = imKayacHeader(mail);
+		}
 
 		if (text.length() > 512) {
 		  text = text.substring(0,511);//512文字以上の場合は切ってしまおう
 		}
 
-		log.info("Try to sending IM to ["+this.username+"] via im.kayac.com");
+		log.info("Try to sending IM to ["+this.config.getForwardImKayacUsername()+"] via im.kayac.com");
 		try{
-      HttpPost post = new HttpPost(ImKayacUrl+this.username);
-      String digest = encrypt(text+this.secret);
+      HttpPost post = new HttpPost(ImKayacUrl+this.config.getForwardImKayacUsername());
+      String digest = encrypt(text+this.config.getForwardImKayacSecret());
 
 
       List<NameValuePair> formparams = new ArrayList<NameValuePair>();
@@ -123,7 +127,7 @@ public class ImKayacNotifier implements Runnable{
   				log.debug(json.toString(2));
     			log.info("im.kayac.com error");
 				} else {
-				  log.info("Send IM to ["+this.username+"] via im.kayac.com complete!");
+				  log.info("Send IM to ["+this.config.getForwardImKayacUsername()+"] via im.kayac.com complete!");
 				}
 			}finally{
 				post.abort();
@@ -133,47 +137,59 @@ public class ImKayacNotifier implements Runnable{
 		}
 	}
 
-	private static String imKayacHeader(ImodeMail mail){
+	private String imKayacHeader(ImodeMail mail){
 		StringBuilder buf = new StringBuilder();
 		SimpleDateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-		if ( mail.getFromAddr().getPersonal() != null)
-		{
-			buf.append("From:").append(mail.getFromAddr().getPersonal()).append(" <").append(mail.getFromAddr().getAddress()).append(">\r\n");
+		if ( mail.getFromAddr().getPersonal() != null) {
+			if( this.config.isForwardPushFrom() || this.config.isForwordPushNotifyAddress() ) {
+				buf.append("From:");
+				if( this.config.isForwardPushFrom() ) {
+					buf.append("From:").append(mail.getFromAddr().getPersonal());
+				}
+				if( !this.config.isForwardPushFrom() && this.config.isForwordPushNotifyAddress() ) {
+					buf.append(mail.getFromAddr().getAddress());
+				} else if( this.config.isForwordPushNotifyAddress() ) {
+					buf.append(" <").append(mail.getFromAddr().getAddress()).append(">");
+				}
+				buf.append("\r\n");
+			}
 		}
-		else
-		{
+		else if( this.config.isForwordPushNotifyAddress() || this.config.isForwardPushNotifyUnknownAddress() ) {
 			buf.append("From:").append(mail.getFromAddr().getAddress()).append("\r\n");
 		}
+		else {
+			buf.append("新着メール\r\n");
+		}
 		buf.append("Date:").append(df.format(mail.getTimeDate())).append("\r\n");
-		buf.append("Subject:").append(EmojiUtil.replaceToLabel(mail.getSubject())).append("\r\n");
-		if(mail.getGroupList().size()!=0) buf.append("Group:").append(mail.getGroupList().get(0));
+		if(this.config.isForwardPushSubject())
+			buf.append("Subject:").append(EmojiUtil.replaceToLabel(mail.getSubject())).append("\r\n");
 		buf.append("\r\n");
 		return buf.toString();
 	}
 
-  public static String encrypt(String input) {
-    try {
-      MessageDigest md = MessageDigest.getInstance("SHA1");
-      md.update(input.getBytes("UTF-8"));
-      return toHexString(md.digest());
-    } catch (NoSuchAlgorithmException e) {
-      e.printStackTrace();
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-    }
-    return null;
-  }
+	public static String encrypt(String input) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA1");
+			md.update(input.getBytes("UTF-8"));
+			return toHexString(md.digest());
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
-  private static String toHexString(byte[] b) {
-    StringBuffer hexString = new StringBuffer();
-    String plainText=null;
-    for (int i = 0; i < b.length; i++) {
-      plainText = Integer.toHexString(0xFF & b[i]);
-      if (plainText.length() < 2) {
-        plainText = "0" + plainText;
-      }
-      hexString.append(plainText);
-    }
-    return new String(hexString);
-  }
+	private static String toHexString(byte[] b) {
+		StringBuffer hexString = new StringBuffer();
+		String plainText=null;
+		for (int i = 0; i < b.length; i++) {
+			plainText = Integer.toHexString(0xFF & b[i]);
+			if (plainText.length() < 2) {
+				plainText = "0" + plainText;
+			}
+			hexString.append(plainText);
+		}
+		return new String(hexString);
+	}
 }

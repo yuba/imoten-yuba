@@ -156,6 +156,18 @@ forward.skype.sms
 　この機能はSkypeAPI(Skype4javaを使用)を使用しています。別途Skypeを
 　起動しておく必要があります。
 
+gmail.id
+　gmailのログインID。Google Contacts Data Data API対応追加機能を使って
+　メールアドレスから氏名・グループ名を取得します。
+　取得された氏名・グループ名はディスプレイネームやim.kayac.comおよび
+　Growl系アプリ(ProwlおよびNMA)への通知の際に利用されます
+
+gmail.passwd
+　gmailのログインパスワード。Google Contacts Data API対応追加機能を使って
+　メールアドレスから氏名・グループ名を取得します。
+　取得された氏名・グループ名はディスプレイネームやim.kayac.comおよび
+　Growl系アプリ(ProwlおよびNMA)への通知の際に利用されます
+
 forward.im.kayac.username
 　メールが来るとim.kayac.comにnotificationを送信する場合に、im.kayac.com の
 　ユーザー名を指定します。
@@ -163,6 +175,16 @@ forward.im.kayac.username
 forward.im.kayac.secret
 　メールが来るとim.kayac.comにnotificationを送信する場合に、im.kayac.com の
 　秘密鍵を指定します。
+
+forward.nma.keys
+　メールが来るとNotify My Androidに通知を送ります。Notify My AndroidのAPI Keyを指定します。
+　複数のAPI Keyを指定する場合は「,」(半角のカンマ)で区切ることで可能です。
+　API Keyの取得については http://nma.usk.bz/ にてユーザー登録を行うことで可能です。
+
+forward.prowl.keys
+　メールが来るとProwlに通知を送ります。ProwlのAPI Keyを指定します。
+　複数のAPI Keyを指定する場合は「,」(半角のカンマ)で区切ることで可能です。
+　API Keyの取得については http://www.prowlapp.com/ にてユーザー登録を行うことで可能です。
 
 forward.push.email
 　iPhone/iPod/iPadアプリのPush(http://www.appnotifications.com/)を使用してメール着信を通知します。
@@ -179,12 +201,34 @@ forward.push.message
 　デフォルト[新着iモードメールあり]
 
 forward.push.notifyfrom
+　※Push,im.kayac.com,Prowl,NMAで有効なオプション
 　メール着信通知で表示されるポップアップウィンドウにメール送信者名を表示するかどうか設定できます。
 　[false]を設定すると表示しません。
 　デフォルト[true]
 
 forward.push.notifysubject
+　※Push,im.kayac.com,Prowl,NMAで有効なオプション
 　メール着信通知で表示されるポップアップウィンドウにメール件名を表示するかどうか設定できます。
+　[false]を設定すると表示しません。
+　デフォルト[false]
+
+forward.push.notifyaddress
+　※im.kayac.com,Prowl,NMAでのみ有効なオプション
+　メール着信通知で表示される内容にメールアドレスを表示するかどうか設定できます。
+　[false]を設定すると表示しません。
+　デフォルト[false]
+
+forward.push.notifyunknownaddress
+　※im.kayac.com,Prowl,NMAでのみ有効なオプション
+　「連絡先に登録されていないメールアドレスからのメール着信通知」で
+　表示される内容にメール送信者名を表示するかどうか設定できます。
+　[false]を設定すると表示しません。
+　※forward.push.notifyaddress=trueの場合は、このオプションによらず、常に表示されます
+　デフォルト[true]
+
+forward.push.notifybody
+　※im.kayac.com,Prowl,NMAでのみ有効なオプション
+　メール着信通知で表示される内容に本文を表示するかどうか設定できます（最大1000文字まで）。
 　[false]を設定すると表示しません。
 　デフォルト[false]
 
@@ -332,14 +376,6 @@ addressbook.vcard
 　　"ディスプレイネーム"<myname@example.com>
 　相対パスを指定した場合、binディレクトリからの相対パスになります。
 　デフォルト[../address.vcf]
-
-gmail.id
-　gmailのログインID。Google Contacts Data Data API対応追加機能を使って
-　メールアドレスにディスプレイネームを表示する場合は必要
-
-gmail.passwd
-　gmailのログインパスワード。Google Contacts Data API対応追加機能を使って
-　メールアドレスにディスプレイネームを表示する場合は必要
 
 http.conntimeout
 　httpでの接続タイムアウト時間(秒)を指定します。

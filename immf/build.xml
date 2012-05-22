@@ -65,7 +65,7 @@
 	</target>
 
 	<target name="compile" depends="mkdir" description ="Compile">
-		<javac srcdir="${src}" destdir="${bin}" encoding="UTF-8">
+		<javac srcdir="${src}" destdir="${bin}" encoding="UTF-8" includeantruntime="false">
 			<classpath>
 				<fileset dir="lib" includes="*.jar" />
 				<pathelement location="imoten/lib/skype.jar" />

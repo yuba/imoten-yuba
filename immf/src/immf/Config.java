@@ -224,6 +224,12 @@ public class Config {
 	private String forwardImKayacUsername;
 	private String forwardImKayacSecret;
 
+	// Prowl設定
+	private String forwordProwlKeys;
+
+	// Notify My Android設定
+	private String forwordNMAKeys;
+
 	// AppNotifications(iPhone/iPod/iPadアプリPush)
 	private String forwardPushEmail;
 	private String forwardPushPassword;
@@ -234,7 +240,18 @@ public class Config {
 	private boolean forwardPushNotifySubject = false;
 	private boolean forwardPushReplyButton = false;
 	private boolean forwardPushUseDnsCache = false;
-	
+
+	// im.kayac.com Prowl MNA にのみ有効な追加設定
+	// APIに転送する内容に送信者のアドレスを含めるかどうか
+	private boolean forwordPushNotifyAddress = false;
+
+	// 送信者のアドレスを含めない場合でも連絡先に登録されていない
+	// 不明の送信者からの場合は通知する
+	private boolean forwardPushNotifyUnknownAddress = true;
+
+	// APIに転送する内容に本文を含めるかどうか
+	private boolean forwordPushNotifyBody = false;
+
 	// 識別用
 	private int configId;
 
@@ -251,7 +268,7 @@ public class Config {
 		getForwardProperties(1);
 		configId = 1;
 	}
-	
+
 	public Config(InputStream is, int index) throws Exception{
 		Reader reader = null;
 		try{
@@ -314,6 +331,8 @@ public class Config {
 		this.forwardSkypeSms = getString("forward.skype.sms", null);
 		this.forwardImKayacUsername = getString("forward.im.kayac.username", "");
 		this.forwardImKayacSecret = getString("forward.im.kayac.secret", "");
+		this.forwordProwlKeys = getString("forward.prowl.keys", "");
+		this.forwordNMAKeys = getString("forward.nma.keys", "");
 		this.forwardPushEmail = getString("forward.push.email","");
 		this.forwardPushPassword = getString("forward.push.password","");
 		this.forwardPushMessage = getString("forward.push.message",null);
@@ -323,6 +342,9 @@ public class Config {
 		this.forwardPushNotifySubject = getBoolean("forward.push.notifysubject",this.forwardPushNotifySubject);
 		this.forwardPushReplyButton = getBoolean("forward.push.replybutton",this.forwardPushReplyButton);
 		this.forwardPushUseDnsCache = getBoolean("forward.push.usednscache",this.forwardPushUseDnsCache);
+		this.forwordPushNotifyAddress = getBoolean("forward.push.notifyaddress",this.forwordPushNotifyAddress);
+		this.forwardPushNotifyUnknownAddress  = getBoolean("forward.push.notifyunknownaddress",this.forwardPushNotifyUnknownAddress);
+		this.forwordPushNotifyBody = getBoolean("forward.push.notifybody",this.forwordPushNotifyBody);
 		/*
 		this.forwardReplyTo = splitComma(getString("forward.replyto", ""));
 		this.rewriteAddress = getBoolean("forward.rewriteaddress", this.rewriteAddress);
@@ -497,7 +519,7 @@ public class Config {
 		}
 		return i - 1;
 	}
-	
+
 	public int getConfigId(){
 		return configId;
 	}
@@ -745,6 +767,14 @@ public class Config {
 		return forwardImKayacSecret;
 	}
 
+	public String getForwardNMAKeys() {
+		return forwordNMAKeys;
+	}
+
+	public String getForwordProwlKeys() {
+		return forwordProwlKeys;
+	}
+
 	public String getForwardPushEmail() {
 		return forwardPushEmail;
 	}
@@ -779,6 +809,18 @@ public class Config {
 
 	public boolean isForwardPushUseDnsCache() {
 		return forwardPushUseDnsCache;
+	}
+
+	public boolean isForwordPushNotifyAddress() {
+		return forwordPushNotifyAddress;
+	}
+
+	public boolean isForwardPushNotifyUnknownAddress() {
+		return forwardPushNotifyUnknownAddress;
+	}
+
+	public boolean isForwordPushNotifyBody() {
+		return forwordPushNotifyBody;
 	}
 
 	public String getIgnoreDomainFile() {

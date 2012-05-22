@@ -22,6 +22,9 @@
 package immf;
 
 import immf.google.contact.GoogleContactsAccessor;
+import immf.growl.GrowlNotifier;
+import immf.growl.concrete.NMAClient;
+import immf.growl.concrete.ProwlClient;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -52,6 +55,8 @@ public class ServerMain {
 	private SkypeForwarder skypeForwarder;
 	private ImKayacNotifier imKayacNotifier;
 	private AppNotifications appNotifications;
+	private GrowlNotifier prowlNotifier;
+	private GrowlNotifier nmaNotifier;
 	private int numForwardSite;
 	private Map<Config, ForwardMailPicker> forwarders = new HashMap<Config, ForwardMailPicker>();
 	private Map<Config, List<String>> ignoreDomainsMap = new HashMap<Config, List<String>>();
@@ -175,10 +180,17 @@ public class ServerMain {
 		this.skypeForwarder = new SkypeForwarder(conf.getForwardSkypeChat(),conf.getForwardSkypeSms(),conf);
 
 		// im.kayac.com
-		this.imKayacNotifier = new ImKayacNotifier(conf.getForwardImKayacUsername(),conf.getForwardImKayacSecret());
+		this.imKayacNotifier = new ImKayacNotifier(this.conf);
 
 		// appnotifications
 		this.appNotifications = new AppNotifications(this.conf, this.status);
+
+		// Growl APIs
+		// for Prowl
+		this.prowlNotifier = GrowlNotifier.getInstance(ProwlClient.getInstance(), this.conf);
+
+		// for Notify My Android
+		this.nmaNotifier = GrowlNotifier.getInstance(NMAClient.getInstance(), this.conf);
 
 		Date lastUpdate = null;
 		while(true){
@@ -423,6 +435,20 @@ public class ServerMain {
 		}
 
 		try{
+			this.prowlNotifier.forward(mail);
+		}catch (Exception e) {
+			log.error("mail["+mailId+"] Prowl forward Error.",e);
+			return;
+		}
+
+		try{
+			this.nmaNotifier.forward(mail);
+		}catch (Exception e) {
+			log.error("mail["+mailId+"] NMA forward Error.",e);
+			return;
+		}
+
+		try{
 			this.appNotifications.push(folderId, mail);
 		}catch (Exception e) {
 			this.appNotifications.pushError(folderId);
@@ -462,11 +488,11 @@ public class ServerMain {
 		try{
 			fr = new FileReader(ignoreDomainFile);
 			br = new BufferedReader(fr);
-			int id = 0;
+			//int id = 0;
 
 			String line = null;
 			while((line = br.readLine()) != null){
-				id++;
+				//id++;
 				try{
 					if(line.startsWith("#")){
 						continue;
