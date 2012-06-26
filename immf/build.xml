@@ -71,6 +71,11 @@
 				<pathelement location="imoten/lib/skype.jar" />
 			</classpath>
 		</javac>
+		<copy todir="${bin}" overwrite="true">
+			<fileset dir="${src}">
+			    <include name="META-INF/**"/>
+			</fileset>
+		</copy>
 	</target>
 
 	<target name="release" depends="create_run_jar" description="Release">
